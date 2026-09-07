@@ -12,13 +12,17 @@ A clean booking calendar for the Empire Building Management field crew.
 
 ## What it does
 
-**Office view** — the crew down the side, a month calendar for whoever is selected, and a day sheet for adding jobs.
+**Everyone has their own code.** The code is the login: it decides who you are and what you can open. The office code opens the full calendar; a crew code opens only that person's own schedule and cannot reach the office view. Codes live in `config.js`.
+
+**Office view** — the crew down the side, a month calendar for whoever is selected, and a day sheet for adding jobs. Days show the **project number** and unit.
 
 **Worker view** — each person sees only their own upcoming jobs, and can clock in, clock out, and leave notes.
 
 A job is booked against a real property: pick the **project** (23 companies), then the **building** (the list narrows to that project's addresses), then the **unit**. Choose **all day** or a **from–to** time inside 8:00 AM – 5:00 PM. Double-booking a crew member is refused.
 
-Anyone — office or crew — can add notes to a job. Past days are locked.
+Anyone — office or crew — can add notes to a job. Past days are locked, and Saturdays and Sundays read "Off".
+
+If the app can't reach the network it says **No connection** and shows the last data saved on that device, rather than hanging or pretending the schedule is empty.
 
 **Installs like an app.** Android Chrome offers "Install app"; on iPhone it's Share → Add to Home Screen. It then opens full screen with its own icon, and the app shell is cached so it still opens with no signal.
 
@@ -34,7 +38,9 @@ Out of the box the calendar keeps bookings in whoever's browser opened it. To ma
 
 Once that's done the top right of the page says *"Shared — everyone with the link"* and bookings appear on everyone's phone within seconds.
 
-`config.js` also holds an optional passcode. Anyone opening the calendar types it once and their phone remembers it. It keeps out people who stumble on the link; it is not real security, and it is visible to anyone who reads the page source.
+`config.js` holds one access code per person. Each person types theirs once and their phone remembers it; **Sign out** clears it.
+
+Be clear-eyed about what these codes are: they live in the page's JavaScript, so anyone who knows how to view a page's source can read all of them. They stop crew members casually opening each other's or the office's view. They are **not** account security. For that you want real logins — Firebase Authentication with a Firestore rule per person — which is a bigger job and gives every worker a username and password to manage.
 
 ## Where the bookings live
 

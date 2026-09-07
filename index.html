@@ -280,20 +280,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   <form class="card" id="gateForm">
     <div class="eyebrow">Empire Building Management</div>
     <h2>Crew Calendar</h2>
-    <p>Enter the crew passcode to open the calendar.</p>
-    <input id="gateInput" type="password" autocomplete="current-password" placeholder="Passcode" required>
-    <button type="submit" class="btn btn-primary btn-block">Open calendar</button>
+    <p>Enter your own code. Everyone has a different one.</p>
+    <input id="gateInput" type="password" autocomplete="current-password" placeholder="Your code" required>
+    <button type="submit" class="btn btn-primary btn-block">Open</button>
     <p class="err" id="gateErr"></p>
   </form>
-</div>
-
-<div class="screen" id="rolePick" hidden>
-  <div class="card">
-    <div class="eyebrow">One time only</div>
-    <h2>Who's using this phone?</h2>
-    <p>This decides what you see. You can change it later from the top of the page.</p>
-    <div class="rolelist" id="roleList"></div>
-  </div>
 </div>
 
 <div class="wrap" id="app" hidden>
@@ -305,7 +296,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="topbar-right">
       <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
       <button class="btn" id="installBtn">Install app</button>
-      <button class="btn btn-quiet" id="whoBtn">Not you?</button>
+      <button class="btn btn-quiet" id="whoBtn">Sign out</button>
     </div>
   </header>
 
@@ -428,7 +419,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var TRADE = {plumbing:"Plumbing", electrical:"Electrical"};
   var MAX_CHIPS = 3;
   var LS_PASS = "ebm-crew:pass:v2";
-  var LS_ME   = "ebm-crew:me:v2";
   var LS_JOBS = "ebm-crew:jobs:v2";
 
   var PROJECTS = window.EBM_PROJECTS || [];
@@ -624,6 +614,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       el.classList.add("live");
       txt.textContent = "Shared — everyone with the link";
       note = "Jobs save straight away and every open calendar updates within seconds.";
+    } else if (state.mode==="offline"){
+      el.classList.add("local");
+      txt.textContent = "No connection";
+      note = "<strong>Can't reach the calendar right now.</strong> You are seeing what was last saved on this device. Anything you change here will not reach anyone else — check your signal and reload.";
     } else if (state.mode==="device"){
       el.classList.add("local");
       txt.textContent = "Saved on this device only";
@@ -799,7 +793,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         list.slice(0,MAX_CHIPS).forEach(function(j){
           var c=document.createElement("span"); c.className="chip";
           var t=document.createElement("span"); t.className="t"; t.textContent=j.allDay?"all":hourShort(j.from);
-          var n=document.createElement("span"); n.className="n"; n.textContent=j.buildingName;
+          var n=document.createElement("span"); n.className="n";
+          n.textContent = j.projectId + (j.unit ? " · " + j.unit : "");
           c.appendChild(t); c.appendChild(n); chips.appendChild(c);
         });
         cell.appendChild(chips);
@@ -809,7 +804,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         }
       } else {
         var fh=document.createElement("span"); fh.className="freehint";
-        fh.textContent = isWeekend(ds) ? "Off" : (dayIsPast(ds) ? "" : "Free");
+        fh.textContent = state.mode==="loading" ? ""
+          : (isWeekend(ds) ? "Off" : (dayIsPast(ds) ? "" : "Free"));
         cell.appendChild(fh);
       }
       cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+", "+(list.length?list.length+" jobs":(isWeekend(ds)?"day off":"free")));
@@ -829,7 +825,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
                       .sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
     if (!mine.length){
       var e=document.createElement("div"); e.className="empty";
-      e.textContent="Nothing booked. The office will add jobs here and they show up straight away.";
+      // Don't claim the schedule is empty before the jobs have arrived.
+      e.textContent = state.mode==="loading"
+        ? "Checking your schedule…"
+        : "Nothing booked. The office will add jobs here and they show up straight away.";
       host.appendChild(e); return;
     }
     var groups={}, order=[];
@@ -885,7 +884,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var host=$("dayJobs"); host.innerHTML="";
     var list=jobsOn(ds, state.who);
     if (!list.length){
-      var e=document.createElement("div"); e.className="empty"; e.textContent="Nothing booked this day.";
+      var e=document.createElement("div"); e.className="empty";
+      e.textContent = state.mode==="loading" ? "Checking this day…" : "Nothing booked this day.";
       host.appendChild(e);
     } else {
       list.forEach(function(j){ host.appendChild(jobCard(j,{remove:true, after:showDayPane})); });
@@ -960,25 +960,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   });
 
   /* ---------- who am I ---------- */
-  function renderRolePicker(){
-    var host=$("roleList"); host.innerHTML="";
-    var opts=[{id:"office", name:"Office", sub:"Book jobs for the whole crew"}].concat(
-      CREW.map(function(m){ return {id:m.id, name:m.name, sub:"See my own jobs, clock in and out"}; }));
-    opts.forEach(function(o){
-      var b=document.createElement("button");
-      b.type="button"; b.className="btn btn-block"; b.style.textAlign="left";
-      b.innerHTML="<strong>"+o.name+"</strong><br><span style='color:var(--ink-3);font-size:12.5px'>"+o.sub+"</span>";
-      b.addEventListener("click", function(){ setMe(o.id); });
-      host.appendChild(b);
-    });
-  }
-  function setMe(id){
-    state.me=id; lsWrite(LS_ME,id);
-    $("rolePick").hidden=true; $("app").hidden=false;
-    resubscribe(); render();
-  }
   $("whoBtn").addEventListener("click", function(){
-    $("app").hidden=true; $("rolePick").hidden=false; renderRolePicker();
+    try{ localStorage.removeItem(LS_PASS); }catch(e){}
+    location.reload();
   });
 
   /* ---------- live data ---------- */
@@ -1033,8 +1017,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
 
   /* ---------- boot ---------- */
-  function bootDevice(){
-    state.mode="device";
+  function bootDevice(offline){
+    state.mode = offline ? "offline" : "device";
     var saved=lsRead(LS_JOBS,{});
     state.jobs = (saved && typeof saved==="object") ? saved : {};
     render();
@@ -1052,19 +1036,32 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function bootFirebase(cfg){
     var base="https://www.gstatic.com/firebasejs/10.12.5/";
+    var settled=false;
+    // A phone on bad signal can leave these script requests hanging rather than
+    // failing, which would strand the app on "Loading…" with nothing on screen.
+    var giveUp=setTimeout(function(){
+      if (settled) return;
+      settled=true;
+      console.warn("Firebase did not load in time");
+      bootDevice(true);
+    }, 12000);
     loadScript(base+"firebase-app-compat.js")
       .then(function(){ return loadScript(base+"firebase-firestore-compat.js"); })
       .then(function(){
+        if (settled) return;
+        settled=true; clearTimeout(giveUp);
         firebase.initializeApp(cfg);
         state.fb=firebase.firestore();
         state.mode="cloud"; resubscribe(); render();
       })
-      .catch(function(e){ console.warn("Firebase unavailable",e); bootDevice(); });
+      .catch(function(e){
+        if (settled) return;
+        settled=true; clearTimeout(giveUp);
+        console.warn("Firebase unavailable",e);
+        bootDevice(true);
+      });
   }
   function start(){
-    state.me = lsRead(LS_ME, null);
-    if (state.me && state.me!=="office" && !member(state.me)) state.me=null;
-    if (state.me){ $("app").hidden=false; } else { $("rolePick").hidden=false; renderRolePicker(); }
     render();
 
     if (window.claude && typeof window.claude.use==="function"){
@@ -1080,27 +1077,61 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     }
   }
 
-  /* ---------- passcode ---------- */
-  function wantPass(){ return String((window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "").trim(); }
-  function passOk(){
-    var w=wantPass();
-    if (!w) return true;
-    try{ return (localStorage.getItem(LS_PASS)||"")===w; }catch(e){ return false; }
+  /* ---------- access codes ---------- */
+  /* Every person has their own code. The code is the login: it says who you
+     are AND what you can open. A crew code can never reach the office
+     calendar, because the office view is only rendered for "office". */
+  function accessMap(){
+    var a = window.EBM_CONFIG && window.EBM_CONFIG.access;
+    if (a && typeof a === "object"){
+      var any = false;
+      for (var k in a) if (String(a[k] || "").trim()) any = true;
+      if (any) return a;
+    }
+    var legacy = String((window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "").trim();
+    return legacy ? {office: legacy} : null;
   }
-  if (passOk()){
+  function whoFor(code){
+    var a = accessMap();
+    if (!a || !code) return null;
+    for (var k in a){
+      if (String(a[k] || "").trim() === code) return k;
+    }
+    return null;
+  }
+  function validPerson(id){ return id === "office" || !!member(id); }
+
+  function openAs(id){
+    state.me = id;
+    $("gate").hidden = true;
+    $("app").hidden = false;
     start();
+  }
+
+  if (!accessMap()){
+    openAs("office");                       // no codes configured — open to anyone
   } else {
-    $("gate").hidden=false;
-    setTimeout(function(){ $("gateInput").focus(); },40);
-    $("gateForm").addEventListener("submit", function(ev){
-      ev.preventDefault();
-      if ($("gateInput").value.trim()!==wantPass()){
-        $("gateErr").textContent="That passcode does not match. Check with the office.";
-        $("gateInput").select(); return;
-      }
-      try{ localStorage.setItem(LS_PASS, wantPass()); }catch(e){}
-      $("gate").hidden=true; start();
-    });
+    var saved = null;
+    try{ saved = localStorage.getItem(LS_PASS); }catch(e){}
+    var who = whoFor(String(saved || "").trim());
+    if (who && validPerson(who)){
+      openAs(who);
+    } else {
+      $("gate").hidden = false;
+      setTimeout(function(){ $("gateInput").focus(); }, 40);
+      $("gateForm").addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var typed = $("gateInput").value.trim();
+        var id = whoFor(typed);
+        if (!id || !validPerson(id)){
+          $("gateErr").textContent = "That code does not match. Check with the office.";
+          $("gateInput").select();
+          return;
+        }
+        try{ localStorage.setItem(LS_PASS, typed); }catch(e){}
+        openAs(id);
+      });
+    }
   }
 
   /* ---------- install as an app ---------- */

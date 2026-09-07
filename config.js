@@ -21,9 +21,18 @@ window.EBM_CONFIG = {
     appId:             "1:525924907190:web:5673ae7b2c8c7eecdb0e17"
   },
 
-  /* Optional passcode. Anyone opening the calendar types it once and the
-     phone remembers it. Leave it as "" for no passcode.
-     It keeps strangers who stumble on the link out — it is not a password
-     vault, so don't reuse a real password here. */
-  passcode: "empire65"
+  /* Who can open the app, and what each of them sees.
+
+     Each person gets their OWN code. The code is the login — it decides who
+     you are and what you can open. A crew code opens only that person's own
+     schedule; it cannot reach the office calendar. Change any of these to
+     whatever you like, then tell that person their new code.
+
+     Anyone whose code you blank out ("") can no longer get in. */
+  access: {
+    office:      "empire65",
+    rodrigo:     "rd7412",
+    zion:        "zn5836",
+    electrician: "el2947"
+  }
 };
