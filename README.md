@@ -20,23 +20,31 @@ A clean booking calendar for the Empire Building Management field crew.
 - **Crew names** — the electrician's name (or anyone's) can be changed in the app under **Crew names**.
 - Hours in the past are locked automatically.
 
-## The two ways to run it
+## Making it shared
 
-The whole app is one file, `index.html`. It stores bookings differently depending on where it runs:
+Out of the box the calendar keeps bookings in whoever's browser opened it. To make it a real shared calendar — one link, everyone sees the same thing — fill in `config.js` and switch on GitHub Pages.
 
-1. **Published as a Claude Artifact** — bookings are shared. Everyone who opens the link sees the same calendar live, and a booking made on one phone shows up on everyone else's within seconds. This is the version to send to the team. Viewers have to be signed in to the Empire Building Management workspace.
-2. **Anywhere else** (GitHub Pages, opened from a file, any web host) — bookings are saved in that one browser only. Good for trying it out; not for real scheduling, and the app says so at the top of the page.
+**Step-by-step instructions: [SETUP.md](SETUP.md).** About 15 minutes, free, no credit card.
 
-## Publishing on GitHub Pages
+Once that's done the top right of the page says *"Shared — everyone with the link"* and bookings appear on everyone's phone within seconds.
 
-Repo **Settings → Pages → Source: Deploy from a branch**, pick the branch and `/ (root)`, save. The calendar lands at
-`https://shlomestern.github.io/ebm-employee-Celander-/`.
+`config.js` also holds an optional passcode. Anyone opening the calendar types it once and their phone remembers it. It keeps out people who stumble on the link; it is not real security, and it is visible to anyone who reads the page source.
 
-Remember it will be the device-only version there — see above.
+## Where the bookings live
+
+The app picks its storage automatically:
+
+| Where it's running | Bookings go to |
+| --- | --- |
+| GitHub Pages with `config.js` filled in | Your Firebase database — shared with everyone |
+| Published as a Claude Artifact | Claude's store — shared inside your Claude workspace |
+| Anywhere else, or `config.js` left blank | That one browser only, and the page says so |
+
+Bookings are stored one document per crew-member-day, with an hour-keyed `slots` map merged on write, so two people booking different hours of the same day never overwrite each other.
 
 ## Editing it
 
-Everything lives in `index.html`: no build step, no dependencies, no install. Open it in an editor, change it, refresh the browser.
+Everything lives in `index.html` — no build step, no install, nothing to compile. Open it in an editor, change it, refresh the browser. `config.js` holds your settings and is the only file you need for setup.
 
 Common tweaks, all near the top of the `<script>` block:
 

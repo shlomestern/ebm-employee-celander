@@ -214,6 +214,23 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .actions .spacer{flex:1}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
 
+.gate{
+  position:fixed; inset:0; z-index:50; display:grid; place-items:center;
+  background:var(--ground); padding:24px;
+}
+.gatebox{
+  width:min(360px,100%); background:var(--surface); border:1px solid var(--line);
+  border-radius:13px; padding:24px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:11px;
+}
+.gatebox h2{margin:2px 0 0; font-size:24px; font-weight:700; letter-spacing:-.022em}
+.gatebox p{margin:0; font-size:13.5px; color:var(--ink-2)}
+.gatebox input{
+  font:inherit; font-size:16px; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:8px; padding:10px 12px; width:100%;
+}
+body.locked .wrap{display:none}
+
 @media (max-width:820px){
   .layout{grid-template-columns:minmax(0,1fr); gap:16px}
   .crew{flex-direction:row; flex-wrap:wrap; gap:6px}
@@ -234,6 +251,17 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
+
+<div class="gate" id="gate" hidden>
+  <form class="gatebox" id="gateForm">
+    <div class="eyebrow">Empire Building Management</div>
+    <h2>Crew Calendar</h2>
+    <p>Enter the crew passcode to open the calendar.</p>
+    <input id="gateInput" type="password" autocomplete="current-password" placeholder="Passcode" required>
+    <button type="submit" class="btn btn-primary">Open calendar</button>
+    <p class="err" id="gateErr"></p>
+  </form>
+</div>
 
 <div class="wrap">
   <header class="topbar">
@@ -329,6 +357,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   </form>
 </dialog>
 
+<script src="config.js"></script>
 <script>
 (function(){
   "use strict";
@@ -341,6 +370,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var HOURS = [8,9,10,11,12,13,14,15,16];   // slot starts; day ends 5 PM
   var LS_BOOKINGS = "ebm-crew-calendar:bookings:v1";
   var LS_CREW = "ebm-crew-calendar:crew:v1";
+  var LS_PASS = "ebm-crew-calendar:pass:v1";
   var TRADE_LABEL = {plumbing:"Plumbing", electrical:"Electrical"};
   var MAX_CHIPS = 3;
 
@@ -372,8 +402,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     who: DEFAULT_CREW[0].id,
     month: new Date(today.getFullYear(), today.getMonth(), 1),
     days: {},                 // iso -> { crewId -> { "08": booking|null } }
-    mode: "loading",
-    db: null,
+    mode: "loading",       // loading | shared | cloud | device
+    db: null,              // Claude artifact store
+    fb: null,              // Firestore
     unsubs: []
   };
   var todayIso = iso(today);
@@ -404,6 +435,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
 
   function writeSlots(dateStr, crewId, patch){
+    if (state.mode === "cloud" && state.fb){
+      // merge:true merges the slots map key by key, so two people booking
+      // different hours on the same day never overwrite each other.
+      return state.fb.collection("bookings").doc(dayKey(dateStr, crewId))
+        .set({date:dateStr, crewId:crewId, slots:patch}, {merge:true});
+    }
     if (state.mode === "shared" && state.db){
       var ref = state.db.doc("bookings/"+dayKey(dateStr, crewId));
       return ref.update({slots:patch}).catch(function(err){
@@ -429,6 +466,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   function saveCrew(next){
     state.crew = next;
+    if (state.mode === "cloud" && state.fb) return state.fb.collection("config").doc("crew").set({members:next});
     if (state.mode === "shared" && state.db) return state.db.doc("config/crew").set({members:next});
     lsWrite(LS_CREW, next);
     render();
@@ -440,7 +478,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (c === "revoked" || c === "not_granted") return "You no longer have access to this calendar. Reload the page.";
     if (c === "resource_exhausted") return "Too many changes at once. Wait a moment and try again.";
     if (c === "quota_exceeded") return "The calendar is full. Delete some old bookings first.";
-    if (c === "unavailable") return "Connection hiccup. Try that again.";
+    if (c === "unavailable") return "No connection right now. Try that again in a moment.";
+    if (c === "permission-denied") return "This calendar is not accepting changes. Check the Firebase rules in SETUP.md.";
     if (err && err.message) return err.message;
     return fallback;
   }
@@ -480,7 +519,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function renderStatus(){
     var el = $("status"), txt = $("statusText");
     el.classList.remove("live","local");
-    if (state.mode === "shared"){
+    if (state.mode === "cloud"){
+      el.classList.add("live");
+      txt.textContent = "Shared — everyone with the link";
+      $("footnote").innerHTML = "Bookings save straight away and every open calendar updates within seconds. Hours in the past are locked.";
+    } else if (state.mode === "shared"){
       el.classList.add("live");
       txt.textContent = "Shared — everyone sees the same bookings";
       $("footnote").innerHTML = "Bookings save instantly and every open calendar updates. Hours in the past are locked.";
@@ -802,53 +845,135 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     render();
   }
 
+  /* ---------- live updates ---------- */
+  function applyBookings(snap){
+    var fresh = {};
+    snap.docs.forEach(function(doc){
+      var d = doc.data() || {};
+      if (!d.date || !d.crewId) return;
+      if (!fresh[d.date]) fresh[d.date] = {};
+      fresh[d.date][d.crewId] = d.slots || {};
+    });
+    state.days = fresh;
+    render();
+    if ($("dayDlg").open && !$("paneHours").hidden) showHoursPane();
+  }
+  function applyCrew(snap){
+    var d = snap.exists ? snap.data() : null;
+    if (d && Array.isArray(d.members) && d.members.length === 3) state.crew = d.members;
+    render();
+  }
+
   function resubscribe(){
-    if (state.mode !== "shared" || !state.db) return;
     state.unsubs.forEach(function(u){ try{ u(); }catch(e){} });
     state.unsubs = [];
 
     var start = gridStart();
     var from = iso(addDays(start,-1));
     var to   = iso(addDays(start, gridWeeks()*7 + 1));
+    var bookings = null, crewDoc = null;
 
-    state.unsubs.push(
-      state.db.collection("bookings")
-        .where("date",">=",from).where("date","<=",to)
-        .onSnapshot(function(snap){
-          var fresh = {};
-          snap.docs.forEach(function(doc){
-            var d = doc.data() || {};
-            if (!d.date || !d.crewId) return;
-            if (!fresh[d.date]) fresh[d.date] = {};
-            fresh[d.date][d.crewId] = d.slots || {};
-          });
-          state.days = fresh;
-          render();
-          if ($("dayDlg").open && !$("paneHours").hidden) showHoursPane();
-        }, function(err){ console.warn("bookings subscription ended", err); })
-    );
+    if (state.mode === "cloud" && state.fb){
+      bookings = state.fb.collection("bookings").where("date",">=",from).where("date","<=",to);
+      crewDoc  = state.fb.collection("config").doc("crew");
+    } else if (state.mode === "shared" && state.db){
+      bookings = state.db.collection("bookings").where("date",">=",from).where("date","<=",to);
+      crewDoc  = state.db.doc("config/crew");
+    } else {
+      return;
+    }
 
-    state.unsubs.push(
-      state.db.doc("config/crew").onSnapshot(function(snap){
-        var d = snap.exists ? snap.data() : null;
-        if (d && Array.isArray(d.members) && d.members.length === 3) state.crew = d.members;
-        render();
-      }, function(err){ console.warn("crew subscription ended", err); })
-    );
+    state.unsubs.push(bookings.onSnapshot(applyBookings, function(err){
+      console.warn("bookings subscription ended", err);
+    }));
+    state.unsubs.push(crewDoc.onSnapshot(applyCrew, function(err){
+      console.warn("crew subscription ended", err);
+    }));
   }
 
-  render();
+  /* ---------- boot ---------- */
+  function loadScript(src){
+    return new Promise(function(resolve, reject){
+      var el = document.createElement("script");
+      el.src = src;
+      el.onload = resolve;
+      el.onerror = function(){ reject(new Error("could not load " + src)); };
+      document.head.appendChild(el);
+    });
+  }
 
-  if (window.claude && typeof window.claude.use === "function"){
-    window.claude.use("db").then(function(db){
-      if (!db){ bootDevice(); return; }
-      state.db = db;
-      state.mode = "shared";
-      resubscribe();
-      render();
-    }).catch(bootDevice);
+  function firebaseConfig(){
+    var c = window.EBM_CONFIG && window.EBM_CONFIG.firebase;
+    return (c && c.apiKey && c.projectId) ? c : null;
+  }
+
+  function bootFirebase(cfg){
+    var base = "https://www.gstatic.com/firebasejs/10.12.5/";
+    loadScript(base + "firebase-app-compat.js")
+      .then(function(){ return loadScript(base + "firebase-firestore-compat.js"); })
+      .then(function(){
+        firebase.initializeApp(cfg);
+        state.fb = firebase.firestore();
+        state.mode = "cloud";
+        resubscribe();
+        render();
+      })
+      .catch(function(err){
+        console.warn("Firebase unavailable, falling back to this device", err);
+        bootDevice();
+      });
+  }
+
+  function bootCloudOrDevice(){
+    var cfg = firebaseConfig();
+    if (cfg) bootFirebase(cfg); else bootDevice();
+  }
+
+  function start(){
+    render();
+    if (window.claude && typeof window.claude.use === "function"){
+      window.claude.use("db").then(function(db){
+        if (!db){ bootCloudOrDevice(); return; }
+        state.db = db;
+        state.mode = "shared";
+        resubscribe();
+        render();
+      }).catch(bootCloudOrDevice);
+    } else {
+      bootCloudOrDevice();
+    }
+  }
+
+  /* ---------- passcode ---------- */
+  function requiredPasscode(){
+    var p = (window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "";
+    return String(p).trim();
+  }
+  function passcodeAccepted(){
+    var want = requiredPasscode();
+    if (!want) return true;
+    try { return (localStorage.getItem(LS_PASS) || "") === want; } catch(e){ return false; }
+  }
+
+  if (passcodeAccepted()){
+    start();
   } else {
-    bootDevice();
+    document.body.classList.add("locked");
+    $("gate").hidden = false;
+    setTimeout(function(){ $("gateInput").focus(); }, 40);
+    $("gateForm").addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var typed = $("gateInput").value.trim();
+      if (typed !== requiredPasscode()){
+        $("gateErr").textContent = "That passcode does not match. Check with the office.";
+        $("gateInput").select();
+        return;
+      }
+      try { localStorage.setItem(LS_PASS, typed); } catch(e){}
+      $("gate").hidden = true;
+      document.body.classList.remove("locked");
+      start();
+    });
   }
 })();
 </script>
