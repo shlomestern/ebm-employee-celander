@@ -160,6 +160,9 @@ button{font:inherit; color:inherit; cursor:pointer}
 .cell.out{background:var(--surface-2); cursor:default}
 .cell.out .dnum{opacity:.35}
 .cell.past{background:var(--surface-2)}
+.cell.off{background:var(--surface-2)}
+.cell.off .dnum{color:var(--ink-3)}
+.cell.off .freehint{color:var(--ink-3); font-style:italic}
 .cell.past .dnum{color:var(--ink-3)}
 .cell.today .dnum{color:var(--sel); font-weight:700}
 .cell.today .dnum .tdot{width:5px; height:5px; border-radius:50%; background:var(--sel); flex:none}
@@ -429,6 +432,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function rangeShort(j){
     return j.allDay ? "all day" : hourShort(j.from) + "–" + hourShort(j.to);
+  }
+  function isWeekend(ds){
+    var wd = fromIso(ds).getDay();
+    return wd === 0 || wd === 6;
   }
   function dayIsPast(ds){
     var end = fromIso(ds); end.setHours(DAY_END,0,0,0);
@@ -762,7 +769,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var inMonth = d.getMonth()===state.month.getMonth();
       var cell=document.createElement("button");
       cell.type="button";
-      cell.className="cell"+(inMonth?"":" out")+(ds===todayIso?" today":"")+((inMonth&&dayIsPast(ds))?" past":"");
+      cell.className="cell"+(inMonth?"":" out")+(ds===todayIso?" today":"")
+        +((inMonth&&dayIsPast(ds))?" past":"")+((inMonth&&isWeekend(ds))?" off":"");
       var num=document.createElement("span"); num.className="dnum";
       num.appendChild(document.createTextNode(String(d.getDate())));
       if (ds===todayIso){ var td=document.createElement("span"); td.className="tdot"; num.appendChild(td); }
@@ -785,9 +793,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         }
       } else {
         var fh=document.createElement("span"); fh.className="freehint";
-        fh.textContent=dayIsPast(ds)?"":"Free"; cell.appendChild(fh);
+        fh.textContent = isWeekend(ds) ? "Off" : (dayIsPast(ds) ? "" : "Free");
+        cell.appendChild(fh);
       }
-      cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+", "+(list.length?list.length+" jobs":"free"));
+      cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+", "+(list.length?list.length+" jobs":(isWeekend(ds)?"day off":"free")));
       (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
     }
@@ -852,8 +861,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("dayWhen").textContent = F_LONG.format(fromIso(ds));
     $("dayErr").textContent="";
     var free=freeHours(ds, state.who);
-    $("daySub").textContent = dayIsPast(ds) ? "This day has passed."
-      : (free===0 ? "Fully booked." : free+(free===1?" hour":" hours")+" still free, 8:00 AM to 5:00 PM.");
+    var weekendNote = isWeekend(ds) ? "Normally a day off. " : "";
+    $("daySub").textContent = weekendNote + (dayIsPast(ds) ? "This day has passed."
+      : (free===0 ? "Fully booked." : free+(free===1?" hour":" hours")+" still free, 8:00 AM to 5:00 PM."));
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
 
     var host=$("dayJobs"); host.innerHTML="";
