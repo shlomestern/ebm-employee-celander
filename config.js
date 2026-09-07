@@ -25,5 +25,5 @@ window.EBM_CONFIG = {
      phone remembers it. Leave it as "" for no passcode.
      It keeps strangers who stumble on the link out — it is not a password
      vault, so don't reuse a real password here. */
-  passcode: ""
+  passcode: "empire65"
 };
