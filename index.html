@@ -1,4 +1,10 @@
 <title>EBM Crew Calendar</title>
+<meta name="theme-color" content="#0C5A66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crew">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
@@ -7,10 +13,11 @@
   --ink:#131A20; --ink-2:#4B5964; --ink-3:#7C8A94;
   --ground:#E9EEF1; --surface:#FFFFFF; --surface-2:#F3F7F9; --surface-3:#E6EDF1;
   --line:#D4DCE2; --line-2:#B8C4CC;
-  --accent:#0C5A66; --accent-ink:#FFFFFF; --accent-soft:#DDEDEF;
+  --accent:#0C5A66; --accent-soft:#DDEDEF;
   --plumb:#1B6B9E; --plumb-soft:#E4F0F8;
   --elec:#A96406; --elec-soft:#FAEEDA;
-  --open:#2C7A58; --danger:#A93226;
+  --open:#2C7A58; --open-soft:#DEF0E7;
+  --danger:#A93226;
   --sel:var(--accent); --sel-soft:var(--accent-soft);
   --shadow:0 1px 2px rgba(19,26,32,.05), 0 10px 30px -16px rgba(19,26,32,.28);
 }
@@ -19,10 +26,11 @@
     --ink:#E7EDF2; --ink-2:#A6B4BF; --ink-3:#7F8E99;
     --ground:#0D1418; --surface:#161F25; --surface-2:#1C262D; --surface-3:#232F37;
     --line:#2A363E; --line-2:#3C4B55;
-    --accent:#43B3C0; --accent-ink:#06181B; --accent-soft:#153236;
+    --accent:#43B3C0; --accent-soft:#153236;
     --plumb:#6DB6E9; --plumb-soft:#152B3C;
     --elec:#E2A445; --elec-soft:#2F2410;
-    --open:#5EBE8E; --danger:#E4796B;
+    --open:#5EBE8E; --open-soft:#13291F;
+    --danger:#E4796B;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 34px -18px rgba(0,0,0,.85);
   }
 }
@@ -30,10 +38,11 @@
   --ink:#E7EDF2; --ink-2:#A6B4BF; --ink-3:#7F8E99;
   --ground:#0D1418; --surface:#161F25; --surface-2:#1C262D; --surface-3:#232F37;
   --line:#2A363E; --line-2:#3C4B55;
-  --accent:#43B3C0; --accent-ink:#06181B; --accent-soft:#153236;
+  --accent:#43B3C0; --accent-soft:#153236;
   --plumb:#6DB6E9; --plumb-soft:#152B3C;
   --elec:#E2A445; --elec-soft:#2F2410;
-  --open:#5EBE8E; --danger:#E4796B;
+  --open:#5EBE8E; --open-soft:#13291F;
+  --danger:#E4796B;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 34px -18px rgba(0,0,0,.85);
 }
 
@@ -51,14 +60,14 @@ button{font:inherit; color:inherit; cursor:pointer}
   font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600;
   letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
 }
-
-.wrap{max-width:1180px; margin:0 auto; padding:20px 18px 56px}
+.wrap{max-width:1180px; margin:0 auto; padding:18px 16px calc(56px + env(safe-area-inset-bottom))}
 
 .topbar{
-  display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; justify-content:space-between;
-  padding-bottom:14px; border-bottom:2px solid var(--ink); margin-bottom:20px;
+  display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; justify-content:space-between;
+  padding-bottom:13px; border-bottom:2px solid var(--ink); margin-bottom:18px;
 }
-.topbar h1{margin:2px 0 0; font-size:28px; font-weight:700; letter-spacing:-.022em; line-height:1.05}
+.topbar h1{margin:2px 0 0; font-size:26px; font-weight:700; letter-spacing:-.022em; line-height:1.05}
+.topbar-right{display:flex; gap:7px; align-items:center; flex-wrap:wrap}
 .status{
   display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-2);
   padding:5px 11px 5px 9px; border:1px solid var(--line); border-radius:999px; background:var(--surface);
@@ -68,24 +77,43 @@ button{font:inherit; color:inherit; cursor:pointer}
 .status.local .dot{background:var(--elec)}
 
 .btn{
-  border:1px solid var(--line-2); background:var(--surface); border-radius:7px;
-  padding:7px 13px; font-size:13.5px; font-weight:500; white-space:nowrap;
+  border:1px solid var(--line-2); background:var(--surface); border-radius:8px;
+  padding:8px 13px; font-size:13.5px; font-weight:500; white-space:nowrap;
   transition:background .13s ease, border-color .13s ease;
 }
 .btn:hover{background:var(--surface-2); border-color:var(--ink-3)}
 .btn-primary{background:var(--sel); border-color:var(--sel); color:#fff; font-weight:600}
 .btn-primary:hover{filter:brightness(1.1); background:var(--sel); border-color:var(--sel)}
 .btn-quiet{border-color:transparent; background:transparent; color:var(--ink-3); font-size:12.5px; padding:5px 8px}
-.btn-quiet:hover{background:var(--surface-2); color:var(--ink-2); border-color:transparent}
-.btn-danger{color:var(--danger); border-color:var(--line-2)}
+.btn-quiet:hover{background:var(--surface-2); color:var(--ink-2)}
+.btn-danger{color:var(--danger)}
 .btn-danger:hover{background:var(--danger); border-color:var(--danger); color:#fff}
+.btn-go{background:var(--open); border-color:var(--open); color:#fff; font-weight:600}
+.btn-go:hover{filter:brightness(1.08); background:var(--open); border-color:var(--open)}
 .btn[disabled]{opacity:.45; cursor:not-allowed}
+.btn-block{width:100%; justify-content:center; text-align:center}
 
-/* ---------- two-pane layout ---------- */
-.layout{display:grid; grid-template-columns:232px minmax(0,1fr); gap:22px; align-items:start}
+/* ---------- gate & role picker ---------- */
+.screen{
+  position:fixed; inset:0; z-index:60; display:grid; place-items:center;
+  background:var(--ground); padding:22px;
+}
+.card{
+  width:min(380px,100%); background:var(--surface); border:1px solid var(--line);
+  border-radius:14px; padding:24px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:11px;
+}
+.card h2{margin:2px 0 0; font-size:23px; font-weight:700; letter-spacing:-.022em}
+.card p{margin:0; font-size:13.5px; color:var(--ink-2)}
+.card input{
+  font:inherit; font-size:16px; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:8px; padding:11px 12px; width:100%;
+}
+.rolelist{display:flex; flex-direction:column; gap:7px; margin-top:4px}
 
+/* ---------- crew list ---------- */
+.layout{display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; align-items:start}
 .crew{display:flex; flex-direction:column; gap:7px}
-.crew .eyebrow{margin-bottom:3px}
 .person{
   display:flex; align-items:center; gap:11px; text-align:left; width:100%;
   padding:11px 12px; border-radius:10px; border:1px solid var(--line);
@@ -94,218 +122,224 @@ button{font:inherit; color:inherit; cursor:pointer}
 .person:hover{border-color:var(--ink-3)}
 .person .av{
   width:34px; height:34px; border-radius:9px; flex:none; display:grid; place-items:center;
-  font-family:"Archivo",sans-serif; font-weight:700; font-size:14px; letter-spacing:-.01em;
+  font-family:"Archivo",sans-serif; font-weight:700; font-size:14px;
+  background:var(--pc-soft); color:var(--pc);
 }
 .person .txt{min-width:0; flex:1}
-.person .nm{
-  font-family:"Archivo",sans-serif; font-weight:600; font-size:15px; letter-spacing:-.01em;
-  display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
+.person .nm{font-family:"Archivo",sans-serif; font-weight:600; font-size:15px; display:block;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .person .mt{font-size:12px; color:var(--ink-3); display:block; font-variant-numeric:tabular-nums}
 .person[aria-pressed="true"]{border-color:var(--pc); background:var(--pc-soft); box-shadow:inset 3px 0 0 var(--pc)}
 .person[aria-pressed="true"] .mt{color:var(--ink-2)}
+.person[aria-pressed="true"] .av{background:var(--pc); color:#fff}
 .p-plumbing{--pc:var(--plumb); --pc-soft:var(--plumb-soft)}
 .p-electrical{--pc:var(--elec); --pc-soft:var(--elec-soft)}
-.person .av{background:var(--pc-soft); color:var(--pc)}
-.person[aria-pressed="true"] .av{background:var(--pc); color:#fff}
-.crew-foot{margin-top:4px; display:flex; justify-content:flex-start}
 
-/* ---------- calendar ---------- */
-.calbar{display:flex; align-items:center; gap:10px; margin-bottom:12px}
-.calbar h2{margin:0; font-size:20px; font-weight:600; letter-spacing:-.018em; flex:1; min-width:0}
+/* ---------- month calendar ---------- */
+.calbar{display:flex; align-items:center; gap:9px; margin-bottom:11px}
+.calbar h2{margin:0; font-size:19px; font-weight:600; letter-spacing:-.018em; flex:1; min-width:0}
 .calbar h2 .yr{color:var(--ink-3); font-weight:500}
-.nav{
-  width:33px; height:33px; flex:none; display:grid; place-items:center; font-size:15px;
-  border:1px solid var(--line-2); background:var(--surface); border-radius:7px;
-}
+.nav{width:33px; height:33px; flex:none; display:grid; place-items:center; font-size:15px;
+  border:1px solid var(--line-2); background:var(--surface); border-radius:8px}
 .nav:hover{background:var(--surface-2)}
-
 .cal{
-  border:1px solid var(--line); border-radius:12px; overflow:hidden;
-  background:var(--line); box-shadow:var(--shadow);
-  display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:1px;
+  border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--line);
+  box-shadow:var(--shadow); display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:1px;
 }
-.dow{
-  background:var(--surface-2); padding:9px 10px; text-align:left;
+.dow{background:var(--surface-2); padding:8px 9px; text-align:left;
   font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600;
-  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
-}
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
 .cell{
-  background:var(--surface); border:none; text-align:left; padding:7px 8px 8px;
-  min-height:104px; display:flex; flex-direction:column; gap:4px; align-items:stretch;
+  background:var(--surface); border:none; text-align:left; padding:6px 7px 7px;
+  min-height:98px; display:flex; flex-direction:column; gap:3px; align-items:stretch;
   transition:background .12s ease;
 }
 .cell:hover{background:var(--surface-2)}
-.cell .dnum{
-  font-family:"Archivo",sans-serif; font-size:14px; font-weight:600; line-height:1.2;
-  font-variant-numeric:tabular-nums; color:var(--ink-2); display:flex; align-items:center; gap:6px;
-}
+.cell .dnum{font-family:"Archivo",sans-serif; font-size:13.5px; font-weight:600; line-height:1.2;
+  font-variant-numeric:tabular-nums; color:var(--ink-2); display:flex; align-items:center; gap:5px}
 .cell.out{background:var(--surface-2); cursor:default}
-.cell.out:hover{background:var(--surface-2)}
 .cell.out .dnum{opacity:.35}
 .cell.past{background:var(--surface-2)}
-.cell.past:hover{background:var(--surface-3)}
 .cell.past .dnum{color:var(--ink-3)}
-.cell.today .dnum{
-  color:var(--sel); font-weight:700;
-}
+.cell.today .dnum{color:var(--sel); font-weight:700}
 .cell.today .dnum .tdot{width:5px; height:5px; border-radius:50%; background:var(--sel); flex:none}
 .chips{display:flex; flex-direction:column; gap:3px; min-width:0}
 .chip{
-  display:flex; gap:5px; align-items:baseline; min-width:0;
+  display:flex; gap:5px; align-items:baseline; min-width:0; text-align:left;
   background:var(--sel-soft); border-radius:5px; padding:2px 6px;
   box-shadow:inset 2px 0 0 var(--sel);
 }
-.chip .t{
-  font-family:"Archivo",sans-serif; font-size:10px; font-weight:600; letter-spacing:.04em;
-  color:var(--sel); flex:none; font-variant-numeric:tabular-nums;
-}
-.chip .n{font-size:12px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+.chip .t{font-family:"Archivo",sans-serif; font-size:10px; font-weight:600; letter-spacing:.04em;
+  color:var(--sel); flex:none; font-variant-numeric:tabular-nums}
+.chip .n{font-size:11.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; min-width:0}
 .more{font-size:11px; color:var(--ink-3); padding-left:6px}
 .freehint{font-size:11.5px; color:var(--ink-3); margin-top:auto}
-.cell.past .freehint{opacity:.5}
-
-.legend{
-  margin-top:14px; display:flex; flex-wrap:wrap; gap:8px 18px;
-  font-size:12.5px; color:var(--ink-3);
-}
-.legend .sw{display:inline-flex; align-items:center; gap:6px}
-.legend .box{width:11px; height:11px; border-radius:3px; background:var(--sel); flex:none}
-.footnote{margin-top:12px; font-size:12.5px; color:var(--ink-3); max-width:64ch}
+.legend{margin-top:13px; display:flex; flex-wrap:wrap; gap:7px 18px; font-size:12.5px; color:var(--ink-3)}
+.legend .box{width:11px; height:11px; border-radius:3px; background:var(--sel); flex:none;
+  display:inline-block; vertical-align:-1px; margin-right:6px}
+.footnote{margin-top:11px; font-size:12.5px; color:var(--ink-3); max-width:64ch}
 .footnote strong{color:var(--ink-2); font-weight:600}
 
-/* ---------- dialog ---------- */
+/* ---------- job cards ---------- */
+.jobs{display:flex; flex-direction:column; gap:10px}
+.job{
+  border:1px solid var(--line); border-radius:11px; background:var(--surface);
+  padding:12px 13px; display:flex; flex-direction:column; gap:8px;
+  box-shadow:inset 3px 0 0 var(--pc, var(--sel));
+}
+.job.done{opacity:.72}
+.job-top{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+.job-time{font-family:"Archivo",sans-serif; font-weight:600; font-size:13px; letter-spacing:.02em;
+  color:var(--pc, var(--sel)); font-variant-numeric:tabular-nums; flex:none}
+.job-where{font-family:"Archivo",sans-serif; font-weight:600; font-size:15.5px; letter-spacing:-.012em;
+  flex:1; min-width:0}
+.job-sub{font-size:13px; color:var(--ink-2)}
+.job-desc{font-size:13.5px; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere}
+.pill{
+  display:inline-flex; align-items:center; gap:5px; font-family:"Archivo",sans-serif;
+  font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  padding:3px 8px; border-radius:999px; background:var(--surface-3); color:var(--ink-2);
+}
+.pill.on{background:var(--open-soft); color:var(--open)}
+.pill.off{background:var(--surface-3); color:var(--ink-3)}
+.job-actions{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
+.job-actions .spacer{flex:1}
+.notes{display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--line); padding-top:8px}
+.note{font-size:13px; color:var(--ink-2)}
+.note b{color:var(--ink); font-weight:600}
+.note .when{color:var(--ink-3); font-size:11.5px}
+.noteadd{display:flex; gap:6px}
+.noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
+  background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
+.empty{padding:22px 14px; text-align:center; color:var(--ink-3); font-size:13.5px;
+  border:1px dashed var(--line-2); border-radius:11px}
+
+/* ---------- worker view ---------- */
+.daygroup{margin-bottom:22px}
+.daygroup h3{margin:0 0 9px; font-size:16px; font-weight:600; letter-spacing:-.015em}
+.daygroup h3 span{color:var(--ink-3); font-weight:500; font-size:13.5px; margin-left:7px}
+
+/* ---------- dialogs & forms ---------- */
 dialog{
-  border:1px solid var(--line-2); border-radius:13px; background:var(--surface); color:var(--ink);
-  padding:0; width:min(460px, calc(100vw - 28px)); box-shadow:0 26px 64px -22px rgba(0,0,0,.5);
+  border:1px solid var(--line-2); border-radius:14px; background:var(--surface); color:var(--ink);
+  padding:0; width:min(480px, calc(100vw - 24px)); box-shadow:0 26px 64px -22px rgba(0,0,0,.5);
 }
 dialog::backdrop{background:rgba(10,18,22,.5)}
-.dlg{padding:20px}
+.dlg{padding:20px; max-height:min(86vh, 760px); overflow-y:auto}
 .dlg h3{margin:3px 0 2px; font-size:20px; font-weight:600; letter-spacing:-.018em}
 .dlg .sub{font-size:13.5px; color:var(--ink-2); margin:0 0 14px}
-.hours{display:flex; flex-direction:column; gap:1px; background:var(--line);
-  border:1px solid var(--line); border-radius:9px; overflow:hidden; max-height:min(46vh,380px); overflow-y:auto}
-.hrow{display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--surface); min-height:46px}
-.hrow.taken{background:var(--pc-soft, var(--accent-soft))}
-.hrow.gone{background:var(--surface-2)}
-.hrow .hr{
-  font-family:"Archivo",sans-serif; font-size:11.5px; font-weight:600; letter-spacing:.03em;
-  color:var(--ink-3); width:62px; flex:none; font-variant-numeric:tabular-nums;
-}
-.hrow.taken .hr{color:var(--pc, var(--accent))}
-.hrow .info{flex:1; min-width:0}
-.hrow .info .n{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.hrow .info .j{font-size:12px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.hrow .info .free{font-size:13px; color:var(--ink-3)}
-.hrow .btn{padding:5px 11px; font-size:12.5px}
 .field{display:flex; flex-direction:column; gap:4px; margin-bottom:11px}
-.field label{font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
-.field input,.field textarea{
-  font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface-2);
-  border:1px solid var(--line-2); border-radius:7px; padding:8px 10px; width:100%;
+.field label{font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+.field input,.field textarea,.field select{
+  font:inherit; font-size:15px; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:8px; padding:9px 10px; width:100%;
 }
-.field textarea{resize:vertical; min-height:58px}
-.field input::placeholder,.field textarea::placeholder{color:var(--ink-3)}
+.field select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:calc(100% - 17px) 55%, calc(100% - 12px) 55%; background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat; padding-right:32px}
+.field textarea{resize:vertical; min-height:56px}
+.field .hint{font-size:12px; color:var(--ink-3)}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 .check{display:flex; gap:9px; align-items:flex-start; margin:2px 0 12px; padding:10px 11px;
-  background:var(--surface-2); border:1px solid var(--line); border-radius:8px}
-.check input{margin:3px 0 0; flex:none; accent-color:var(--sel); width:15px; height:15px}
+  background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
+.check input{margin:3px 0 0; flex:none; accent-color:var(--sel); width:16px; height:16px}
 .check span{font-size:12.5px; color:var(--ink-2)}
 .check b{color:var(--ink); font-weight:600; display:block; font-size:13.5px}
 .actions{display:flex; gap:8px; justify-content:flex-end; margin-top:15px; flex-wrap:wrap; align-items:center}
 .actions .spacer{flex:1}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
 
-.gate{
-  position:fixed; inset:0; z-index:50; display:grid; place-items:center;
-  background:var(--ground); padding:24px;
-}
-.gatebox{
-  width:min(360px,100%); background:var(--surface); border:1px solid var(--line);
-  border-radius:13px; padding:24px; box-shadow:var(--shadow);
-  display:flex; flex-direction:column; gap:11px;
-}
-.gatebox h2{margin:2px 0 0; font-size:24px; font-weight:700; letter-spacing:-.022em}
-.gatebox p{margin:0; font-size:13.5px; color:var(--ink-2)}
-.gatebox input{
-  font:inherit; font-size:16px; color:var(--ink); background:var(--surface-2);
-  border:1px solid var(--line-2); border-radius:8px; padding:10px 12px; width:100%;
-}
-body.locked .wrap{display:none}
-
 @media (max-width:820px){
-  .layout{grid-template-columns:minmax(0,1fr); gap:16px}
+  .layout{grid-template-columns:minmax(0,1fr); gap:14px}
   .crew{flex-direction:row; flex-wrap:wrap; gap:6px}
-  .crew .eyebrow{width:100%}
-  .person{width:auto; flex:1 1 150px; padding:9px 11px}
-  .crew-foot{width:100%}
-  .cell{min-height:78px; padding:6px}
-  .chip .n{font-size:11px}
+  .person{width:auto; flex:1 1 148px; padding:9px 10px}
+  .cell{min-height:74px; padding:5px}
 }
 @media (max-width:520px){
-  .wrap{padding:16px 11px 48px}
-  .topbar h1{font-size:23px}
-  .dow{padding:7px 5px; font-size:9.5px; letter-spacing:.06em}
-  .cell{min-height:62px; padding:4px 4px 5px}
+  .wrap{padding:14px 10px 46px}
+  .topbar h1{font-size:22px}
+  .dow{padding:6px 4px; font-size:9.5px; letter-spacing:.05em}
+  .cell{min-height:58px; padding:4px}
   .chip{padding:1px 4px; gap:3px}
   .chip .n{display:none}
   .freehint{display:none}
+  .row2{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 
-<div class="gate" id="gate" hidden>
-  <form class="gatebox" id="gateForm">
+<div class="screen" id="gate" hidden>
+  <form class="card" id="gateForm">
     <div class="eyebrow">Empire Building Management</div>
     <h2>Crew Calendar</h2>
     <p>Enter the crew passcode to open the calendar.</p>
     <input id="gateInput" type="password" autocomplete="current-password" placeholder="Passcode" required>
-    <button type="submit" class="btn btn-primary">Open calendar</button>
+    <button type="submit" class="btn btn-primary btn-block">Open calendar</button>
     <p class="err" id="gateErr"></p>
   </form>
 </div>
 
-<div class="wrap">
+<div class="screen" id="rolePick" hidden>
+  <div class="card">
+    <div class="eyebrow">One time only</div>
+    <h2>Who's using this phone?</h2>
+    <p>This decides what you see. You can change it later from the top of the page.</p>
+    <div class="rolelist" id="roleList"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
   <header class="topbar">
     <div>
       <div class="eyebrow">Empire Building Management</div>
-      <h1>Crew Calendar</h1>
+      <h1 id="appTitle">Crew Calendar</h1>
     </div>
-    <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
+    <div class="topbar-right">
+      <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
+      <button class="btn" id="installBtn" hidden>Install app</button>
+      <button class="btn btn-quiet" id="whoBtn">Not you?</button>
+    </div>
   </header>
 
-  <div class="layout">
-    <aside class="crew" id="crew">
-      <div class="eyebrow">Crew</div>
-    </aside>
+  <!-- OFFICE / ADMIN -->
+  <div id="officeView" hidden>
+    <div class="layout">
+      <aside class="crew" id="crew"><div class="eyebrow">Crew</div></aside>
+      <main>
+        <div class="calbar">
+          <button class="nav" id="prevMonth" aria-label="Previous month">&#8249;</button>
+          <button class="nav" id="nextMonth" aria-label="Next month">&#8250;</button>
+          <h2 id="monthLabel"></h2>
+          <button class="btn" id="todayBtn">Today</button>
+        </div>
+        <div class="cal" id="cal"></div>
+        <div class="legend">
+          <span><span class="box"></span><span id="legendName"></span></span>
+          <span>Click a day to see it or add a job</span>
+        </div>
+        <p class="footnote" id="footnote"></p>
+      </main>
+    </div>
+  </div>
 
-    <main>
-      <div class="calbar">
-        <button class="nav" id="prevMonth" aria-label="Previous month">&#8249;</button>
-        <button class="nav" id="nextMonth" aria-label="Next month">&#8250;</button>
-        <h2 id="monthLabel"></h2>
-        <button class="btn" id="todayBtn">Today</button>
-      </div>
-
-      <div class="cal" id="cal"></div>
-
-      <div class="legend">
-        <span class="sw"><span class="box"></span><span id="legendName"></span></span>
-        <span class="sw">Click any day to book an hour or the whole day</span>
-      </div>
-      <p class="footnote" id="footnote"></p>
-    </main>
+  <!-- WORKER -->
+  <div id="workerView" hidden>
+    <div id="workerBody"></div>
+    <p class="footnote" id="footnote2"></p>
   </div>
 </div>
 
 <dialog id="dayDlg">
-  <div class="dlg" id="paneHours">
+  <div class="dlg" id="paneDay">
     <div class="eyebrow" id="dayWho"></div>
     <h3 id="dayWhen"></h3>
     <p class="sub" id="daySub"></p>
-    <div class="hours" id="hoursList"></div>
+    <div class="jobs" id="dayJobs"></div>
     <p class="err" id="dayErr"></p>
     <div class="actions">
-      <button type="button" class="btn" id="bookDayBtn">Book the whole day</button>
+      <button type="button" class="btn btn-primary" id="addJobBtn">Add a job</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="dayClose">Close</button>
     </div>
@@ -314,666 +348,748 @@ body.locked .wrap{display:none}
   <form method="dialog" class="dlg" id="paneForm" hidden>
     <div class="eyebrow" id="formWho"></div>
     <h3 id="formWhen"></h3>
-    <p class="sub">Fill in the job so the crew knows where to go.</p>
+    <p class="sub">Pick the property, then the time.</p>
+
     <div class="field">
-      <label for="fName">Customer / building</label>
-      <input id="fName" required maxlength="60" placeholder="e.g. 4820 Van Horne &mdash; Apt 3">
+      <label for="fProject">Project</label>
+      <select id="fProject" required></select>
     </div>
     <div class="field">
-      <label for="fPhone">Phone</label>
-      <input id="fPhone" maxlength="30" placeholder="e.g. 514-555-0142">
+      <label for="fBuilding">Building</label>
+      <select id="fBuilding" required></select>
+      <span class="hint" id="managerHint"></span>
     </div>
     <div class="field">
-      <label for="fAddr">Address</label>
-      <input id="fAddr" maxlength="90" placeholder="Street, city">
+      <label for="fUnit">Unit</label>
+      <input id="fUnit" maxlength="20" placeholder="e.g. 3, or Basement">
     </div>
-    <div class="field">
-      <label for="fJob">Job</label>
-      <textarea id="fJob" maxlength="240" placeholder="e.g. Kitchen sink leaking under cabinet"></textarea>
-    </div>
-    <label class="check" id="fullDayWrap">
-      <input type="checkbox" id="fFullDay">
-      <span><b>Book the whole day</b>Holds every open hour, 8:00&nbsp;AM to 5:00&nbsp;PM. Hours already taken stay as they are.</span>
+
+    <label class="check">
+      <input type="checkbox" id="fAllDay">
+      <span><b>All day</b>8:00&nbsp;AM to 5:00&nbsp;PM.</span>
     </label>
+
+    <div class="row2" id="timeRow">
+      <div class="field">
+        <label for="fFrom">From</label>
+        <select id="fFrom"></select>
+      </div>
+      <div class="field">
+        <label for="fTo">To</label>
+        <select id="fTo"></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="fJob">Work to do</label>
+      <textarea id="fJob" maxlength="400" placeholder="e.g. Kitchen sink leaking under the cabinet"></textarea>
+    </div>
+
     <p class="err" id="formErr"></p>
     <div class="actions">
       <button type="button" class="btn" id="formBack">Back</button>
       <span class="spacer"></span>
-      <button type="submit" class="btn btn-primary" id="formSave">Book it</button>
-    </div>
-  </form>
-</dialog>
-
-<dialog id="crewDlg">
-  <form method="dialog" class="dlg" id="crewForm">
-    <div class="eyebrow">Settings</div>
-    <h3>Crew names</h3>
-    <p class="sub">Change a name here and it updates for everyone who opens this calendar.</p>
-    <div id="crewFields"></div>
-    <p class="err" id="crewErr"></p>
-    <div class="actions">
-      <button type="button" class="btn" id="crewCancel">Cancel</button>
-      <button type="submit" class="btn btn-primary">Save names</button>
+      <button type="submit" class="btn btn-primary" id="formSave">Save job</button>
     </div>
   </form>
 </dialog>
 
 <script src="config.js"></script>
+<script src="projects.js"></script>
 <script>
 (function(){
   "use strict";
 
-  var DEFAULT_CREW = [
+  var CREW = [
     {id:"rodrigo",     name:"Rodrigo",     trade:"plumbing"},
     {id:"zion",        name:"Zion",        trade:"plumbing"},
     {id:"electrician", name:"Electrician", trade:"electrical"}
   ];
-  var HOURS = [8,9,10,11,12,13,14,15,16];   // slot starts; day ends 5 PM
-  var LS_BOOKINGS = "ebm-crew-calendar:bookings:v1";
-  var LS_CREW = "ebm-crew-calendar:crew:v1";
-  var LS_PASS = "ebm-crew-calendar:pass:v1";
-  var TRADE_LABEL = {plumbing:"Plumbing", electrical:"Electrical"};
+  var DAY_START = 8, DAY_END = 17;          // 8:00 AM to 5:00 PM
+  var TRADE = {plumbing:"Plumbing", electrical:"Electrical"};
   var MAX_CHIPS = 3;
+  var LS_PASS = "ebm-crew:pass:v2";
+  var LS_ME   = "ebm-crew:me:v2";
+  var LS_JOBS = "ebm-crew:jobs:v2";
+
+  var PROJECTS = window.EBM_PROJECTS || [];
 
   /* ---------- dates ---------- */
   function iso(d){
-    var m = d.getMonth()+1, day = d.getDate();
+    var m=d.getMonth()+1, day=d.getDate();
     return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(day<10?"0":"")+day;
   }
-  function fromIso(s){ var p = s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
-  function addDays(d,n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
-  function pad2(h){ return (h<10?"0":"")+h; }
-  function hourLong(h){ var ap = h<12?"AM":"PM", hh = h%12; if(!hh) hh = 12; return hh+":00 "+ap; }
-  function hourShort(h){ var ap = h<12?"a":"p", hh = h%12; if(!hh) hh = 12; return hh+ap; }
-  function isPast(dateStr, hour){
-    var end = fromIso(dateStr); end.setHours(hour+1,0,0,0);
+  function fromIso(s){ var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function addDays(d,n){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function hourLong(h){ var ap=h<12?"AM":"PM", hh=h%12; if(!hh) hh=12; return hh+":00 "+ap; }
+  function hourShort(h){ var ap=h<12?"a":"p", hh=h%12; if(!hh) hh=12; return hh+ap; }
+  function rangeLabel(j){
+    if (j.allDay) return "All day";
+    return hourLong(j.from) + " – " + hourLong(j.to);
+  }
+  function rangeShort(j){
+    return j.allDay ? "all day" : hourShort(j.from) + "–" + hourShort(j.to);
+  }
+  function dayIsPast(ds){
+    var end = fromIso(ds); end.setHours(DAY_END,0,0,0);
     return end <= new Date();
   }
-  function dayAllPast(dateStr){
-    return HOURS.every(function(h){ return isPast(dateStr,h); });
-  }
-  var FMT_MONTH = new Intl.DateTimeFormat(undefined,{month:"long"});
-  var FMT_LONG  = new Intl.DateTimeFormat(undefined,{weekday:"long", month:"long", day:"numeric"});
-  var FMT_DOW   = new Intl.DateTimeFormat(undefined,{weekday:"short"});
+  var F_MONTH = new Intl.DateTimeFormat(undefined,{month:"long"});
+  var F_LONG  = new Intl.DateTimeFormat(undefined,{weekday:"long", month:"long", day:"numeric"});
+  var F_DOW   = new Intl.DateTimeFormat(undefined,{weekday:"short"});
+  var F_TIME  = new Intl.DateTimeFormat(undefined,{hour:"numeric", minute:"2-digit"});
 
   /* ---------- state ---------- */
-  var today = new Date();
+  var today = new Date(), todayIso = iso(today);
   var state = {
-    crew: DEFAULT_CREW.slice(),
-    who: DEFAULT_CREW[0].id,
+    me: null,                 // "office" | crew id
+    who: CREW[0].id,          // crew member shown in the office calendar
     month: new Date(today.getFullYear(), today.getMonth(), 1),
-    days: {},                 // iso -> { crewId -> { "08": booking|null } }
-    mode: "loading",       // loading | shared | cloud | device
-    db: null,              // Claude artifact store
-    fb: null,              // Firestore
-    unsubs: []
+    jobs: {},                 // jobId -> job
+    mode: "loading",          // shared | cloud | device
+    db: null, fb: null, unsubs: [], seen: {}
   };
-  var todayIso = iso(today);
 
   function member(id){
-    for (var i=0;i<state.crew.length;i++) if (state.crew[i].id === id) return state.crew[i];
-    return state.crew[0];
+    for (var i=0;i<CREW.length;i++) if (CREW[i].id===id) return CREW[i];
+    return null;
   }
-  function selected(){ return member(state.who); }
+  function isOffice(){ return state.me === "office"; }
+  function meName(){ return isOffice() ? "Office" : (member(state.me) || {}).name || "?"; }
+  var $ = function(id){ return document.getElementById(id); };
 
   /* ---------- storage ---------- */
-  function lsRead(k,f){ try{ var r = localStorage.getItem(k); return r?JSON.parse(r):f; }catch(e){ return f; } }
-  function lsWrite(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
-  function dayKey(dateStr, crewId){ return dateStr+"__"+crewId; }
+  function lsRead(k,f){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):f; }catch(e){ return f; } }
+  function lsWrite(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
 
-  function slotsFor(dateStr, crewId){
-    var d = state.days[dateStr];
-    return (d && d[crewId]) || {};
+  function newId(){
+    return String(Date.now().toString(36)) + "-" + Math.random().toString(36).slice(2,8);
   }
-  function bookingAt(dateStr, crewId, hour){
-    var b = slotsFor(dateStr, crewId)[pad2(hour)];
-    return (b && b.name) ? b : null;
+  function jobRef(id){
+    if (state.mode === "cloud" && state.fb) return state.fb.collection("bookings").doc(id);
+    if (state.mode === "shared" && state.db) return state.db.doc("bookings/" + id);
+    return null;
   }
-  function bookedHours(dateStr, crewId){
-    var s = slotsFor(dateStr, crewId), out = [];
-    HOURS.forEach(function(h){ if (s[pad2(h)] && s[pad2(h)].name) out.push(h); });
-    return out;
-  }
-
-  function writeSlots(dateStr, crewId, patch){
-    if (state.mode === "cloud" && state.fb){
-      // merge:true merges the slots map key by key, so two people booking
-      // different hours on the same day never overwrite each other.
-      return state.fb.collection("bookings").doc(dayKey(dateStr, crewId))
-        .set({date:dateStr, crewId:crewId, slots:patch}, {merge:true});
-    }
-    if (state.mode === "shared" && state.db){
-      var ref = state.db.doc("bookings/"+dayKey(dateStr, crewId));
-      return ref.update({slots:patch}).catch(function(err){
-        if (err && err.code === "invalid_argument"){
-          return ref.set({date:dateStr, crewId:crewId, slots:patch});
-        }
-        throw err;
-      });
-    }
-    if (!state.days[dateStr]) state.days[dateStr] = {};
-    var cur = state.days[dateStr][crewId] || {}, next = {};
-    for (var k in cur) next[k] = cur[k];
-    for (var j in patch) next[j] = patch[j];
-    state.days[dateStr][crewId] = next;
-    var all = lsRead(LS_BOOKINGS, {});
-    all[dayKey(dateStr, crewId)] = next;
-    if (!lsWrite(LS_BOOKINGS, all)){
-      return Promise.reject({code:"storage", message:"This browser is blocking saved data, so the booking was not kept."});
-    }
-    render();
+  function saveJob(job){
+    var ref = jobRef(job.id);
+    if (ref) return ref.set(job);
+    state.jobs[job.id] = job;
+    lsWrite(LS_JOBS, state.jobs); render();
     return Promise.resolve();
   }
-
-  function saveCrew(next){
-    state.crew = next;
-    if (state.mode === "cloud" && state.fb) return state.fb.collection("config").doc("crew").set({members:next});
-    if (state.mode === "shared" && state.db) return state.db.doc("config/crew").set({members:next});
-    lsWrite(LS_CREW, next);
-    render();
+  function patchJob(id, patch){
+    var ref = jobRef(id);
+    if (ref) return ref.update(patch);
+    var j = state.jobs[id]; if (!j) return Promise.resolve();
+    for (var k in patch) j[k] = patch[k];
+    lsWrite(LS_JOBS, state.jobs); render();
     return Promise.resolve();
   }
-
+  function removeJob(id){
+    var ref = jobRef(id);
+    if (ref) return ref.delete();
+    delete state.jobs[id];
+    lsWrite(LS_JOBS, state.jobs); render();
+    return Promise.resolve();
+  }
   function errText(err, fallback){
     var c = err && err.code;
-    if (c === "revoked" || c === "not_granted") return "You no longer have access to this calendar. Reload the page.";
-    if (c === "resource_exhausted") return "Too many changes at once. Wait a moment and try again.";
-    if (c === "quota_exceeded") return "The calendar is full. Delete some old bookings first.";
-    if (c === "unavailable") return "No connection right now. Try that again in a moment.";
-    if (c === "permission-denied") return "This calendar is not accepting changes. Check the Firebase rules in SETUP.md.";
+    if (c==="revoked"||c==="not_granted") return "You no longer have access. Reload the page.";
+    if (c==="resource_exhausted") return "Too many changes at once. Wait a moment and try again.";
+    if (c==="quota_exceeded") return "The calendar is full. Delete some old jobs first.";
+    if (c==="unavailable") return "No connection right now. Try again in a moment.";
+    if (c==="permission-denied") return "This calendar is not accepting changes. Check the Firebase rules.";
     if (err && err.message) return err.message;
     return fallback;
   }
 
-  /* ---------- month grid maths ---------- */
-  function gridStart(){
-    var first = new Date(state.month.getFullYear(), state.month.getMonth(), 1);
-    return addDays(first, -first.getDay());          // back to Sunday
+  /* ---------- job queries ---------- */
+  function allJobs(){
+    var out = [];
+    for (var k in state.jobs) out.push(state.jobs[k]);
+    return out;
   }
-  function gridWeeks(){
-    var first = new Date(state.month.getFullYear(), state.month.getMonth(), 1);
-    var days = new Date(state.month.getFullYear(), state.month.getMonth()+1, 0).getDate();
-    return Math.ceil((first.getDay() + days) / 7);
+  function jobsOn(ds, crewId){
+    return allJobs().filter(function(j){
+      return j.date === ds && (!crewId || j.crewId === crewId);
+    }).sort(function(a,b){ return a.from - b.from; });
+  }
+  function overlaps(ds, crewId, from, to, skipId){
+    return jobsOn(ds, crewId).some(function(j){
+      return j.id !== skipId && from < j.to && to > j.from;
+    });
+  }
+  function freeHours(ds, crewId){
+    var used = 0;
+    jobsOn(ds, crewId).forEach(function(j){ used += (j.to - j.from); });
+    return Math.max(0, (DAY_END - DAY_START) - used);
   }
 
-  /* ---------- render ---------- */
-  var $ = function(id){ return document.getElementById(id); };
-
-  function applyAccent(){
-    var m = selected();
-    var c = m.trade === "electrical" ? "--elec" : "--plumb";
-    var s = m.trade === "electrical" ? "--elec-soft" : "--plumb-soft";
-    document.documentElement.style.setProperty("--sel", "var("+c+")");
-    document.documentElement.style.setProperty("--sel-soft", "var("+s+")");
+  /* ---------- projects ---------- */
+  function project(id){
+    for (var i=0;i<PROJECTS.length;i++) if (PROJECTS[i].id===id) return PROJECTS[i];
+    return null;
   }
-
-  function monthJobCount(crewId){
-    var n = 0, start = gridStart(), total = gridWeeks()*7;
-    for (var i=0;i<total;i++){
-      var d = addDays(start,i);
-      if (d.getMonth() !== state.month.getMonth()) continue;
-      n += bookedHours(iso(d), crewId).length;
+  function fillProjects(){
+    var sel = $("fProject");
+    sel.innerHTML = "";
+    var ph = document.createElement("option");
+    ph.value=""; ph.textContent = PROJECTS.length ? "Choose a project…" : "No projects loaded";
+    sel.appendChild(ph);
+    PROJECTS.forEach(function(p){
+      var o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = p.id + " — " + p.name;
+      sel.appendChild(o);
+    });
+  }
+  function fillBuildings(projectId){
+    var sel = $("fBuilding");
+    sel.innerHTML = "";
+    var p = project(projectId);
+    if (!p){
+      var none = document.createElement("option");
+      none.value=""; none.textContent = "Pick a project first";
+      sel.appendChild(none); sel.disabled = true;
+      $("managerHint").textContent = "";
+      return;
     }
-    return n;
+    sel.disabled = false;
+    if (p.buildings.length > 1){
+      var ph = document.createElement("option");
+      ph.value=""; ph.textContent = "Choose a building…";
+      sel.appendChild(ph);
+    }
+    p.buildings.forEach(function(b){
+      var o = document.createElement("option");
+      o.value = b.id;
+      o.textContent = b.name + (b.city ? " · " + b.city : "");
+      sel.appendChild(o);
+    });
+    $("managerHint").textContent = p.manager
+      ? "Manager: " + p.manager + (p.managerPhone ? " · " + p.managerPhone : "")
+      : "";
+  }
+  function buildingOf(projectId, buildingId){
+    var p = project(projectId);
+    if (!p) return null;
+    for (var i=0;i<p.buildings.length;i++) if (p.buildings[i].id===buildingId) return p.buildings[i];
+    return null;
+  }
+  function fillHours(){
+    var f = $("fFrom"), t = $("fTo"), i;
+    f.innerHTML = ""; t.innerHTML = "";
+    for (i=DAY_START;i<DAY_END;i++){
+      var o=document.createElement("option"); o.value=i; o.textContent=hourLong(i); f.appendChild(o);
+    }
+    for (i=DAY_START+1;i<=DAY_END;i++){
+      var o2=document.createElement("option"); o2.value=i; o2.textContent=hourLong(i); t.appendChild(o2);
+    }
+  }
+  function syncTo(){
+    var f = parseInt($("fFrom").value,10);
+    var t = parseInt($("fTo").value,10);
+    if (t <= f) $("fTo").value = String(Math.min(f+1, DAY_END));
   }
 
+  /* ---------- rendering: shared bits ---------- */
   function renderStatus(){
-    var el = $("status"), txt = $("statusText");
+    var el=$("status"), txt=$("statusText");
     el.classList.remove("live","local");
-    if (state.mode === "cloud"){
+    var note = "";
+    if (state.mode==="cloud" || state.mode==="shared"){
       el.classList.add("live");
       txt.textContent = "Shared — everyone with the link";
-      $("footnote").innerHTML = "Bookings save straight away and every open calendar updates within seconds. Hours in the past are locked.";
-    } else if (state.mode === "shared"){
-      el.classList.add("live");
-      txt.textContent = "Shared — everyone sees the same bookings";
-      $("footnote").innerHTML = "Bookings save instantly and every open calendar updates. Hours in the past are locked.";
-    } else if (state.mode === "device"){
+      note = "Jobs save straight away and every open calendar updates within seconds.";
+    } else if (state.mode==="device"){
       el.classList.add("local");
       txt.textContent = "Saved on this device only";
-      $("footnote").innerHTML = "<strong>Heads up:</strong> this copy keeps bookings in this browser only — nobody else sees them.";
+      note = "<strong>Heads up:</strong> this copy keeps jobs in this browser only — nobody else sees them.";
     } else {
       txt.textContent = "Loading…";
-      $("footnote").textContent = "";
     }
+    $("footnote").innerHTML = note;
+    $("footnote2").innerHTML = note;
   }
 
+  function jobCard(j, opts){
+    opts = opts || {};
+    var m = member(j.crewId) || {name:"?", trade:"plumbing"};
+    var card = document.createElement("div");
+    card.className = "job p-" + m.trade + (j.clockOut ? " done" : "");
+
+    var top = document.createElement("div"); top.className="job-top";
+    var t = document.createElement("span"); t.className="job-time"; t.textContent = rangeShort(j);
+    var w = document.createElement("span"); w.className="job-where";
+    w.textContent = j.buildingName + (j.unit ? " · Unit " + j.unit : "");
+    top.appendChild(t); top.appendChild(w);
+    if (j.clockOut){
+      var p1=document.createElement("span"); p1.className="pill off"; p1.textContent="Finished"; top.appendChild(p1);
+    } else if (j.clockIn){
+      var p2=document.createElement("span"); p2.className="pill on"; p2.textContent="On site"; top.appendChild(p2);
+    }
+    card.appendChild(top);
+
+    var sub = document.createElement("div"); sub.className="job-sub";
+    sub.textContent = j.projectId + " — " + j.projectName + (opts.showCrew ? " · " + m.name : "");
+    card.appendChild(sub);
+
+    if (j.job){
+      var d=document.createElement("div"); d.className="job-desc"; d.textContent=j.job; card.appendChild(d);
+    }
+    if (j.clockIn){
+      var cs=document.createElement("div"); cs.className="job-sub";
+      cs.textContent = "In " + F_TIME.format(new Date(j.clockIn)) +
+        (j.clockOut ? " · Out " + F_TIME.format(new Date(j.clockOut)) : "");
+      card.appendChild(cs);
+    }
+
+    var acts = document.createElement("div"); acts.className="job-actions";
+    if (opts.clock){
+      if (!j.clockIn){
+        var bi=document.createElement("button"); bi.type="button"; bi.className="btn btn-go"; bi.textContent="Clock in";
+        bi.addEventListener("click", function(){
+          bi.disabled=true;
+          patchJob(j.id, {clockIn:new Date().toISOString()}).catch(function(e){ bi.disabled=false; alert(errText(e,"Could not clock in.")); });
+        });
+        acts.appendChild(bi);
+      } else if (!j.clockOut){
+        var bo=document.createElement("button"); bo.type="button"; bo.className="btn"; bo.textContent="Clock out";
+        bo.addEventListener("click", function(){
+          bo.disabled=true;
+          patchJob(j.id, {clockOut:new Date().toISOString()}).catch(function(e){ bo.disabled=false; alert(errText(e,"Could not clock out.")); });
+        });
+        acts.appendChild(bo);
+      }
+    }
+    acts.appendChild(Object.assign(document.createElement("span"), {className:"spacer"}));
+    if (opts.remove && !dayIsPast(j.date)){
+      var del=document.createElement("button"); del.type="button"; del.className="btn btn-danger"; del.textContent="Cancel job";
+      del.addEventListener("click", function(){
+        if (del.dataset.armed!=="1"){ del.dataset.armed="1"; del.textContent="Sure?"; return; }
+        del.disabled=true;
+        removeJob(j.id).then(opts.after||function(){}).catch(function(e){
+          del.disabled=false; del.dataset.armed="0"; del.textContent="Cancel job";
+          alert(errText(e,"Could not cancel."));
+        });
+      });
+      acts.appendChild(del);
+    }
+    if (acts.children.length) card.appendChild(acts);
+
+    // notes — anyone can add one
+    var notes = document.createElement("div"); notes.className="notes";
+    (j.notes||[]).forEach(function(n){
+      var el=document.createElement("div"); el.className="note";
+      var b=document.createElement("b"); b.textContent=n.by+": ";
+      el.appendChild(b); el.appendChild(document.createTextNode(n.text+" "));
+      var wsp=document.createElement("span"); wsp.className="when";
+      wsp.textContent = n.at ? F_TIME.format(new Date(n.at)) : "";
+      el.appendChild(wsp); notes.appendChild(el);
+    });
+    var add=document.createElement("div"); add.className="noteadd";
+    var inp=document.createElement("input"); inp.placeholder="Add a note…"; inp.maxLength=200;
+    var go=document.createElement("button"); go.type="button"; go.className="btn"; go.textContent="Add";
+    function submitNote(){
+      var text=inp.value.trim(); if(!text) return;
+      go.disabled=true;
+      var next=(j.notes||[]).concat([{by:meName(), text:text, at:new Date().toISOString()}]);
+      patchJob(j.id,{notes:next}).then(function(){ inp.value=""; go.disabled=false; })
+        .catch(function(e){ go.disabled=false; alert(errText(e,"Note not saved.")); });
+    }
+    go.addEventListener("click", submitNote);
+    inp.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitNote(); } });
+    add.appendChild(inp); add.appendChild(go); notes.appendChild(add);
+    card.appendChild(notes);
+    return card;
+  }
+
+  /* ---------- office view ---------- */
+  function applyAccent(trade){
+    var c = trade==="electrical" ? "--elec" : "--plumb";
+    var s = trade==="electrical" ? "--elec-soft" : "--plumb-soft";
+    document.documentElement.style.setProperty("--sel","var("+c+")");
+    document.documentElement.style.setProperty("--sel-soft","var("+s+")");
+  }
+  function gridStart(){
+    var first=new Date(state.month.getFullYear(), state.month.getMonth(), 1);
+    return addDays(first, -first.getDay());
+  }
+  function gridWeeks(){
+    var first=new Date(state.month.getFullYear(), state.month.getMonth(), 1);
+    var days=new Date(state.month.getFullYear(), state.month.getMonth()+1, 0).getDate();
+    return Math.ceil((first.getDay()+days)/7);
+  }
+  function monthCount(crewId){
+    return allJobs().filter(function(j){
+      var d=fromIso(j.date);
+      return j.crewId===crewId && d.getMonth()===state.month.getMonth() && d.getFullYear()===state.month.getFullYear();
+    }).length;
+  }
   function renderCrew(){
-    var host = $("crew");
-    host.innerHTML = '<div class="eyebrow">Crew</div>';
-    state.crew.forEach(function(m){
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "person p-"+m.trade;
-      b.setAttribute("aria-pressed", m.id === state.who ? "true" : "false");
-
-      var av = document.createElement("span");
-      av.className = "av";
-      av.textContent = (m.name || "?").trim().charAt(0).toUpperCase();
-
-      var txt = document.createElement("span"); txt.className = "txt";
-      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = m.name;
-      var mt = document.createElement("span"); mt.className = "mt";
-      var n = monthJobCount(m.id);
-      mt.textContent = (TRADE_LABEL[m.trade]||m.trade) + " · " + (n === 0 ? "nothing booked" : n + (n===1?" hour":" hours"));
-      txt.appendChild(nm); txt.appendChild(mt);
-
-      b.appendChild(av); b.appendChild(txt);
-      b.addEventListener("click", function(){ state.who = m.id; render(); });
+    var host=$("crew");
+    host.innerHTML='<div class="eyebrow">Crew</div>';
+    CREW.forEach(function(m){
+      var b=document.createElement("button");
+      b.type="button"; b.className="person p-"+m.trade;
+      b.setAttribute("aria-pressed", m.id===state.who ? "true":"false");
+      var av=document.createElement("span"); av.className="av"; av.textContent=m.name.charAt(0).toUpperCase();
+      var tx=document.createElement("span"); tx.className="txt";
+      var nm=document.createElement("span"); nm.className="nm"; nm.textContent=m.name;
+      var mt=document.createElement("span"); mt.className="mt";
+      var n=monthCount(m.id);
+      mt.textContent=(TRADE[m.trade]||m.trade)+" · "+(n===0?"no jobs":n+(n===1?" job":" jobs"));
+      tx.appendChild(nm); tx.appendChild(mt); b.appendChild(av); b.appendChild(tx);
+      b.addEventListener("click", function(){ state.who=m.id; render(); });
       host.appendChild(b);
     });
-
-    var foot = document.createElement("div");
-    foot.className = "crew-foot";
-    var ren = document.createElement("button");
-    ren.type = "button"; ren.className = "btn btn-quiet"; ren.textContent = "Rename crew";
-    ren.addEventListener("click", openCrewDialog);
-    foot.appendChild(ren);
-    host.appendChild(foot);
   }
-
   function renderCalendar(){
-    var m = selected();
-    applyAccent();
-    $("monthLabel").innerHTML = FMT_MONTH.format(state.month) + ' <span class="yr">' + state.month.getFullYear() + '</span>';
-    $("legendName").textContent = "Booked hours for " + m.name;
+    var m=member(state.who);
+    applyAccent(m.trade);
+    $("monthLabel").innerHTML = F_MONTH.format(state.month)+' <span class="yr">'+state.month.getFullYear()+'</span>';
+    $("legendName").textContent = m.name + "'s jobs";
 
-    var cal = $("cal");
-    cal.innerHTML = "";
-
-    var start = gridStart();
-    for (var i=0;i<7;i++){
-      var h = document.createElement("div");
-      h.className = "dow";
-      h.textContent = FMT_DOW.format(addDays(start,i));
-      cal.appendChild(h);
+    var cal=$("cal"); cal.innerHTML="";
+    var start=gridStart(), i, k;
+    for (i=0;i<7;i++){
+      var h=document.createElement("div"); h.className="dow";
+      h.textContent=F_DOW.format(addDays(start,i)); cal.appendChild(h);
     }
-
-    var total = gridWeeks()*7;
-    for (var k=0;k<total;k++){
-      var d = addDays(start,k);
-      var ds = iso(d);
-      var inMonth = d.getMonth() === state.month.getMonth();
-
-      var cell = document.createElement("button");
-      cell.type = "button";
-      cell.className = "cell" + (inMonth ? "" : " out") + (ds === todayIso ? " today" : "");
-      if (inMonth && dayAllPast(ds)) cell.className += " past";
-
-      var num = document.createElement("span");
-      num.className = "dnum";
+    var total=gridWeeks()*7;
+    for (k=0;k<total;k++){
+      var d=addDays(start,k), ds=iso(d);
+      var inMonth = d.getMonth()===state.month.getMonth();
+      var cell=document.createElement("button");
+      cell.type="button";
+      cell.className="cell"+(inMonth?"":" out")+(ds===todayIso?" today":"")+((inMonth&&dayIsPast(ds))?" past":"");
+      var num=document.createElement("span"); num.className="dnum";
       num.appendChild(document.createTextNode(String(d.getDate())));
-      if (ds === todayIso){
-        var td = document.createElement("span"); td.className = "tdot"; num.appendChild(td);
-      }
+      if (ds===todayIso){ var td=document.createElement("span"); td.className="tdot"; num.appendChild(td); }
       cell.appendChild(num);
+      if (!inMonth){ cell.disabled=true; cal.appendChild(cell); continue; }
 
-      if (!inMonth){
-        cell.disabled = true;
-        cal.appendChild(cell);
-        continue;
-      }
-
-      var booked = bookedHours(ds, m.id);
-      if (booked.length){
-        var chips = document.createElement("span");
-        chips.className = "chips";
-        booked.slice(0, MAX_CHIPS).forEach(function(h){
-          var bk = bookingAt(ds, m.id, h);
-          var chip = document.createElement("span");
-          chip.className = "chip";
-          var t = document.createElement("span"); t.className = "t"; t.textContent = hourShort(h);
-          var n = document.createElement("span"); n.className = "n"; n.textContent = bk.name;
-          chip.appendChild(t); chip.appendChild(n);
-          chips.appendChild(chip);
+      var list=jobsOn(ds, state.who);
+      if (list.length){
+        var chips=document.createElement("span"); chips.className="chips";
+        list.slice(0,MAX_CHIPS).forEach(function(j){
+          var c=document.createElement("span"); c.className="chip";
+          var t=document.createElement("span"); t.className="t"; t.textContent=j.allDay?"all":hourShort(j.from);
+          var n=document.createElement("span"); n.className="n"; n.textContent=j.buildingName;
+          c.appendChild(t); c.appendChild(n); chips.appendChild(c);
         });
         cell.appendChild(chips);
-        if (booked.length > MAX_CHIPS){
-          var more = document.createElement("span");
-          more.className = "more";
-          more.textContent = "+" + (booked.length - MAX_CHIPS) + " more";
-          cell.appendChild(more);
+        if (list.length>MAX_CHIPS){
+          var mo=document.createElement("span"); mo.className="more";
+          mo.textContent="+"+(list.length-MAX_CHIPS)+" more"; cell.appendChild(mo);
         }
       } else {
-        var fh = document.createElement("span");
-        fh.className = "freehint";
-        fh.textContent = dayAllPast(ds) ? "" : "Free";
-        cell.appendChild(fh);
+        var fh=document.createElement("span"); fh.className="freehint";
+        fh.textContent=dayIsPast(ds)?"":"Free"; cell.appendChild(fh);
       }
-
-      cell.setAttribute("aria-label", FMT_LONG.format(d) + ", " + m.name + ", " +
-        (booked.length ? booked.length + " hours booked" : "free"));
-      (function(dateStr){
-        cell.addEventListener("click", function(){ openDay(dateStr); });
-      })(ds);
-
+      cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+", "+(list.length?list.length+" jobs":"free"));
+      (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
     }
   }
 
-  function render(){ renderStatus(); renderCrew(); renderCalendar(); }
+  /* ---------- worker view ---------- */
+  function renderWorker(){
+    var m=member(state.me);
+    applyAccent(m.trade);
+    $("appTitle").textContent = m.name + "'s schedule";
+    var host=$("workerBody"); host.innerHTML="";
 
-  /* ---------- day dialog ---------- */
-  var openDate = null;
-
-  function openDay(dateStr){
-    openDate = dateStr;
-    showHoursPane();
-    $("dayDlg").showModal();
-  }
-
-  function showHoursPane(){
-    $("paneForm").hidden = true;
-    $("paneHours").hidden = false;
-    var m = selected(), ds = openDate;
-    $("dayWho").textContent = m.name + " · " + (TRADE_LABEL[m.trade]||m.trade);
-    $("dayWhen").textContent = FMT_LONG.format(fromIso(ds));
-    $("dayErr").textContent = "";
-
-    var freeCount = HOURS.filter(function(h){ return !isPast(ds,h) && !bookingAt(ds,m.id,h); }).length;
-    $("daySub").textContent = dayAllPast(ds)
-      ? "This day has passed."
-      : (freeCount === 0 ? "Fully booked." : freeCount + (freeCount===1?" hour":" hours") + " still open, 8:00 AM to 5:00 PM.");
-    $("bookDayBtn").disabled = freeCount === 0;
-
-    var list = $("hoursList");
-    list.innerHTML = "";
-    HOURS.forEach(function(h){
-      var bk = bookingAt(ds, m.id, h);
-      var past = isPast(ds, h);
-      var row = document.createElement("div");
-      row.className = "hrow p-"+m.trade + (bk ? " taken" : (past ? " gone" : ""));
-
-      var hr = document.createElement("span"); hr.className = "hr"; hr.textContent = hourLong(h);
-      var info = document.createElement("div"); info.className = "info";
-      row.appendChild(hr); row.appendChild(info);
-
-      if (bk){
-        var n = document.createElement("div"); n.className = "n"; n.textContent = bk.name;
-        info.appendChild(n);
-        var bits = [];
-        if (bk.job) bits.push(bk.job);
-        if (bk.phone) bits.push(bk.phone);
-        if (bits.length){
-          var j = document.createElement("div"); j.className = "j"; j.textContent = bits.join(" · ");
-          info.appendChild(j);
-        }
-        if (!past){
-          var del = document.createElement("button");
-          del.type = "button"; del.className = "btn btn-danger"; del.textContent = "Cancel";
-          del.addEventListener("click", function(){
-            if (del.dataset.armed !== "1"){ del.dataset.armed = "1"; del.textContent = "Sure?"; return; }
-            del.disabled = true;
-            var patch = {}; patch[pad2(h)] = null;
-            writeSlots(ds, m.id, patch).then(showHoursPane).catch(function(err){
-              del.disabled = false; del.dataset.armed = "0"; del.textContent = "Cancel";
-              $("dayErr").textContent = errText(err, "That booking could not be cancelled.");
-            });
-          });
-          row.appendChild(del);
-        }
-      } else {
-        var f = document.createElement("div"); f.className = "free";
-        f.textContent = past ? "Passed" : "Open";
-        info.appendChild(f);
-        if (!past){
-          var bb = document.createElement("button");
-          bb.type = "button"; bb.className = "btn"; bb.textContent = "Book";
-          bb.addEventListener("click", function(){ showFormPane(h); });
-          row.appendChild(bb);
-        }
-      }
-      list.appendChild(row);
+    var mine=allJobs().filter(function(j){ return j.crewId===state.me && j.date>=todayIso; })
+                      .sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
+    if (!mine.length){
+      var e=document.createElement("div"); e.className="empty";
+      e.textContent="Nothing booked. The office will add jobs here and they show up straight away.";
+      host.appendChild(e); return;
+    }
+    var groups={}, order=[];
+    mine.forEach(function(j){
+      if(!groups[j.date]){ groups[j.date]=[]; order.push(j.date); }
+      groups[j.date].push(j);
+    });
+    order.forEach(function(ds){
+      var g=document.createElement("section"); g.className="daygroup";
+      var h=document.createElement("h3");
+      h.textContent = ds===todayIso ? "Today" : F_LONG.format(fromIso(ds));
+      var sp=document.createElement("span");
+      sp.textContent = groups[ds].length + (groups[ds].length===1?" job":" jobs");
+      h.appendChild(sp); g.appendChild(h);
+      var jobs=document.createElement("div"); jobs.className="jobs";
+      groups[ds].forEach(function(j){ jobs.appendChild(jobCard(j,{clock:true})); });
+      g.appendChild(jobs); host.appendChild(g);
     });
   }
 
-  /* ---------- booking form pane ---------- */
-  var formHour = null;      // null means whole-day booking
-
-  function showFormPane(hour){
-    formHour = hour;
-    var m = selected(), ds = openDate;
-    $("paneHours").hidden = true;
-    $("paneForm").hidden = false;
-    $("formWho").textContent = m.name + " · " + (TRADE_LABEL[m.trade]||m.trade);
-    $("formWhen").textContent = (hour === null ? "Whole day" : hourLong(hour)) + " — " + FMT_LONG.format(fromIso(ds));
-    $("formErr").textContent = "";
-    $("formSave").disabled = false;
-    $("paneForm").reset();
-    $("fFullDay").checked = hour === null;
-    $("fullDayWrap").hidden = hour === null;
-    setTimeout(function(){ $("fName").focus(); }, 30);
+  function render(){
+    renderStatus();
+    if (!state.me) return;
+    $("officeView").hidden = !isOffice();
+    $("workerView").hidden = isOffice();
+    if (isOffice()){
+      $("appTitle").textContent = "Crew Calendar";
+      renderCrew(); renderCalendar();
+    } else {
+      renderWorker();
+    }
   }
 
-  $("bookDayBtn").addEventListener("click", function(){ showFormPane(null); });
-  $("formBack").addEventListener("click", showHoursPane);
+  /* ---------- day dialog ---------- */
+  var openDate=null;
+  function openDay(ds){
+    openDate=ds;
+    showDayPane();
+    $("dayDlg").showModal();
+  }
+  function showDayPane(){
+    $("paneForm").hidden=true; $("paneDay").hidden=false;
+    var m=member(state.who), ds=openDate;
+    $("dayWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
+    $("dayWhen").textContent = F_LONG.format(fromIso(ds));
+    $("dayErr").textContent="";
+    var free=freeHours(ds, state.who);
+    $("daySub").textContent = dayIsPast(ds) ? "This day has passed."
+      : (free===0 ? "Fully booked." : free+(free===1?" hour":" hours")+" still free, 8:00 AM to 5:00 PM.");
+    $("addJobBtn").disabled = dayIsPast(ds) || free===0;
+
+    var host=$("dayJobs"); host.innerHTML="";
+    var list=jobsOn(ds, state.who);
+    if (!list.length){
+      var e=document.createElement("div"); e.className="empty"; e.textContent="Nothing booked this day.";
+      host.appendChild(e);
+    } else {
+      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:true, after:showDayPane})); });
+    }
+  }
   $("dayClose").addEventListener("click", function(){ $("dayDlg").close(); });
+  $("addJobBtn").addEventListener("click", function(){ showFormPane(); });
+  $("formBack").addEventListener("click", showDayPane);
+
+  function showFormPane(){
+    var m=member(state.who), ds=openDate;
+    $("paneDay").hidden=true; $("paneForm").hidden=false;
+    $("formWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
+    $("formWhen").textContent = F_LONG.format(fromIso(ds));
+    $("formErr").textContent=""; $("formSave").disabled=false;
+    $("paneForm").reset();
+    fillProjects(); fillBuildings(""); fillHours();
+    // start at the first free hour
+    var startAt=DAY_START;
+    while (startAt<DAY_END && overlaps(ds,state.who,startAt,startAt+1)) startAt++;
+    $("fFrom").value=String(Math.min(startAt,DAY_END-1));
+    $("fTo").value=String(Math.min(startAt+1,DAY_END));
+    $("timeRow").hidden=false;
+    setTimeout(function(){ $("fProject").focus(); },30);
+  }
+
+  $("fProject").addEventListener("change", function(){
+    fillBuildings($("fProject").value);
+  });
+  $("fFrom").addEventListener("change", syncTo);
+  $("fTo").addEventListener("change", function(){
+    var f=parseInt($("fFrom").value,10), t=parseInt($("fTo").value,10);
+    if (t<=f) $("fFrom").value=String(Math.max(DAY_START, t-1));
+  });
+  $("fAllDay").addEventListener("change", function(){
+    $("timeRow").hidden = $("fAllDay").checked;
+  });
 
   $("paneForm").addEventListener("submit", function(ev){
     ev.preventDefault();
-    var m = selected(), ds = openDate;
-    var name = $("fName").value.trim();
-    if (!name){ $("formErr").textContent = "Add a customer or building name first."; return; }
+    var ds=openDate, crewId=state.who;
+    var pid=$("fProject").value;
+    var p=project(pid);
+    if (!p){ $("formErr").textContent="Pick a project first."; return; }
+    var bid=$("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "");
+    var b=buildingOf(pid,bid);
+    if (!b){ $("formErr").textContent="Pick a building."; return; }
 
-    var booking = {
-      name:name,
-      phone:$("fPhone").value.trim(),
-      address:$("fAddr").value.trim(),
-      job:$("fJob").value.trim(),
-      bookedAt:new Date().toISOString()
-    };
-
-    var patch = {};
-    if (formHour === null || $("fFullDay").checked){
-      HOURS.forEach(function(h){
-        if (isPast(ds,h) || bookingAt(ds,m.id,h)) return;
-        patch[pad2(h)] = booking;
-      });
-    } else {
-      if (bookingAt(ds, m.id, formHour)){
-        $("formErr").textContent = "Someone just took this hour. Go back and pick another.";
-        return;
-      }
-      patch[pad2(formHour)] = booking;
-    }
-
-    if (!Object.keys(patch).length){
-      $("formErr").textContent = "There are no open hours left on this day.";
+    var allDay=$("fAllDay").checked;
+    var from = allDay ? DAY_START : parseInt($("fFrom").value,10);
+    var to   = allDay ? DAY_END   : parseInt($("fTo").value,10);
+    if (to<=from){ $("formErr").textContent="The end time has to be after the start time."; return; }
+    if (overlaps(ds, crewId, from, to)){
+      $("formErr").textContent = member(crewId).name+" already has a job in those hours. Pick another time.";
       return;
     }
 
-    $("formSave").disabled = true;
-    writeSlots(ds, m.id, patch).then(function(){
-      showHoursPane();
-    }).catch(function(err){
-      $("formSave").disabled = false;
-      $("formErr").textContent = errText(err, "The booking did not save.");
-    });
+    var job={
+      v:2, id:newId(), date:ds, crewId:crewId,
+      from:from, to:to, allDay:allDay,
+      projectId:p.id, projectName:p.name,
+      buildingId:b.id, buildingName:b.name,
+      unit:$("fUnit").value.trim(),
+      job:$("fJob").value.trim(),
+      manager:p.manager||"", managerPhone:p.managerPhone||"",
+      createdAt:new Date().toISOString(), createdBy:meName(),
+      clockIn:null, clockOut:null, notes:[]
+    };
+    $("formSave").disabled=true;
+    saveJob(job).then(function(){ showDayPane(); })
+      .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,"The job did not save."); });
   });
 
-  /* ---------- crew rename ---------- */
-  function openCrewDialog(){
-    var host = $("crewFields");
-    host.innerHTML = "";
-    state.crew.forEach(function(m,i){
-      var f = document.createElement("div"); f.className = "field";
-      var l = document.createElement("label");
-      l.setAttribute("for","crew"+i);
-      l.textContent = TRADE_LABEL[m.trade]||m.trade;
-      var inp = document.createElement("input");
-      inp.id = "crew"+i; inp.value = m.name; inp.maxLength = 30; inp.required = true;
-      f.appendChild(l); f.appendChild(inp); host.appendChild(f);
+  /* ---------- who am I ---------- */
+  function renderRolePicker(){
+    var host=$("roleList"); host.innerHTML="";
+    var opts=[{id:"office", name:"Office", sub:"Book jobs for the whole crew"}].concat(
+      CREW.map(function(m){ return {id:m.id, name:m.name, sub:"See my own jobs, clock in and out"}; }));
+    opts.forEach(function(o){
+      var b=document.createElement("button");
+      b.type="button"; b.className="btn btn-block"; b.style.textAlign="left";
+      b.innerHTML="<strong>"+o.name+"</strong><br><span style='color:var(--ink-3);font-size:12.5px'>"+o.sub+"</span>";
+      b.addEventListener("click", function(){ setMe(o.id); });
+      host.appendChild(b);
     });
-    $("crewErr").textContent = "";
-    $("crewDlg").showModal();
   }
-  $("crewCancel").addEventListener("click", function(){ $("crewDlg").close(); });
-  $("crewForm").addEventListener("submit", function(ev){
-    ev.preventDefault();
-    var next = state.crew.map(function(m,i){
-      var v = ($("crew"+i).value||"").trim();
-      return {id:m.id, name:v||m.name, trade:m.trade};
-    });
-    saveCrew(next).then(function(){ $("crewDlg").close(); })
-      .catch(function(err){ $("crewErr").textContent = errText(err,"The names did not save."); });
+  function setMe(id){
+    state.me=id; lsWrite(LS_ME,id);
+    $("rolePick").hidden=true; $("app").hidden=false;
+    resubscribe(); render();
+  }
+  $("whoBtn").addEventListener("click", function(){
+    $("app").hidden=true; $("rolePick").hidden=false; renderRolePicker();
   });
 
-  /* ---------- month navigation ---------- */
-  function shiftMonth(n){
-    state.month = new Date(state.month.getFullYear(), state.month.getMonth()+n, 1);
-    resubscribe(); render();
+  /* ---------- live data ---------- */
+  function windowRange(){
+    if (isOffice()){
+      var s=gridStart();
+      return [iso(addDays(s,-1)), iso(addDays(s, gridWeeks()*7+1))];
+    }
+    return [iso(addDays(today,-1)), iso(addDays(today,60))];
   }
-  $("prevMonth").addEventListener("click", function(){ shiftMonth(-1); });
-  $("nextMonth").addEventListener("click", function(){ shiftMonth(1); });
-  $("todayBtn").addEventListener("click", function(){
-    state.month = new Date(today.getFullYear(), today.getMonth(), 1);
-    resubscribe(); render();
-  });
+  function applySnapshot(snap){
+    var fresh={};
+    snap.docs.forEach(function(doc){
+      var d=doc.data()||{};
+      if (d.v!==2 || !d.date || !d.crewId) return;   // ignore the old format
+      d.id = d.id || doc.id;
+      fresh[d.id]=d;
+    });
+    var first = !Object.keys(state.seen).length;
+    state.jobs=fresh;
+    if (!first) notifyNew(fresh);
+    Object.keys(fresh).forEach(function(k){ state.seen[k]=1; });
+    render();
+    if ($("dayDlg").open && !$("paneDay").hidden) showDayPane();
+  }
+  function notifyNew(fresh){
+    if (isOffice() || !("Notification" in window) || Notification.permission!=="granted") return;
+    Object.keys(fresh).forEach(function(k){
+      if (state.seen[k]) return;
+      var j=fresh[k];
+      if (j.crewId!==state.me || j.date<todayIso) return;
+      try{
+        new Notification("New job — " + (j.date===todayIso ? "today" : F_LONG.format(fromIso(j.date))), {
+          body: rangeShort(j)+" · "+j.buildingName+(j.unit?" Unit "+j.unit:""),
+          icon: "icons/icon-192.png", tag: j.id
+        });
+      }catch(e){}
+    });
+  }
+  function resubscribe(){
+    state.unsubs.forEach(function(u){ try{u();}catch(e){} });
+    state.unsubs=[];
+    var r=windowRange(), q=null;
+    if (state.mode==="cloud" && state.fb){
+      q=state.fb.collection("bookings").where("date",">=",r[0]).where("date","<=",r[1]);
+    } else if (state.mode==="shared" && state.db){
+      q=state.db.collection("bookings").where("date",">=",r[0]).where("date","<=",r[1]);
+    } else return;
+    state.unsubs.push(q.onSnapshot(applySnapshot, function(err){
+      console.warn("jobs subscription ended", err);
+    }));
+  }
 
   /* ---------- boot ---------- */
   function bootDevice(){
-    state.mode = "device";
-    var crew = lsRead(LS_CREW, null);
-    if (Array.isArray(crew) && crew.length === 3) state.crew = crew;
-    var all = lsRead(LS_BOOKINGS, {});
-    state.days = {};
-    Object.keys(all).forEach(function(k){
-      var p = k.split("__");
-      if (p.length !== 2) return;
-      if (!state.days[p[0]]) state.days[p[0]] = {};
-      state.days[p[0]][p[1]] = all[k] || {};
-    });
+    state.mode="device";
+    var saved=lsRead(LS_JOBS,{});
+    state.jobs = (saved && typeof saved==="object") ? saved : {};
     render();
   }
-
-  /* ---------- live updates ---------- */
-  function applyBookings(snap){
-    var fresh = {};
-    snap.docs.forEach(function(doc){
-      var d = doc.data() || {};
-      if (!d.date || !d.crewId) return;
-      if (!fresh[d.date]) fresh[d.date] = {};
-      fresh[d.date][d.crewId] = d.slots || {};
-    });
-    state.days = fresh;
-    render();
-    if ($("dayDlg").open && !$("paneHours").hidden) showHoursPane();
-  }
-  function applyCrew(snap){
-    var d = snap.exists ? snap.data() : null;
-    if (d && Array.isArray(d.members) && d.members.length === 3) state.crew = d.members;
-    render();
-  }
-
-  function resubscribe(){
-    state.unsubs.forEach(function(u){ try{ u(); }catch(e){} });
-    state.unsubs = [];
-
-    var start = gridStart();
-    var from = iso(addDays(start,-1));
-    var to   = iso(addDays(start, gridWeeks()*7 + 1));
-    var bookings = null, crewDoc = null;
-
-    if (state.mode === "cloud" && state.fb){
-      bookings = state.fb.collection("bookings").where("date",">=",from).where("date","<=",to);
-      crewDoc  = state.fb.collection("config").doc("crew");
-    } else if (state.mode === "shared" && state.db){
-      bookings = state.db.collection("bookings").where("date",">=",from).where("date","<=",to);
-      crewDoc  = state.db.doc("config/crew");
-    } else {
-      return;
-    }
-
-    state.unsubs.push(bookings.onSnapshot(applyBookings, function(err){
-      console.warn("bookings subscription ended", err);
-    }));
-    state.unsubs.push(crewDoc.onSnapshot(applyCrew, function(err){
-      console.warn("crew subscription ended", err);
-    }));
-  }
-
-  /* ---------- boot ---------- */
   function loadScript(src){
-    return new Promise(function(resolve, reject){
-      var el = document.createElement("script");
-      el.src = src;
-      el.onload = resolve;
-      el.onerror = function(){ reject(new Error("could not load " + src)); };
+    return new Promise(function(res,rej){
+      var el=document.createElement("script");
+      el.src=src; el.onload=res; el.onerror=function(){ rej(new Error("could not load "+src)); };
       document.head.appendChild(el);
     });
   }
-
-  function firebaseConfig(){
-    var c = window.EBM_CONFIG && window.EBM_CONFIG.firebase;
+  function fbConfig(){
+    var c=window.EBM_CONFIG && window.EBM_CONFIG.firebase;
     return (c && c.apiKey && c.projectId) ? c : null;
   }
-
   function bootFirebase(cfg){
-    var base = "https://www.gstatic.com/firebasejs/10.12.5/";
-    loadScript(base + "firebase-app-compat.js")
-      .then(function(){ return loadScript(base + "firebase-firestore-compat.js"); })
+    var base="https://www.gstatic.com/firebasejs/10.12.5/";
+    loadScript(base+"firebase-app-compat.js")
+      .then(function(){ return loadScript(base+"firebase-firestore-compat.js"); })
       .then(function(){
         firebase.initializeApp(cfg);
-        state.fb = firebase.firestore();
-        state.mode = "cloud";
-        resubscribe();
-        render();
+        state.fb=firebase.firestore();
+        state.mode="cloud"; resubscribe(); render();
       })
-      .catch(function(err){
-        console.warn("Firebase unavailable, falling back to this device", err);
-        bootDevice();
-      });
+      .catch(function(e){ console.warn("Firebase unavailable",e); bootDevice(); });
   }
-
-  function bootCloudOrDevice(){
-    var cfg = firebaseConfig();
-    if (cfg) bootFirebase(cfg); else bootDevice();
-  }
-
   function start(){
+    state.me = lsRead(LS_ME, null);
+    if (state.me && state.me!=="office" && !member(state.me)) state.me=null;
+    if (state.me){ $("app").hidden=false; } else { $("rolePick").hidden=false; renderRolePicker(); }
     render();
-    if (window.claude && typeof window.claude.use === "function"){
+
+    if (window.claude && typeof window.claude.use==="function"){
       window.claude.use("db").then(function(db){
-        if (!db){ bootCloudOrDevice(); return; }
-        state.db = db;
-        state.mode = "shared";
-        resubscribe();
-        render();
-      }).catch(bootCloudOrDevice);
+        if (!db){ var c=fbConfig(); if(c) bootFirebase(c); else bootDevice(); return; }
+        state.db=db; state.mode="shared"; resubscribe(); render();
+      }).catch(function(){ var c=fbConfig(); if(c) bootFirebase(c); else bootDevice(); });
     } else {
-      bootCloudOrDevice();
+      var c=fbConfig(); if(c) bootFirebase(c); else bootDevice();
+    }
+    if (!isOffice() && "Notification" in window && Notification.permission==="default"){
+      setTimeout(function(){ try{ Notification.requestPermission(); }catch(e){} }, 3000);
     }
   }
 
   /* ---------- passcode ---------- */
-  function requiredPasscode(){
-    var p = (window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "";
-    return String(p).trim();
+  function wantPass(){ return String((window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "").trim(); }
+  function passOk(){
+    var w=wantPass();
+    if (!w) return true;
+    try{ return (localStorage.getItem(LS_PASS)||"")===w; }catch(e){ return false; }
   }
-  function passcodeAccepted(){
-    var want = requiredPasscode();
-    if (!want) return true;
-    try { return (localStorage.getItem(LS_PASS) || "") === want; } catch(e){ return false; }
-  }
-
-  if (passcodeAccepted()){
+  if (passOk()){
     start();
   } else {
-    document.body.classList.add("locked");
-    $("gate").hidden = false;
-    setTimeout(function(){ $("gateInput").focus(); }, 40);
+    $("gate").hidden=false;
+    setTimeout(function(){ $("gateInput").focus(); },40);
     $("gateForm").addEventListener("submit", function(ev){
       ev.preventDefault();
-      var typed = $("gateInput").value.trim();
-      if (typed !== requiredPasscode()){
-        $("gateErr").textContent = "That passcode does not match. Check with the office.";
-        $("gateInput").select();
-        return;
+      if ($("gateInput").value.trim()!==wantPass()){
+        $("gateErr").textContent="That passcode does not match. Check with the office.";
+        $("gateInput").select(); return;
       }
-      try { localStorage.setItem(LS_PASS, typed); } catch(e){}
-      $("gate").hidden = true;
-      document.body.classList.remove("locked");
-      start();
+      try{ localStorage.setItem(LS_PASS, wantPass()); }catch(e){}
+      $("gate").hidden=true; start();
+    });
+  }
+
+  /* ---------- install as an app ---------- */
+  var deferredPrompt=null;
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault(); deferredPrompt=e; $("installBtn").hidden=false;
+  });
+  $("installBtn").addEventListener("click", function(){
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(){ deferredPrompt=null; $("installBtn").hidden=true; });
+  });
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(e){ console.warn("sw", e); });
     });
   }
 })();

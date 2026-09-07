@@ -12,13 +12,19 @@ A clean booking calendar for the Empire Building Management field crew.
 
 ## What it does
 
-- **Crew list down the side** — click a name and that person's calendar comes up. The calendar takes on their trade's color.
-- **Month calendar** — a plain month grid, every day showing that person's booked hours.
-- **Book an hour** — click a day to see its hours, then Book. Fill in customer/building, phone, address and the job.
-- **Book a whole day** — one button on the day view; it holds every open hour and leaves already-taken hours alone.
-- **Cancel** — open the day and cancel any booked hour.
-- **Crew names** — the electrician's name (or anyone's) can be changed in the app under **Crew names**.
-- Hours in the past are locked automatically.
+**Office view** — the crew down the side, a month calendar for whoever is selected, and a day sheet for adding jobs.
+
+**Worker view** — each person sees only their own upcoming jobs, and can clock in, clock out, and leave notes.
+
+A job is booked against a real property: pick the **project** (23 companies), then the **building** (the list narrows to that project's addresses), then the **unit**. Choose **all day** or a **from–to** time inside 8:00 AM – 5:00 PM. Double-booking a crew member is refused.
+
+Anyone — office or crew — can add notes to a job. Past days are locked.
+
+**Installs like an app.** Android Chrome offers "Install app"; on iPhone it's Share → Add to Home Screen. It then opens full screen with its own icon, and the app shell is cached so it still opens with no signal.
+
+## The property list
+
+`projects.js` holds 23 projects and 59 buildings, generated from *EBM  All Projects Info 10.xlsx*. Each project carries its number, company name, manager and manager's phone; each building its address, city and postal code. Edit that file to add a building or a project — the format is one line per building.
 
 ## Making it shared
 
@@ -46,7 +52,9 @@ Bookings are stored one document per crew-member-day, with an hour-keyed `slots`
 
 Everything lives in `index.html` — no build step, no install, nothing to compile. Open it in an editor, change it, refresh the browser. `config.js` holds your settings and is the only file you need for setup.
 
-Common tweaks, all near the top of the `<script>` block:
+Common tweaks, near the top of the `<script>` block in `index.html`:
 
-- `HOURS` — the bookable hours. `[8,9,10,11,12,13,14,15,16]` means 8:00 AM through the 4:00 PM slot, ending at 5:00 PM.
-- `DEFAULT_CREW` — add or remove a crew member. Give each one a unique `id`, a `name`, and a `trade` of `plumbing` or `electrical`.
+- `DAY_START` / `DAY_END` — the working day, as 24-hour numbers. `8` and `17` mean 8:00 AM to 5:00 PM.
+- `CREW` — add or remove a crew member. Each needs a unique `id`, a `name`, and a `trade` of `plumbing` or `electrical`.
+
+The other files: `config.js` (Firebase settings and the passcode), `projects.js` (properties), `manifest.webmanifest` and `sw.js` (what makes it installable). After changing `index.html`, bump `CACHE` in `sw.js` so phones pick up the new version.
