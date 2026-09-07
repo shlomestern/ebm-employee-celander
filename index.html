@@ -215,6 +215,21 @@ button{font:inherit; color:inherit; cursor:pointer}
 .noteadd{display:flex; gap:6px}
 .noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
+.prow{display:grid; grid-template-columns:minmax(0,1fr) 118px 118px 34px; gap:7px;
+  align-items:center; margin-bottom:8px}
+.prow input,.prow select{font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:7px; padding:8px 9px; width:100%; min-width:0}
+.prow .rm{width:34px; height:34px; padding:0; display:grid; place-items:center; border-radius:7px;
+  border:1px solid var(--line-2); background:var(--surface); color:var(--ink-3); font-size:16px}
+.prow .rm:hover{background:var(--danger); border-color:var(--danger); color:#fff}
+.phead{display:grid; grid-template-columns:minmax(0,1fr) 118px 118px 34px; gap:7px; margin-bottom:5px}
+.phead span{font-family:"Archivo",sans-serif; font-size:10px; font-weight:600; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3)}
+@media (max-width:540px){
+  .prow{grid-template-columns:minmax(0,1fr) 34px; gap:6px}
+  .prow select,.prow input.code{grid-column:1}
+  .phead{display:none}
+}
 .steps{margin:0 0 4px; padding-left:22px; display:flex; flex-direction:column; gap:9px}
 .steps li{font-size:14px; color:var(--ink); line-height:1.45}
 .steps b{font-weight:600}
@@ -282,7 +297,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <h2>Crew Calendar</h2>
     <p>Enter your own code. Everyone has a different one.</p>
     <input id="gateInput" type="password" autocomplete="current-password" placeholder="Your code" required>
-    <button type="submit" class="btn btn-primary btn-block">Open</button>
+    <button type="submit" class="btn btn-primary btn-block" id="gateSubmit" disabled>Starting&hellip;</button>
     <p class="err" id="gateErr"></p>
   </form>
 </div>
@@ -296,6 +311,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="topbar-right">
       <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
       <button class="btn" id="installBtn">Install app</button>
+      <button class="btn" id="crewBtn" hidden>Crew &amp; codes</button>
       <button class="btn btn-quiet" id="whoBtn">Sign out</button>
     </div>
   </header>
@@ -327,6 +343,27 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <p class="footnote" id="footnote2"></p>
   </div>
 </div>
+
+<dialog id="crewDlg">
+  <form method="dialog" class="dlg" id="crewForm">
+    <div class="eyebrow">Office only</div>
+    <h3>Crew &amp; codes</h3>
+    <p class="sub">Give each person their own code and tell them what it is. They sign in with it, see their own name, and see only their own jobs.</p>
+    <div id="crewRows"></div>
+    <button type="button" class="btn" id="addPerson">Add someone</button>
+    <div class="field" style="margin-top:16px">
+      <label for="fOfficeCode">Office code</label>
+      <input id="fOfficeCode" maxlength="40" autocomplete="off">
+      <span class="hint">Opens the whole calendar. Keep this one to yourself.</span>
+    </div>
+    <p class="err" id="crewErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="crewCancel">Cancel</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="crewSave">Save</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="installDlg">
   <div class="dlg">
@@ -410,16 +447,19 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 (function(){
   "use strict";
 
-  var CREW = [
-    {id:"rodrigo",     name:"Rodrigo",     trade:"plumbing"},
-    {id:"zion",        name:"Zion",        trade:"plumbing"},
-    {id:"electrician", name:"Electrician", trade:"electrical"}
+  /* The roster lives in the database so the office can change it from inside
+     the app. These are only the values seeded on first run. */
+  var DEFAULT_PEOPLE = [
+    {id:"rodrigo",     name:"Rodrigo",     trade:"plumbing",   code:"rd7412"},
+    {id:"zion",        name:"Zion",        trade:"plumbing",   code:"zn5836"},
+    {id:"electrician", name:"Electrician", trade:"electrical", code:"el2947"}
   ];
   var DAY_START = 8, DAY_END = 17;          // 8:00 AM to 5:00 PM
   var TRADE = {plumbing:"Plumbing", electrical:"Electrical"};
   var MAX_CHIPS = 3;
   var LS_PASS = "ebm-crew:pass:v2";
   var LS_JOBS = "ebm-crew:jobs:v2";
+  var LS_ROSTER = "ebm-crew:roster:v1";
 
   var PROJECTS = window.EBM_PROJECTS || [];
 
@@ -456,19 +496,28 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var today = new Date(), todayIso = iso(today);
   var state = {
     me: null,                 // "office" | crew id
-    who: CREW[0].id,          // crew member shown in the office calendar
+    who: DEFAULT_PEOPLE[0].id, // crew member shown in the office calendar
     month: new Date(today.getFullYear(), today.getMonth(), 1),
     jobs: {},                 // jobId -> job
     mode: "loading",          // shared | cloud | device
-    db: null, fb: null, unsubs: [], seen: {}
+    db: null, fb: null, unsubs: [], seen: {},
+    people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
+    officeCode: "",
+    rosterReady: false, rosterUnsub: null, opened: false
   };
 
   function member(id){
-    for (var i=0;i<CREW.length;i++) if (CREW[i].id===id) return CREW[i];
+    for (var i=0;i<state.people.length;i++) if (state.people[i].id===id) return state.people[i];
     return null;
   }
+  /* A job can outlive the person it was booked for. Never return null to the
+     renderers — they would throw and take the whole page with them. */
+  function memberOr(id){
+    return member(id) || {id:id, name:"(removed)", trade:"plumbing"};
+  }
   function isOffice(){ return state.me === "office"; }
-  function meName(){ return isOffice() ? "Office" : (member(state.me) || {}).name || "?"; }
+  function meName(){ return isOffice() ? "Office" : memberOr(state.me).name; }
+  function firstCrewId(){ return state.people.length ? state.people[0].id : null; }
   var $ = function(id){ return document.getElementById(id); };
 
   /* ---------- storage ---------- */
@@ -631,7 +680,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   function jobCard(j, opts){
     opts = opts || {};
-    var m = member(j.crewId) || {name:"?", trade:"plumbing"};
+    var m = memberOr(j.crewId);
     var card = document.createElement("div");
     card.className = "job p-" + m.trade + (j.clockOut ? " done" : "");
 
@@ -746,7 +795,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function renderCrew(){
     var host=$("crew");
     host.innerHTML='<div class="eyebrow">Crew</div>';
-    CREW.forEach(function(m){
+    if (!member(state.who)) state.who = firstCrewId();
+    state.people.forEach(function(m){
       var b=document.createElement("button");
       b.type="button"; b.className="person p-"+m.trade;
       b.setAttribute("aria-pressed", m.id===state.who ? "true":"false");
@@ -762,7 +812,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     });
   }
   function renderCalendar(){
-    var m=member(state.who);
+    var m=memberOr(state.who);
     applyAccent(m.trade);
     $("monthLabel").innerHTML = F_MONTH.format(state.month)+' <span class="yr">'+state.month.getFullYear()+'</span>';
     $("legendName").textContent = m.name + "'s jobs";
@@ -816,7 +866,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   /* ---------- worker view ---------- */
   function renderWorker(){
-    var m=member(state.me);
+    var m=memberOr(state.me);
     applyAccent(m.trade);
     $("appTitle").textContent = m.name + "'s schedule";
     var host=$("workerBody"); host.innerHTML="";
@@ -871,7 +921,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function showDayPane(){
     $("paneForm").hidden=true; $("paneDay").hidden=false;
-    var m=member(state.who), ds=openDate;
+    var m=memberOr(state.who), ds=openDate;
     $("dayWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
     $("dayWhen").textContent = F_LONG.format(fromIso(ds));
     $("dayErr").textContent="";
@@ -896,7 +946,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   $("formBack").addEventListener("click", showDayPane);
 
   function showFormPane(){
-    var m=member(state.who), ds=openDate;
+    var m=memberOr(state.who), ds=openDate;
     $("paneDay").hidden=true; $("paneForm").hidden=false;
     $("formWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
     $("formWhen").textContent = F_LONG.format(fromIso(ds));
@@ -939,7 +989,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var to   = allDay ? DAY_END   : parseInt($("fTo").value,10);
     if (to<=from){ $("formErr").textContent="The end time has to be after the start time."; return; }
     if (overlaps(ds, crewId, from, to)){
-      $("formErr").textContent = member(crewId).name+" already has a job in those hours. Pick another time.";
+      $("formErr").textContent = memberOr(crewId).name+" already has a job in those hours. Pick another time.";
       return;
     }
 
@@ -1021,6 +1071,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     state.mode = offline ? "offline" : "device";
     var saved=lsRead(LS_JOBS,{});
     state.jobs = (saved && typeof saved==="object") ? saved : {};
+    rosterSettled();          // no shared roster here, so the codes in the page stand
     render();
   }
   function loadScript(src){
@@ -1052,7 +1103,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         settled=true; clearTimeout(giveUp);
         firebase.initializeApp(cfg);
         state.fb=firebase.firestore();
-        state.mode="cloud"; resubscribe(); render();
+        state.mode="cloud"; subscribeRoster(); resubscribe(); render();
       })
       .catch(function(e){
         if (settled) return;
@@ -1061,77 +1112,218 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         bootDevice(true);
       });
   }
-  function start(){
-    render();
-
+  function connect(){
+    if (state.connecting) return;
+    state.connecting = true;
     if (window.claude && typeof window.claude.use==="function"){
       window.claude.use("db").then(function(db){
         if (!db){ var c=fbConfig(); if(c) bootFirebase(c); else bootDevice(); return; }
-        state.db=db; state.mode="shared"; resubscribe(); render();
+        state.db=db; state.mode="shared"; subscribeRoster(); resubscribe(); render();
       }).catch(function(){ var c=fbConfig(); if(c) bootFirebase(c); else bootDevice(); });
     } else {
       var c=fbConfig(); if(c) bootFirebase(c); else bootDevice();
     }
+  }
+  function start(){
+    render();
+    connect();
+    resubscribe();
     if (!isOffice() && "Notification" in window && Notification.permission==="default"){
       setTimeout(function(){ try{ Notification.requestPermission(); }catch(e){} }, 3000);
     }
   }
 
-  /* ---------- access codes ---------- */
-  /* Every person has their own code. The code is the login: it says who you
-     are AND what you can open. A crew code can never reach the office
-     calendar, because the office view is only rendered for "office". */
-  function accessMap(){
-    var a = window.EBM_CONFIG && window.EBM_CONFIG.access;
-    if (a && typeof a === "object"){
-      var any = false;
-      for (var k in a) if (String(a[k] || "").trim()) any = true;
-      if (any) return a;
+  /* ---------- the roster: who exists, and their codes ---------- */
+  function rosterRef(){
+    if (state.mode==="cloud" && state.fb) return state.fb.collection("config").doc("crew");
+    if (state.mode==="shared" && state.db) return state.db.doc("config/crew");
+    return null;
+  }
+  function cacheRoster(){
+    // Kept so a phone with no signal can still recognise a code the office
+    // changed after this device last connected.
+    lsWrite(LS_ROSTER, {people: state.people, officeCode: state.officeCode});
+  }
+  function applyRoster(d){
+    if (d && Array.isArray(d.people)){
+      var clean = d.people.filter(function(p){ return p && p.id && p.name; }).map(function(p){
+        return {id:String(p.id), name:String(p.name), trade:(p.trade==="electrical"?"electrical":"plumbing"),
+                code:String(p.code||"")};
+      });
+      if (clean.length) state.people = clean;
     }
-    var legacy = String((window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "").trim();
-    return legacy ? {office: legacy} : null;
+    if (d && d.officeCode) state.officeCode = String(d.officeCode).trim();
+    cacheRoster();
+  }
+  function subscribeRoster(){
+    var ref = rosterRef();
+    if (!ref){ rosterSettled(); return; }
+    state.rosterUnsub = ref.onSnapshot(function(snap){
+      if (snap.exists){
+        applyRoster(snap.data());
+      } else {
+        // First run on a fresh database: write the starting roster.
+        ref.set({people: DEFAULT_PEOPLE, officeCode: masterOfficeCode()}).catch(function(){});
+      }
+      rosterSettled();
+      render();
+    }, function(){ rosterSettled(); });
+  }
+  function rosterSettled(){
+    state.rosterReady = true;
+    $("gateSubmit").disabled = false;
+    $("gateSubmit").textContent = "Open";
+    if (!state.opened) tryAutoOpen();
+  }
+  function saveRoster(people, officeCode){
+    state.people = people;
+    state.officeCode = officeCode;
+    cacheRoster();
+    var ref = rosterRef();
+    if (ref) return ref.set({people: people, officeCode: officeCode});
+    render();
+    return Promise.resolve();
+  }
+
+  /* ---------- crew & codes editor (office only) ---------- */
+  function addRosterRow(person){
+    var row = document.createElement("div");
+    row.className = "prow";
+    var nm = document.createElement("input");
+    nm.className = "nm"; nm.placeholder = "Name"; nm.maxLength = 30;
+    nm.value = person ? person.name : "";
+    var tr = document.createElement("select");
+    tr.className = "tr";
+    [["plumbing","Plumbing"],["electrical","Electrical"]].forEach(function(o){
+      var op=document.createElement("option"); op.value=o[0]; op.textContent=o[1]; tr.appendChild(op);
+    });
+    tr.value = person ? person.trade : "plumbing";
+    var cd = document.createElement("input");
+    cd.className = "code"; cd.placeholder = "Code"; cd.maxLength = 40; cd.autocomplete = "off";
+    cd.value = person ? (person.code||"") : "";
+    var rm = document.createElement("button");
+    rm.type="button"; rm.className="rm"; rm.title="Remove"; rm.textContent="\u00d7";
+    rm.addEventListener("click", function(){ row.remove(); });
+    row.dataset.id = person ? person.id : ("p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+    row.appendChild(nm); row.appendChild(tr); row.appendChild(cd); row.appendChild(rm);
+    $("crewRows").appendChild(row);
+    return row;
+  }
+  function openCrewEditor(){
+    var host = $("crewRows");
+    host.innerHTML = '<div class="phead"><span>Name</span><span>Trade</span><span>Code</span><span></span></div>';
+    state.people.forEach(addRosterRow);
+    $("fOfficeCode").value = state.officeCode || masterOfficeCode();
+    $("crewErr").textContent = "";
+    $("crewSave").disabled = false;
+    $("crewDlg").showModal();
+  }
+  $("crewBtn").addEventListener("click", openCrewEditor);
+  $("addPerson").addEventListener("click", function(){ addRosterRow(null).querySelector(".nm").focus(); });
+  $("crewCancel").addEventListener("click", function(){ $("crewDlg").close(); });
+
+  $("crewForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var rows = $("crewRows").querySelectorAll(".prow");
+    var people = [], codes = {}, err = "";
+    var office = $("fOfficeCode").value.trim();
+    if (!office){ $("crewErr").textContent = "The office needs a code."; return; }
+    codes[office] = "the office";
+    for (var i=0;i<rows.length;i++){
+      var r = rows[i];
+      var name = r.querySelector(".nm").value.trim();
+      var code = r.querySelector(".code").value.trim();
+      if (!name && !code) continue;
+      if (!name){ err = "Every person needs a name."; break; }
+      if (!code){ err = name + " needs a code, or nobody can sign in as them."; break; }
+      if (codes[code]){ err = "Two people cannot share a code — " + code + " is already used by " + codes[code] + "."; break; }
+      codes[code] = name;
+      people.push({id:r.dataset.id, name:name, trade:r.querySelector(".tr").value, code:code});
+    }
+    if (err){ $("crewErr").textContent = err; return; }
+    if (!people.length){ $("crewErr").textContent = "Keep at least one person on the crew."; return; }
+
+    $("crewSave").disabled = true;
+    saveRoster(people, office).then(function(){
+      $("crewDlg").close();
+      render();
+    }).catch(function(e){
+      $("crewSave").disabled = false;
+      $("crewErr").textContent = errText(e, "The crew list did not save.");
+    });
+  });
+
+  /* Start from the last roster this device saw, so codes work offline. */
+  (function loadCachedRoster(){
+    var c = lsRead(LS_ROSTER, null);
+    if (c && Array.isArray(c.people) && c.people.length){
+      state.people = c.people.filter(function(p){ return p && p.id && p.name; });
+      if (c.officeCode) state.officeCode = String(c.officeCode);
+    }
+  })();
+
+  /* ---------- access codes ---------- */
+  /* One code per person. The code is the login: it says who you are and what
+     you can open. A crew code can never reach the office calendar, because the
+     office view is only rendered for "office". */
+  function masterOfficeCode(){
+    var a = window.EBM_CONFIG && window.EBM_CONFIG.access;
+    var v = a && a.office ? String(a.office).trim() : "";
+    if (v) return v;
+    return String((window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "").trim();
   }
   function whoFor(code){
-    var a = accessMap();
-    if (!a || !code) return null;
-    for (var k in a){
-      if (String(a[k] || "").trim() === code) return k;
+    if (!code) return null;
+    // The code in config.js always works, so a mistyped office code in the app
+    // can never lock the office out of its own calendar.
+    if (code === masterOfficeCode()) return "office";
+    if (state.officeCode && code === state.officeCode) return "office";
+    for (var i=0;i<state.people.length;i++){
+      if (String(state.people[i].code||"").trim() === code) return state.people[i].id;
     }
     return null;
   }
   function validPerson(id){ return id === "office" || !!member(id); }
 
   function openAs(id){
+    if (state.opened && state.me === id) return;
+    state.opened = true;
     state.me = id;
     $("gate").hidden = true;
     $("app").hidden = false;
-    start();
+    $("crewBtn").hidden = !isOffice();
+    if (!state.started){ state.started = true; start(); } else { resubscribe(); render(); }
   }
-
-  if (!accessMap()){
-    openAs("office");                       // no codes configured — open to anyone
-  } else {
+  function tryAutoOpen(){
     var saved = null;
     try{ saved = localStorage.getItem(LS_PASS); }catch(e){}
-    var who = whoFor(String(saved || "").trim());
-    if (who && validPerson(who)){
-      openAs(who);
-    } else {
-      $("gate").hidden = false;
-      setTimeout(function(){ $("gateInput").focus(); }, 40);
-      $("gateForm").addEventListener("submit", function(ev){
-        ev.preventDefault();
-        var typed = $("gateInput").value.trim();
-        var id = whoFor(typed);
-        if (!id || !validPerson(id)){
-          $("gateErr").textContent = "That code does not match. Check with the office.";
-          $("gateInput").select();
-          return;
-        }
-        try{ localStorage.setItem(LS_PASS, typed); }catch(e){}
-        openAs(id);
-      });
-    }
+    var id = whoFor(String(saved||"").trim());
+    if (id && validPerson(id)){ openAs(id); return true; }
+    return false;
+  }
+
+  if (!masterOfficeCode()){
+    openAs("office");                    // no code configured — open to anyone
+  } else if (!tryAutoOpen()) {
+    $("gate").hidden = false;
+    setTimeout(function(){ $("gateInput").focus(); }, 40);
+    $("gateForm").addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var typed = $("gateInput").value.trim();
+      var id = whoFor(typed);
+      if (!id || !validPerson(id)){
+        $("gateErr").textContent = state.rosterReady
+          ? "That code does not match. Check with the office."
+          : "Still starting up — try again in a second.";
+        $("gateInput").select();
+        return;
+      }
+      try{ localStorage.setItem(LS_PASS, typed); }catch(e){}
+      openAs(id);
+    });
+    // The page has to be able to reach the storage layer before it can check a
+    // code against the live roster, so get that going even while locked.
+    connect();
   }
 
   /* ---------- install as an app ---------- */

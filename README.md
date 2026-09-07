@@ -12,7 +12,9 @@ A clean booking calendar for the Empire Building Management field crew.
 
 ## What it does
 
-**Everyone has their own code.** The code is the login: it decides who you are and what you can open. The office code opens the full calendar; a crew code opens only that person's own schedule and cannot reach the office view. Codes live in `config.js`.
+**Everyone has their own code.** The code is the login: it decides who you are and what you can open. The office code opens the full calendar; a crew code opens only that person's own schedule and cannot reach the office view.
+
+**The office manages the crew from inside the app** — the **Crew & codes** button, visible only to the office. Add someone, rename them, set their trade, give them a code. They sign in with it and see their own name at the top. Two people can't share a code, and everyone needs one. The roster is stored in the database, so a change reaches every phone; each device also keeps a copy so codes still work with no signal.
 
 **Office view** — the crew down the side, a month calendar for whoever is selected, and a day sheet for adding jobs. Days show the **project number** and unit.
 
@@ -38,7 +40,9 @@ Out of the box the calendar keeps bookings in whoever's browser opened it. To ma
 
 Once that's done the top right of the page says *"Shared — everyone with the link"* and bookings appear on everyone's phone within seconds.
 
-`config.js` holds one access code per person. Each person types theirs once and their phone remembers it; **Sign out** clears it.
+`config.js` holds only the **office** code. It is deliberately the one code that lives in the file rather than the app, so a typo made inside the app can never lock the office out of its own calendar — it always works. Everyone else is managed in the app.
+
+Each person types their code once and their phone remembers it; **Sign out** clears it.
 
 Be clear-eyed about what these codes are: they live in the page's JavaScript, so anyone who knows how to view a page's source can read all of them. They stop crew members casually opening each other's or the office's view. They are **not** account security. For that you want real logins — Firebase Authentication with a Firestore rule per person — which is a bigger job and gives every worker a username and password to manage.
 

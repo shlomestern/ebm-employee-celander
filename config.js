@@ -21,18 +21,12 @@ window.EBM_CONFIG = {
     appId:             "1:525924907190:web:5673ae7b2c8c7eecdb0e17"
   },
 
-  /* Who can open the app, and what each of them sees.
+  /* The office code. This one lives here, in the file, so a typo made inside
+     the app can never lock you out of your own calendar — it always works.
 
-     Each person gets their OWN code. The code is the login — it decides who
-     you are and what you can open. A crew code opens only that person's own
-     schedule; it cannot reach the office calendar. Change any of these to
-     whatever you like, then tell that person their new code.
-
-     Anyone whose code you blank out ("") can no longer get in. */
+     Everyone else's name and code is managed inside the app: sign in as the
+     office and use the "Crew & codes" button. */
   access: {
-    office:      "empire65",
-    rodrigo:     "rd7412",
-    zion:        "zn5836",
-    electrician: "el2947"
+    office: "empire65"
   }
 };
