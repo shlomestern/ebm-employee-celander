@@ -28,6 +28,12 @@ If the app can't reach the network it says **No connection** and shows the last 
 
 **Installs like an app.** Android Chrome offers "Install app"; on iPhone it's Share → Add to Home Screen. It then opens full screen with its own icon, and the app shell is cached so it still opens with no signal.
 
+## Phone notifications
+
+When a job is booked, that crew member's phone can buzz even with the app closed. It is off until a `vapidKey` is set in `config.js` and the Cloud Function in `functions/` is deployed — **[NOTIFICATIONS.md](NOTIFICATIONS.md)** walks through both, and the deploy is done from a browser with nothing to install.
+
+The office is never asked for notification permission; only crew are. On iPhone the app has to be added to the Home Screen first, which is Apple's rule, not ours.
+
 ## The property list
 
 `projects.js` holds 23 projects and 59 buildings, generated from *EBM  All Projects Info 10.xlsx*. Each project carries its number, company name, manager and manager's phone; each building its address, city and postal code. Edit that file to add a building or a project — the format is one line per building.

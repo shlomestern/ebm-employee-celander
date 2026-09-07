@@ -7,7 +7,7 @@
    Step-by-step instructions are in SETUP.md.
    --------------------------------------------------------------- */
 
-window.EBM_CONFIG = {
+self.EBM_CONFIG = {   /* self, not window: the service worker reads this file too */
 
   /* Paste the six values Firebase gives you.
      Firebase console → gear icon → Project settings → Your apps → Web app.
@@ -28,5 +28,10 @@ window.EBM_CONFIG = {
      office and use the "Crew & codes" button. */
   access: {
     office: "empire65"
-  }
+  },
+
+  /* Phone notifications. Paste the Web Push certificate key pair from
+     Firebase console → Project settings → Cloud Messaging → Web Push
+     certificates → Generate key pair. Leave "" and notifications stay off. */
+  vapidKey: ""
 };
