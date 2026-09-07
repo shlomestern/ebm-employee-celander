@@ -152,6 +152,18 @@ button{font:inherit; color:inherit; cursor:pointer}
 .nav{width:33px; height:33px; flex:none; display:grid; place-items:center; font-size:15px;
   border:1px solid var(--line-2); background:var(--surface); border-radius:8px}
 .nav:hover{background:var(--surface-2)}
+.calbar{flex-wrap:wrap}
+.seg{display:inline-flex; border:1px solid var(--line-2); border-radius:8px; overflow:hidden; background:var(--surface)}
+.seg button{border:none; background:transparent; padding:7px 12px; font-size:13px; font-weight:500;
+  border-left:1px solid var(--line); color:var(--ink-2)}
+.seg button:first-child{border-left:none}
+.seg button[aria-pressed="true"]{background:var(--sel); color:#fff; font-weight:600}
+.seg button:not([aria-pressed="true"]):hover{background:var(--surface-2)}
+.cal.week .cell{min-height:190px}
+.cal.week .chips{gap:4px}
+.daygroup{margin-bottom:20px}
+.daygroup h3{margin:0 0 8px; font-size:16px; font-weight:600; letter-spacing:-.015em}
+.daygroup h3 span{color:var(--ink-3); font-weight:500; font-size:13.5px; margin-left:7px}
 .cal{
   border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--line);
   box-shadow:var(--shadow); display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:1px;
@@ -339,8 +351,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
           <button class="nav" id="nextMonth" aria-label="Next month">&#8250;</button>
           <h2 id="monthLabel"></h2>
           <button class="btn" id="todayBtn">Today</button>
+          <div class="seg" id="viewSeg" role="group" aria-label="Calendar layout">
+            <button type="button" data-v="month">Month</button>
+            <button type="button" data-v="week">Week</button>
+            <button type="button" data-v="list">List</button>
+          </div>
         </div>
         <div class="cal" id="cal"></div>
+        <div class="jobs" id="calList" hidden></div>
         <div class="legend">
           <span><span class="box"></span><span id="legendName"></span></span>
           <span id="legendHint"></span>
@@ -503,6 +521,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var LS_PASS = "ebm-crew:pass:v2";
   var LS_JOBS = "ebm-crew:jobs:v2";
   var LS_ROSTER = "ebm-crew:roster:v1";
+  var LS_VIEW = "ebm-crew:view:v1";
 
   var PROJECTS = window.EBM_PROJECTS || [];
 
@@ -533,6 +552,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var F_MONTH = new Intl.DateTimeFormat(undefined,{month:"long"});
   var F_LONG  = new Intl.DateTimeFormat(undefined,{weekday:"long", month:"long", day:"numeric"});
   var F_DOW   = new Intl.DateTimeFormat(undefined,{weekday:"short"});
+  var F_MED   = new Intl.DateTimeFormat(undefined,{month:"short", day:"numeric"});
   var F_TIME  = new Intl.DateTimeFormat(undefined,{hour:"numeric", minute:"2-digit"});
 
   /* ---------- state ---------- */
@@ -540,7 +560,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var state = {
     me: null,                 // "office" | crew id
     who: DEFAULT_PEOPLE[0].id, // crew member shown in the office calendar
-    month: new Date(today.getFullYear(), today.getMonth(), 1),
+    anchor: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+    view: "month",
     jobs: {},                 // jobId -> job
     mode: "loading",          // shared | cloud | device
     db: null, fb: null, unsubs: [], seen: {},
@@ -856,19 +877,23 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     document.documentElement.style.setProperty("--sel","var("+c+")");
     document.documentElement.style.setProperty("--sel-soft","var("+s+")");
   }
+  function monthFirst(){ return new Date(state.anchor.getFullYear(), state.anchor.getMonth(), 1); }
+  function weekFirst(){ return addDays(state.anchor, -state.anchor.getDay()); }
   function gridStart(){
-    var first=new Date(state.month.getFullYear(), state.month.getMonth(), 1);
+    if (state.view === "week") return weekFirst();
+    var first = monthFirst();
     return addDays(first, -first.getDay());
   }
   function gridWeeks(){
-    var first=new Date(state.month.getFullYear(), state.month.getMonth(), 1);
-    var days=new Date(state.month.getFullYear(), state.month.getMonth()+1, 0).getDate();
-    return Math.ceil((first.getDay()+days)/7);
+    if (state.view === "week") return 1;
+    var f = monthFirst();
+    var days = new Date(f.getFullYear(), f.getMonth()+1, 0).getDate();
+    return Math.ceil((f.getDay()+days)/7);
   }
   function monthCount(crewId){
+    var from = iso(gridStart()), to = iso(addDays(gridStart(), gridWeeks()*7-1));
     return allJobs().filter(function(j){
-      var d=fromIso(j.date);
-      return j.crewId===crewId && d.getMonth()===state.month.getMonth() && d.getFullYear()===state.month.getFullYear();
+      return j.crewId===crewId && j.date>=from && j.date<=to;
     }).length;
   }
   function renderCrew(){
@@ -896,26 +921,52 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       host.appendChild(b);
     });
   }
+  function periodLabel(){
+    if (state.view === "list") return "Everything coming up";
+    if (state.view === "week"){
+      var a = weekFirst(), b = addDays(a,6);
+      return F_MED.format(a) + " – " + F_MED.format(b) + ", " + b.getFullYear();
+    }
+    return F_MONTH.format(monthFirst()) + ' <span class="yr">' + monthFirst().getFullYear() + '</span>';
+  }
+
   function renderCalendar(){
     if (isOffice() && (!state.who || !member(state.who))) state.who = firstCrewId();
-    var m=memberOr(viewCrewId());
+    var m = memberOr(viewCrewId());
     applyAccent(m.trade);
+    $("monthLabel").innerHTML = periodLabel();
+    $("legendName").textContent = isOffice() ? (m.name + "'s jobs") : "Your jobs";
     $("legendHint").textContent = can("book")
       ? "Click a day to see it or add a job"
       : "Click a day to see what you have on";
-    $("monthLabel").innerHTML = F_MONTH.format(state.month)+' <span class="yr">'+state.month.getFullYear()+'</span>';
-    $("legendName").textContent = isOffice() ? (m.name + "'s jobs") : "Your jobs";
 
-    var cal=$("cal"); cal.innerHTML="";
+    Array.prototype.forEach.call($("viewSeg").children, function(b){
+      b.setAttribute("aria-pressed", b.dataset.v === state.view ? "true" : "false");
+    });
+    var isList = state.view === "list";
+    $("cal").hidden = isList;
+    $("calList").hidden = !isList;
+    $("prevMonth").hidden = isList;
+    $("nextMonth").hidden = isList;
+    $("todayBtn").hidden = isList;
+
+    if (isList) renderList(); else renderGrid(m);
+  }
+
+  function renderGrid(m){
+    var cal=$("cal");
+    cal.className = "cal" + (state.view === "week" ? " week" : "");
+    cal.innerHTML="";
     var start=gridStart(), i, k;
     for (i=0;i<7;i++){
       var h=document.createElement("div"); h.className="dow";
       h.textContent=F_DOW.format(addDays(start,i)); cal.appendChild(h);
     }
-    var total=gridWeeks()*7;
+    var weeks = gridWeeks(), total = weeks*7;
+    var showAll = state.view === "week";
     for (k=0;k<total;k++){
       var d=addDays(start,k), ds=iso(d);
-      var inMonth = d.getMonth()===state.month.getMonth();
+      var inMonth = state.view === "week" ? true : d.getMonth()===monthFirst().getMonth();
       var cell=document.createElement("button");
       cell.type="button";
       cell.className="cell"+(inMonth?"":" out")+(ds===todayIso?" today":"")
@@ -929,7 +980,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var list=jobsOn(ds, viewCrewId());
       if (list.length){
         var chips=document.createElement("span"); chips.className="chips";
-        list.slice(0,MAX_CHIPS).forEach(function(j){
+        var cap = showAll ? list.length : MAX_CHIPS;
+        list.slice(0,cap).forEach(function(j){
           var c=document.createElement("span"); c.className="chip";
           var t=document.createElement("span"); t.className="t"; t.textContent=j.allDay?"all":hourShort(j.from);
           var n=document.createElement("span"); n.className="n";
@@ -937,9 +989,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
           c.appendChild(t); c.appendChild(n); chips.appendChild(c);
         });
         cell.appendChild(chips);
-        if (list.length>MAX_CHIPS){
+        if (list.length>cap){
           var mo=document.createElement("span"); mo.className="more";
-          mo.textContent="+"+(list.length-MAX_CHIPS)+" more"; cell.appendChild(mo);
+          mo.textContent="+"+(list.length-cap)+" more"; cell.appendChild(mo);
         }
       } else {
         var fh=document.createElement("span"); fh.className="freehint";
@@ -951,6 +1003,37 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
     }
+  }
+
+  function renderList(){
+    var host=$("calList"); host.innerHTML="";
+    var mine = allJobs().filter(function(j){
+      return j.crewId===viewCrewId() && j.date>=todayIso;
+    }).sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
+
+    if (!mine.length){
+      var e=document.createElement("div"); e.className="empty";
+      e.textContent = state.mode==="loading" ? "Checking the calendar…" : "Nothing booked from today onwards.";
+      host.appendChild(e); return;
+    }
+    var groups={}, order=[];
+    mine.forEach(function(j){
+      if(!groups[j.date]){ groups[j.date]=[]; order.push(j.date); }
+      groups[j.date].push(j);
+    });
+    order.forEach(function(ds){
+      var g=document.createElement("section"); g.className="daygroup";
+      var h=document.createElement("h3");
+      h.textContent = ds===todayIso ? "Today" : F_LONG.format(fromIso(ds));
+      var sp=document.createElement("span");
+      sp.textContent = groups[ds].length + (groups[ds].length===1?" job":" jobs");
+      h.appendChild(sp); g.appendChild(h);
+      var jobs=document.createElement("div"); jobs.className="jobs";
+      groups[ds].forEach(function(j){
+        jobs.appendChild(jobCard(j,{clock:!isOffice(), remove:ownsJob(j), after:render}));
+      });
+      g.appendChild(jobs); host.appendChild(g);
+    });
   }
 
   function render(){
@@ -1129,6 +1212,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   /* ---------- live data ---------- */
   function windowRange(){
+    if (state.view === "list") return [iso(addDays(today,-1)), iso(addDays(today,120))];
     var g = gridStart();
     return [iso(addDays(g,-1)), iso(addDays(g, gridWeeks()*7+1))];
   }
@@ -1239,6 +1323,30 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     resubscribe();
     setupPush();
   }
+
+  /* ---------- moving around the calendar ---------- */
+  function shiftPeriod(n){
+    if (state.view === "week"){
+      state.anchor = addDays(state.anchor, 7*n);
+    } else {
+      var f = monthFirst();
+      state.anchor = new Date(f.getFullYear(), f.getMonth()+n, 1);
+    }
+    resubscribe(); render();
+  }
+  $("prevMonth").addEventListener("click", function(){ shiftPeriod(-1); });
+  $("nextMonth").addEventListener("click", function(){ shiftPeriod(1); });
+  $("todayBtn").addEventListener("click", function(){
+    state.anchor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    resubscribe(); render();
+  });
+  Array.prototype.forEach.call($("viewSeg").children, function(btn){
+    btn.addEventListener("click", function(){
+      state.view = btn.dataset.v;
+      lsWrite(LS_VIEW, state.view);
+      resubscribe(); render();
+    });
+  });
 
   /* ---------- the roster: who exists, and their codes ---------- */
   function rosterRef(){
@@ -1393,6 +1501,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   });
 
   /* Start from the last roster this device saw, so codes work offline. */
+  (function loadView(){
+    var v = lsRead(LS_VIEW, null);
+    if (v === "month" || v === "week" || v === "list") state.view = v;
+  })();
+
   (function loadCachedRoster(){
     var c = lsRead(LS_ROSTER, null);
     if (c && Array.isArray(c.people) && c.people.length){
