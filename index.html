@@ -215,6 +215,9 @@ button{font:inherit; color:inherit; cursor:pointer}
 .noteadd{display:flex; gap:6px}
 .noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
+.steps{margin:0 0 4px; padding-left:22px; display:flex; flex-direction:column; gap:9px}
+.steps li{font-size:14px; color:var(--ink); line-height:1.45}
+.steps b{font-weight:600}
 .empty{padding:22px 14px; text-align:center; color:var(--ink-3); font-size:13.5px;
   border:1px dashed var(--line-2); border-radius:11px}
 
@@ -301,7 +304,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     </div>
     <div class="topbar-right">
       <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
-      <button class="btn" id="installBtn" hidden>Install app</button>
+      <button class="btn" id="installBtn">Install app</button>
       <button class="btn btn-quiet" id="whoBtn">Not you?</button>
     </div>
   </header>
@@ -333,6 +336,19 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <p class="footnote" id="footnote2"></p>
   </div>
 </div>
+
+<dialog id="installDlg">
+  <div class="dlg">
+    <div class="eyebrow">Put it on your phone</div>
+    <h3 id="instTitle">Install the app</h3>
+    <p class="sub" id="instSub"></p>
+    <ol class="steps" id="instSteps"></ol>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="instClose">Got it</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="dayDlg">
   <div class="dlg" id="paneDay">
@@ -1088,15 +1104,90 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
 
   /* ---------- install as an app ---------- */
-  var deferredPrompt=null;
+  var deferredPrompt = null;
+
+  function isStandalone(){
+    try{
+      return window.matchMedia("(display-mode: standalone)").matches ||
+             window.navigator.standalone === true;
+    }catch(e){ return false; }
+  }
+  function isIOS(){
+    var ua = navigator.userAgent || "";
+    return /iPhone|iPad|iPod/i.test(ua) ||
+           (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+  function isAndroid(){ return /Android/i.test(navigator.userAgent || ""); }
+
+  function refreshInstallButton(){
+    $("installBtn").hidden = isStandalone();
+  }
+
   window.addEventListener("beforeinstallprompt", function(e){
-    e.preventDefault(); deferredPrompt=e; $("installBtn").hidden=false;
+    e.preventDefault();
+    deferredPrompt = e;
+    refreshInstallButton();
   });
+  window.addEventListener("appinstalled", function(){
+    deferredPrompt = null;
+    refreshInstallButton();
+  });
+
+  function showInstallHelp(){
+    var title, sub, steps;
+    if (isIOS()){
+      title = "Add to your iPhone";
+      sub = "Safari does not have an install button, so it takes three taps. Make sure you are in Safari, not Chrome.";
+      steps = [
+        "Tap the <b>Share</b> button — the square with an arrow pointing up, at the bottom of the screen.",
+        "Scroll down the list and tap <b>Add to Home Screen</b>.",
+        "Tap <b>Add</b> in the top right."
+      ];
+    } else if (isAndroid()){
+      title = "Add to your phone";
+      sub = "Chrome can install this like a normal app.";
+      steps = [
+        "Tap the <b>⋮</b> menu in the top right of Chrome.",
+        "Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see it.",
+        "Tap <b>Install</b>."
+      ];
+    } else {
+      title = "Install on this computer";
+      sub = "Chrome and Edge can install this as a desktop app.";
+      steps = [
+        "Look for the <b>install icon</b> at the right-hand end of the address bar — a screen with a downward arrow.",
+        "Click it, then click <b>Install</b>.",
+        "No icon there? Open the browser menu and look for <b>Install</b> or <b>Apps</b>."
+      ];
+    }
+    $("instTitle").textContent = title;
+    $("instSub").textContent = sub;
+    var ol = $("instSteps");
+    ol.innerHTML = "";
+    steps.forEach(function(html){
+      var li = document.createElement("li");
+      li.innerHTML = html;
+      ol.appendChild(li);
+    });
+    $("installDlg").showModal();
+  }
+
+  $("instClose").addEventListener("click", function(){ $("installDlg").close(); });
+
   $("installBtn").addEventListener("click", function(){
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(){ deferredPrompt=null; $("installBtn").hidden=true; });
+    if (deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function(){
+        deferredPrompt = null;
+        refreshInstallButton();
+      });
+      return;
+    }
+    showInstallHelp();     // iPhone, and any browser that offers no prompt
   });
+
+  refreshInstallButton();
+
   if ("serviceWorker" in navigator){
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("sw.js").catch(function(e){ console.warn("sw", e); });
