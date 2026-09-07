@@ -12,13 +12,13 @@ A clean booking calendar for the Empire Building Management field crew.
 
 ## What it does
 
-- **Week strip** — Monday to Saturday, each day showing how many hours are still open.
-- **Day board** — one column per crew member, one row per hour, 8:00 AM to 5:00 PM.
-- **Book an hour** — tap any open slot, fill in customer/building, phone, address and the job.
-- **Book a whole day** — tick "Book the whole day" in the booking form; it holds every open hour and leaves already-taken hours alone.
-- **Cancel** — tap a booked slot to see the details and cancel it.
+- **Crew list down the side** — click a name and that person's calendar comes up. The calendar takes on their trade's color.
+- **Month calendar** — a plain month grid, every day showing that person's booked hours.
+- **Book an hour** — click a day to see its hours, then Book. Fill in customer/building, phone, address and the job.
+- **Book a whole day** — one button on the day view; it holds every open hour and leaves already-taken hours alone.
+- **Cancel** — open the day and cancel any booked hour.
 - **Crew names** — the electrician's name (or anyone's) can be changed in the app under **Crew names**.
-- Hours in the past are locked automatically. Sundays are closed.
+- Hours in the past are locked automatically.
 
 ## The two ways to run it
 
@@ -41,5 +41,4 @@ Everything lives in `index.html`: no build step, no dependencies, no install. Op
 Common tweaks, all near the top of the `<script>` block:
 
 - `HOURS` — the bookable hours. `[8,9,10,11,12,13,14,15,16]` means 8:00 AM through the 4:00 PM slot, ending at 5:00 PM.
-- `DAYS_SHOWN` — `6` shows Monday to Saturday. Set it to `7` to include Sunday.
 - `DEFAULT_CREW` — add or remove a crew member. Give each one a unique `id`, a `name`, and a `trade` of `plumbing` or `electrical`.
