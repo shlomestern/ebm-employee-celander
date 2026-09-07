@@ -330,7 +330,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   </header>
 
   <!-- OFFICE / ADMIN -->
-  <div id="officeView" hidden>
+  <div id="calView" hidden>
     <div class="layout">
       <aside class="crew" id="crew"><div class="eyebrow">Crew</div></aside>
       <main>
@@ -343,18 +343,13 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         <div class="cal" id="cal"></div>
         <div class="legend">
           <span><span class="box"></span><span id="legendName"></span></span>
-          <span>Click a day to see it or add a job</span>
+          <span id="legendHint"></span>
         </div>
         <p class="footnote" id="footnote"></p>
       </main>
     </div>
   </div>
 
-  <!-- WORKER -->
-  <div id="workerView" hidden>
-    <div id="workerBody"></div>
-    <p class="footnote" id="footnote2"></p>
-  </div>
 </div>
 
 <dialog id="meDlg">
@@ -588,6 +583,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     return false;
   }
   function isOffice(){ return state.me === "office" || isAdmin(member(state.me)); }
+  /* The office picks whose calendar to look at; everyone else only ever sees
+     their own. One calendar, one day sheet, for all of them. */
+  function viewCrewId(){ return isOffice() ? state.who : state.me; }
   function crewPeople(){
     return state.people.filter(function(p){ return !isAdmin(p); });
   }
@@ -751,7 +749,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     // Nothing to say when it is simply working, so the bar stays clean.
     el.hidden = !warn;
     $("footnote").innerHTML = note;
-    $("footnote2").innerHTML = note;
   }
 
   function jobCard(j, opts){
@@ -900,11 +897,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     });
   }
   function renderCalendar(){
-    if (!state.who || !member(state.who)) state.who = firstCrewId();
-    var m=memberOr(state.who);
+    if (isOffice() && (!state.who || !member(state.who))) state.who = firstCrewId();
+    var m=memberOr(viewCrewId());
     applyAccent(m.trade);
+    $("legendHint").textContent = can("book")
+      ? "Click a day to see it or add a job"
+      : "Click a day to see what you have on";
     $("monthLabel").innerHTML = F_MONTH.format(state.month)+' <span class="yr">'+state.month.getFullYear()+'</span>';
-    $("legendName").textContent = m.name + "'s jobs";
+    $("legendName").textContent = isOffice() ? (m.name + "'s jobs") : "Your jobs";
 
     var cal=$("cal"); cal.innerHTML="";
     var start=gridStart(), i, k;
@@ -926,7 +926,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       cell.appendChild(num);
       if (!inMonth){ cell.disabled=true; cal.appendChild(cell); continue; }
 
-      var list=jobsOn(ds, state.who);
+      var list=jobsOn(ds, viewCrewId());
       if (list.length){
         var chips=document.createElement("span"); chips.className="chips";
         list.slice(0,MAX_CHIPS).forEach(function(j){
@@ -953,54 +953,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     }
   }
 
-  /* ---------- worker view ---------- */
-  function renderWorker(){
-    var m=memberOr(state.me);
-    applyAccent(m.trade);
-    $("appTitle").textContent = m.name + "'s schedule";
-    var host=$("workerBody"); host.innerHTML="";
-
-    var mine=allJobs().filter(function(j){ return j.crewId===state.me && j.date>=todayIso; })
-                      .sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
-    if (!mine.length){
-      var e=document.createElement("div"); e.className="empty";
-      // Don't claim the schedule is empty before the jobs have arrived.
-      e.textContent = state.mode==="loading"
-        ? "Checking your schedule…"
-        : "Nothing booked. The office will add jobs here and they show up straight away.";
-      host.appendChild(e); return;
-    }
-    var groups={}, order=[];
-    mine.forEach(function(j){
-      if(!groups[j.date]){ groups[j.date]=[]; order.push(j.date); }
-      groups[j.date].push(j);
-    });
-    order.forEach(function(ds){
-      var g=document.createElement("section"); g.className="daygroup";
-      var h=document.createElement("h3");
-      h.textContent = ds===todayIso ? "Today" : F_LONG.format(fromIso(ds));
-      var sp=document.createElement("span");
-      sp.textContent = groups[ds].length + (groups[ds].length===1?" job":" jobs");
-      h.appendChild(sp); g.appendChild(h);
-      var jobs=document.createElement("div"); jobs.className="jobs";
-      groups[ds].forEach(function(j){ jobs.appendChild(jobCard(j,{clock:true})); });
-      g.appendChild(jobs); host.appendChild(g);
-    });
-  }
-
   function render(){
     renderStatus();
     if (!state.me) return;
     var nm = meName();
     $("meInitial").textContent = (nm || "?").trim().charAt(0).toUpperCase();
-    $("officeView").hidden = !isOffice();
-    $("workerView").hidden = isOffice();
-    if (isOffice()){
-      $("appTitle").textContent = "Crew Calendar";
-      renderCrew(); renderCalendar();
-    } else {
-      renderWorker();
-    }
+    $("calView").hidden = false;
+    $("crew").hidden = !isOffice();          // crew see only their own calendar
+    $("appTitle").textContent = isOffice() ? "Crew Calendar" : "My Schedule";
+    if (isOffice()) renderCrew();
+    renderCalendar();
   }
 
   /* ---------- day dialog ---------- */
@@ -1010,27 +972,34 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     showDayPane();
     $("dayDlg").showModal();
   }
+  function list0Text(ds){
+    var n = jobsOn(ds, viewCrewId()).length;
+    if (!n) return "Nothing booked for you this day.";
+    return n === 1 ? "One job." : n + " jobs.";
+  }
   function showDayPane(){
     $("paneForm").hidden=true; $("paneDay").hidden=false;
-    var m=memberOr(state.who), ds=openDate;
+    var m=memberOr(viewCrewId()), ds=openDate;
     $("dayWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
     $("dayWhen").textContent = F_LONG.format(fromIso(ds));
     $("dayErr").textContent="";
-    var free=freeHours(ds, state.who);
+    var free=freeHours(ds, viewCrewId());
     var weekendNote = isWeekend(ds) ? "Normally a day off. " : "";
-    $("daySub").textContent = weekendNote + (dayIsPast(ds) ? "This day has passed."
+    if (!can("book")){
+      $("daySub").textContent = list0Text(ds);
+    } else $("daySub").textContent = weekendNote + (dayIsPast(ds) ? "This day has passed."
       : (free===0 ? "Fully booked." : free+(free===1?" hour":" hours")+" still free, 8:00 AM to 5:00 PM."));
     $("addJobBtn").hidden = !can("book");
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
 
     var host=$("dayJobs"); host.innerHTML="";
-    var list=jobsOn(ds, state.who);
+    var list=jobsOn(ds, viewCrewId());
     if (!list.length){
       var e=document.createElement("div"); e.className="empty";
       e.textContent = state.mode==="loading" ? "Checking this day…" : "Nothing booked this day.";
       host.appendChild(e);
     } else {
-      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:ownsJob(j), after:showDayPane})); });
+      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:ownsJob(j), clock:!isOffice(), after:showDayPane})); });
     }
   }
   $("dayClose").addEventListener("click", function(){ $("dayDlg").close(); });
@@ -1038,7 +1007,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   $("formBack").addEventListener("click", showDayPane);
 
   function showFormPane(){
-    var m=memberOr(state.who), ds=openDate;
+    var m=memberOr(viewCrewId()), ds=openDate;
     $("paneDay").hidden=true; $("paneForm").hidden=false;
     $("formWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
     $("formWhen").textContent = F_LONG.format(fromIso(ds));
@@ -1047,7 +1016,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     fillProjects(); fillBuildings(""); fillHours();
     // start at the first free hour
     var startAt=DAY_START;
-    while (startAt<DAY_END && overlaps(ds,state.who,startAt,startAt+1)) startAt++;
+    while (startAt<DAY_END && overlaps(ds,viewCrewId(),startAt,startAt+1)) startAt++;
     $("fFrom").value=String(Math.min(startAt,DAY_END-1));
     $("fTo").value=String(Math.min(startAt+1,DAY_END));
     $("timeRow").hidden=false;
@@ -1068,7 +1037,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   $("paneForm").addEventListener("submit", function(ev){
     ev.preventDefault();
-    var ds=openDate, crewId=state.who;
+    var ds=openDate, crewId=viewCrewId();
     var pid=$("fProject").value;
     var p=project(pid);
     if (!p){ $("formErr").textContent="Pick a project first."; return; }
@@ -1109,16 +1078,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     return isAdmin(p) ? "Office" : (TRADE[p.trade] || p.trade);
   }
   function notifState(){
-    if (isOffice()) return {text:"Notifications go to the crew's phones, not the office."};
+    if (isOffice() && !vapidKey())
+      return {text:"Not switched on yet — the setup still has to be finished."};
     if (!vapidKey()) return {text:"Not switched on yet. The office still has to finish setting these up."};
     if (!("Notification" in window)) return {text:"This phone cannot show notifications."};
     if (Notification.permission === "denied")
       return {text:"Blocked. Allow notifications for this app in your phone's settings, then reopen it."};
     if (Notification.permission === "granted" && state.pushOn)
-      return {text:"On. You'll get a buzz when a job is booked for you."};
+      return {text: isOffice()
+        ? "On. You'll hear when the crew clock in, clock out and finish a job."
+        : "On. You'll get a buzz when a job is booked for you."};
     if (Notification.permission === "granted")
       return {text:"Allowed, but this phone has not registered yet. Reopen the app if it stays like this."};
-    return {text:"Off. Turn them on to hear about a new job without opening the app.", button:true};
+    return {text: isOffice()
+      ? "Off. Turn them on to hear when the crew clock in and out."
+      : "Off. Turn them on to hear about a new job without opening the app.", button:true};
   }
   function openMe(){
     var nm = meName();
@@ -1155,11 +1129,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   /* ---------- live data ---------- */
   function windowRange(){
-    if (isOffice()){
-      var s=gridStart();
-      return [iso(addDays(s,-1)), iso(addDays(s, gridWeeks()*7+1))];
-    }
-    return [iso(addDays(today,-1)), iso(addDays(today,60))];
+    var g = gridStart();
+    return [iso(addDays(g,-1)), iso(addDays(g, gridWeeks()*7+1))];
   }
   function applySnapshot(snap){
     var fresh={};
@@ -1503,7 +1474,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     return String((window.EBM_CONFIG && window.EBM_CONFIG.vapidKey) || "").trim();
   }
   function notificationsPossible(){
-    return !!vapidKey() && state.mode === "cloud" && !isOffice()
+    return !!vapidKey() && state.mode === "cloud"
            && "Notification" in window && "serviceWorker" in navigator;
   }
   function rememberToken(token){

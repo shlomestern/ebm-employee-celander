@@ -1,6 +1,9 @@
 # Turning on phone notifications
 
-When the office books a job, that crew member's phone buzzes — even with the app closed.
+Notifications run both ways, and all of it works with the app closed:
+
+- **A crew member** is told when a job is booked for them.
+- **The office** is told when a crew member clocks in, and again when they clock out and the job is finished.
 
 Two steps. The first is three clicks. The second is a one-off deploy, done entirely in your browser.
 
@@ -57,7 +60,7 @@ You only ever do this once, unless the notification text itself changes.
 ## Checking it works
 
 1. Open the calendar on a crew member's phone and sign in with **their** code.
-2. The phone asks to allow notifications — **Allow**. This only happens for crew, never for the office.
+2. Tap the round avatar top right → **Turn on notifications** → **Allow**. Do this on every phone that should get them, the office phone included.
 3. On your computer, sign in as the office and book them a job.
 4. Their phone should buzz within a few seconds.
 

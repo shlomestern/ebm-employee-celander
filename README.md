@@ -27,9 +27,10 @@ Everyone sees their own name at the top of the app, the office included — set 
 
 Two people can't share a code, and nobody can be saved without one. The roster lives in the database so a change reaches every phone; each device also caches it so codes still work with no signal.
 
-**Office view** — the crew down the side, a month calendar for whoever is selected, and a day sheet for adding jobs. Days show the **project number** and unit.
+**One calendar, for everyone.** A month grid where each day shows the project number and unit. Click a day to see what's on it.
 
-**Worker view** — each person sees only their own upcoming jobs, and can clock in, clock out, and leave notes.
+- The **office** gets the crew down the side and can switch between them, add jobs, and cancel their own.
+- **Crew** get the same calendar showing only their own work. No crew column, no adding, no cancelling — they open a day, read the job, clock in, clock out, and leave notes.
 
 A job is booked against a real property: pick the **project** (23 companies), then the **building** (the list narrows to that project's addresses), then the **unit**. Choose **all day** or a **from–to** time inside 8:00 AM – 5:00 PM. Double-booking a crew member is refused.
 
@@ -43,7 +44,7 @@ If the app can't reach the network it says **No connection** and shows the last 
 
 When a job is booked, that crew member's phone can buzz even with the app closed. It is off until a `vapidKey` is set in `config.js` and the Cloud Function in `functions/` is deployed — **[NOTIFICATIONS.md](NOTIFICATIONS.md)** walks through both, and the deploy is done from a browser with nothing to install.
 
-The office is never asked for notification permission; only crew are. On iPhone the app has to be added to the Home Screen first, which is Apple's rule, not ours.
+Turn them on per phone from the avatar in the top right. On iPhone the app has to be added to the Home Screen first, which is Apple's rule, not ours.
 
 ## The property list
 
