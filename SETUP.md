@@ -79,7 +79,7 @@ Leave that page open — you need those in a minute.
 
 ## Part 2 — Put the settings in the calendar
 
-1. Go to your repo: **https://github.com/shlomestern/ebm-employee-Celander-**
+1. Go to your repo: **https://github.com/shlomestern/ebm-employee-celander**
 2. Open the file **`config.js`**.
 3. Click the **pencil icon** to edit it.
 4. Paste each of the six values between the quote marks. Keep the quotes.
@@ -98,7 +98,7 @@ That's the only file you ever have to touch.
 4. Pick the branch, leave the folder as **/ (root)**, click **Save**.
 5. Wait about a minute, then refresh the page. GitHub shows you the address, something like:
 
-   `https://shlomestern.github.io/ebm-employee-Celander-/`
+   `https://shlomestern.github.io/ebm-employee-celander/`
 
 That's the link you send to Rodrigo, Zion and the electrician. Tell them to add it to their home screen — on an iPhone, Share → Add to Home Screen — and it opens like an app.
 
