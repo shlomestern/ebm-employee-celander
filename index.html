@@ -72,6 +72,7 @@ button{font:inherit; color:inherit; cursor:pointer}
   display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-2);
   padding:5px 11px 5px 9px; border:1px solid var(--line); border-radius:999px; background:var(--surface);
 }
+.signedin{font-size:12.5px; color:var(--ink-2); font-weight:500}
 .status .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-3); flex:none}
 .status.live .dot{background:var(--open)}
 .status.local .dot{background:var(--elec)}
@@ -222,6 +223,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 .prow .rm{width:34px; height:34px; padding:0; display:grid; place-items:center; border-radius:7px;
   border:1px solid var(--line-2); background:var(--surface); color:var(--ink-3); font-size:16px}
 .prow .rm:hover{background:var(--danger); border-color:var(--danger); color:#fff}
+.pperm{display:flex; gap:16px; flex-wrap:wrap; margin:-3px 0 11px 2px;
+  padding:8px 10px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px}
+.pperm label{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2)}
+.pperm input{accent-color:var(--sel); width:15px; height:15px; margin:0}
 .phead{display:grid; grid-template-columns:minmax(0,1fr) 118px 118px 34px; gap:7px; margin-bottom:5px}
 .phead span{font-family:"Archivo",sans-serif; font-size:10px; font-weight:600; letter-spacing:.11em;
   text-transform:uppercase; color:var(--ink-3)}
@@ -311,6 +316,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="topbar-right">
       <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
       <button class="btn" id="installBtn">Install app</button>
+      <span class="signedin" id="signedIn"></span>
       <button class="btn" id="crewBtn" hidden>Crew &amp; codes</button>
       <button class="btn btn-quiet" id="whoBtn">Sign out</button>
     </div>
@@ -348,10 +354,15 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   <form method="dialog" class="dlg" id="crewForm">
     <div class="eyebrow">Office only</div>
     <h3>Crew &amp; codes</h3>
-    <p class="sub">Give each person their own code and tell them what it is. They sign in with it, see their own name, and see only their own jobs.</p>
+    <p class="sub">Give each person their own code and tell them what it is. A plumber or electrician signs in and sees only their own jobs. Set someone to <b>Admin (office)</b> and they get the calendar too — then tick exactly what they may do.</p>
     <div id="crewRows"></div>
     <button type="button" class="btn" id="addPerson">Add someone</button>
     <div class="field" style="margin-top:16px">
+      <label for="fOfficeName">Your name</label>
+      <input id="fOfficeName" maxlength="30" autocomplete="off" placeholder="Office">
+      <span class="hint">Shown at the top of the app when you are signed in with the office code.</span>
+    </div>
+    <div class="field">
       <label for="fOfficeCode">Office code</label>
       <input id="fOfficeCode" maxlength="40" autocomplete="off">
       <span class="hint">Opens the whole calendar. Keep this one to yourself.</span>
@@ -455,7 +466,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     {id:"electrician", name:"Electrician", trade:"electrical", code:"el2947"}
   ];
   var DAY_START = 8, DAY_END = 17;          // 8:00 AM to 5:00 PM
-  var TRADE = {plumbing:"Plumbing", electrical:"Electrical"};
+  var TRADE = {plumbing:"Plumbing", electrical:"Electrical", admin:"Admin"};
   var MAX_CHIPS = 3;
   var LS_PASS = "ebm-crew:pass:v2";
   var LS_JOBS = "ebm-crew:jobs:v2";
@@ -502,7 +513,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     mode: "loading",          // shared | cloud | device
     db: null, fb: null, unsubs: [], seen: {},
     people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
-    officeCode: "",
+    officeCode: "", officeName: "Office",
     rosterReady: false, rosterUnsub: null, opened: false
   };
 
@@ -515,9 +526,40 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function memberOr(id){
     return member(id) || {id:id, name:"(removed)", trade:"plumbing"};
   }
-  function isOffice(){ return state.me === "office"; }
-  function meName(){ return isOffice() ? "Office" : memberOr(state.me).name; }
-  function firstCrewId(){ return state.people.length ? state.people[0].id : null; }
+  /* "office" is the master code from config.js. A person on the roster whose
+     trade is "admin" gets exactly the same view. */
+  function isAdmin(p){ return !!p && p.trade === "admin"; }
+  /* What a signed-in person is allowed to do. The master code from config.js
+     always has everything; an Office person has whatever was ticked for them.
+     These are UI limits, not server-enforced ones — see the README. */
+  /* Only the person who booked a job may cancel it. The master office code
+     from config.js can cancel anything — someone has to be able to. Jobs made
+     before this rule existed carry no owner, so they stay cancellable. */
+  function ownsJob(j){
+    if (!can("book")) return false;
+    if (state.me === "office") return true;
+    if (!j.createdById) return true;
+    return j.createdById === state.me;
+  }
+  function can(what){
+    if (state.me === "office") return true;          // the master office code
+    var p = member(state.me);
+    if (!isAdmin(p)) return false;                   // crew never book or manage
+    var c = p.can || {};
+    if (what === "book")   return c.book !== false;  // on unless turned off
+    if (what === "manage") return c.manage === true; // off unless turned on
+    return false;
+  }
+  function isOffice(){ return state.me === "office" || isAdmin(member(state.me)); }
+  function crewPeople(){
+    return state.people.filter(function(p){ return !isAdmin(p); });
+  }
+  function meName(){
+    var p = member(state.me);
+    if (p) return p.name;
+    return state.me === "office" ? (state.officeName || "Office") : "?";
+  }
+  function firstCrewId(){ var c = crewPeople(); return c.length ? c[0].id : null; }
   var $ = function(id){ return document.getElementById(id); };
 
   /* ---------- storage ---------- */
@@ -700,6 +742,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     sub.textContent = j.projectId + " — " + j.projectName + (opts.showCrew ? " · " + m.name : "");
     card.appendChild(sub);
 
+    if (j.createdBy){
+      var by = document.createElement("div"); by.className="job-sub";
+      by.textContent = "Booked by " + j.createdBy;
+      card.appendChild(by);
+    }
+
     if (j.job){
       var d=document.createElement("div"); d.className="job-desc"; d.textContent=j.job; card.appendChild(d);
     }
@@ -795,8 +843,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function renderCrew(){
     var host=$("crew");
     host.innerHTML='<div class="eyebrow">Crew</div>';
-    if (!member(state.who)) state.who = firstCrewId();
-    state.people.forEach(function(m){
+    var crew = crewPeople();
+    if (!member(state.who) || isAdmin(member(state.who))) state.who = firstCrewId();
+    if (!crew.length){
+      var none=document.createElement("div"); none.className="empty";
+      none.textContent="No crew yet. Add someone under Crew & codes.";
+      host.appendChild(none);
+    }
+    crew.forEach(function(m){
       var b=document.createElement("button");
       b.type="button"; b.className="person p-"+m.trade;
       b.setAttribute("aria-pressed", m.id===state.who ? "true":"false");
@@ -812,6 +866,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     });
   }
   function renderCalendar(){
+    if (!state.who || !member(state.who)) state.who = firstCrewId();
     var m=memberOr(state.who);
     applyAccent(m.trade);
     $("monthLabel").innerHTML = F_MONTH.format(state.month)+' <span class="yr">'+state.month.getFullYear()+'</span>';
@@ -902,6 +957,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function render(){
     renderStatus();
     if (!state.me) return;
+    $("signedIn").textContent = meName();
+    $("crewBtn").hidden = !can("manage");
     $("officeView").hidden = !isOffice();
     $("workerView").hidden = isOffice();
     if (isOffice()){
@@ -929,6 +986,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var weekendNote = isWeekend(ds) ? "Normally a day off. " : "";
     $("daySub").textContent = weekendNote + (dayIsPast(ds) ? "This day has passed."
       : (free===0 ? "Fully booked." : free+(free===1?" hour":" hours")+" still free, 8:00 AM to 5:00 PM."));
+    $("addJobBtn").hidden = !can("book");
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
 
     var host=$("dayJobs"); host.innerHTML="";
@@ -938,7 +996,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       e.textContent = state.mode==="loading" ? "Checking this day…" : "Nothing booked this day.";
       host.appendChild(e);
     } else {
-      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:true, after:showDayPane})); });
+      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:ownsJob(j), after:showDayPane})); });
     }
   }
   $("dayClose").addEventListener("click", function(){ $("dayDlg").close(); });
@@ -1001,7 +1059,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       unit:$("fUnit").value.trim(),
       job:$("fJob").value.trim(),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
-      createdAt:new Date().toISOString(), createdBy:meName(),
+      createdAt:new Date().toISOString(), createdBy:meName(), createdById:state.me,
       clockIn:null, clockOut:null, notes:[]
     };
     $("formSave").disabled=true;
@@ -1140,17 +1198,20 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function cacheRoster(){
     // Kept so a phone with no signal can still recognise a code the office
     // changed after this device last connected.
-    lsWrite(LS_ROSTER, {people: state.people, officeCode: state.officeCode});
+    lsWrite(LS_ROSTER, {people: state.people, officeCode: state.officeCode, officeName: state.officeName});
   }
   function applyRoster(d){
     if (d && Array.isArray(d.people)){
       var clean = d.people.filter(function(p){ return p && p.id && p.name; }).map(function(p){
-        return {id:String(p.id), name:String(p.name), trade:(p.trade==="electrical"?"electrical":"plumbing"),
-                code:String(p.code||"")};
+        var trade = (p.trade==="electrical" || p.trade==="admin") ? p.trade : "plumbing";
+        var out = {id:String(p.id), name:String(p.name), trade:trade, code:String(p.code||"")};
+        if (p.can) out.can = {book: p.can.book !== false, manage: p.can.manage === true};
+        return out;
       });
       if (clean.length) state.people = clean;
     }
     if (d && d.officeCode) state.officeCode = String(d.officeCode).trim();
+    if (d && d.officeName) state.officeName = String(d.officeName).trim();
     cacheRoster();
   }
   function subscribeRoster(){
@@ -1161,7 +1222,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         applyRoster(snap.data());
       } else {
         // First run on a fresh database: write the starting roster.
-        ref.set({people: DEFAULT_PEOPLE, officeCode: masterOfficeCode()}).catch(function(){});
+        ref.set({people: DEFAULT_PEOPLE, officeCode: masterOfficeCode(), officeName: state.officeName}).catch(function(){});
       }
       rosterSettled();
       render();
@@ -1173,12 +1234,13 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("gateSubmit").textContent = "Open";
     if (!state.opened) tryAutoOpen();
   }
-  function saveRoster(people, officeCode){
+  function saveRoster(people, officeCode, officeName){
     state.people = people;
     state.officeCode = officeCode;
+    state.officeName = officeName || "Office";
     cacheRoster();
     var ref = rosterRef();
-    if (ref) return ref.set({people: people, officeCode: officeCode});
+    if (ref) return ref.set({people: people, officeCode: officeCode, officeName: state.officeName});
     render();
     return Promise.resolve();
   }
@@ -1192,7 +1254,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     nm.value = person ? person.name : "";
     var tr = document.createElement("select");
     tr.className = "tr";
-    [["plumbing","Plumbing"],["electrical","Electrical"]].forEach(function(o){
+    [["plumbing","Plumbing"],["electrical","Electrical"],["admin","Admin (office)"]].forEach(function(o){
       var op=document.createElement("option"); op.value=o[0]; op.textContent=o[1]; tr.appendChild(op);
     });
     tr.value = person ? person.trade : "plumbing";
@@ -1201,16 +1263,37 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     cd.value = person ? (person.code||"") : "";
     var rm = document.createElement("button");
     rm.type="button"; rm.className="rm"; rm.title="Remove"; rm.textContent="\u00d7";
-    rm.addEventListener("click", function(){ row.remove(); });
     row.dataset.id = person ? person.id : ("p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
     row.appendChild(nm); row.appendChild(tr); row.appendChild(cd); row.appendChild(rm);
     $("crewRows").appendChild(row);
+
+    // What an office person is allowed to do. Hidden for a trade.
+    var perm = document.createElement("div");
+    perm.className = "pperm";
+    var c = (person && person.can) || {};
+    function box(key, label, on){
+      var w=document.createElement("label");
+      var i=document.createElement("input"); i.type="checkbox"; i.className=key; i.checked=on;
+      w.appendChild(i); w.appendChild(document.createTextNode(" "+label));
+      perm.appendChild(w); return i;
+    }
+    box("pbook",   "Can book and cancel jobs", c.book !== false);
+    box("pmanage", "Can add people and change codes", c.manage === true);
+    $("crewRows").appendChild(perm);
+    row.perm = perm;
+
+    function syncPerm(){ perm.hidden = tr.value !== "admin"; }
+    tr.addEventListener("change", syncPerm);
+    syncPerm();
+
+    rm.addEventListener("click", function(){ perm.remove(); row.remove(); });
     return row;
   }
   function openCrewEditor(){
     var host = $("crewRows");
-    host.innerHTML = '<div class="phead"><span>Name</span><span>Trade</span><span>Code</span><span></span></div>';
+    host.innerHTML = '<div class="phead"><span>Name</span><span>Role</span><span>Code</span><span></span></div>';
     state.people.forEach(addRosterRow);
+    $("fOfficeName").value = state.officeName || "Office";
     $("fOfficeCode").value = state.officeCode || masterOfficeCode();
     $("crewErr").textContent = "";
     $("crewSave").disabled = false;
@@ -1236,13 +1319,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       if (!code){ err = name + " needs a code, or nobody can sign in as them."; break; }
       if (codes[code]){ err = "Two people cannot share a code — " + code + " is already used by " + codes[code] + "."; break; }
       codes[code] = name;
-      people.push({id:r.dataset.id, name:name, trade:r.querySelector(".tr").value, code:code});
+      var role = r.querySelector(".tr").value;
+      var entry = {id:r.dataset.id, name:name, trade:role, code:code};
+      if (role === "admin" && r.perm){
+        entry.can = {
+          book:   r.perm.querySelector(".pbook").checked,
+          manage: r.perm.querySelector(".pmanage").checked
+        };
+      }
+      people.push(entry);
     }
     if (err){ $("crewErr").textContent = err; return; }
     if (!people.length){ $("crewErr").textContent = "Keep at least one person on the crew."; return; }
 
     $("crewSave").disabled = true;
-    saveRoster(people, office).then(function(){
+    saveRoster(people, office, $("fOfficeName").value.trim() || "Office").then(function(){
       $("crewDlg").close();
       render();
     }).catch(function(e){
@@ -1257,6 +1348,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (c && Array.isArray(c.people) && c.people.length){
       state.people = c.people.filter(function(p){ return p && p.id && p.name; });
       if (c.officeCode) state.officeCode = String(c.officeCode);
+      if (c.officeName) state.officeName = String(c.officeName);
     }
   })();
 
@@ -1289,7 +1381,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     state.me = id;
     $("gate").hidden = true;
     $("app").hidden = false;
-    $("crewBtn").hidden = !isOffice();
+    $("crewBtn").hidden = !can("manage");
     if (!state.started){ state.started = true; start(); } else { resubscribe(); render(); }
     setupPush();
   }

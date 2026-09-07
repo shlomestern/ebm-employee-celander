@@ -14,7 +14,18 @@ A clean booking calendar for the Empire Building Management field crew.
 
 **Everyone has their own code.** The code is the login: it decides who you are and what you can open. The office code opens the full calendar; a crew code opens only that person's own schedule and cannot reach the office view.
 
-**The office manages the crew from inside the app** — the **Crew & codes** button, visible only to the office. Add someone, rename them, set their trade, give them a code. They sign in with it and see their own name at the top. Two people can't share a code, and everyone needs one. The roster is stored in the database, so a change reaches every phone; each device also keeps a copy so codes still work with no signal.
+**The office manages everyone from inside the app** — the **Crew & codes** button. Add someone, name them, give them a code, and pick what they are:
+
+| Role | What they get |
+| --- | --- |
+| Plumbing / Electrical | Their own jobs only. Clock in, clock out, notes. No calendar. |
+| Admin (office) | The whole calendar — plus two tickboxes for what they may do: **book and cancel jobs**, and **add people and change codes**. |
+
+**A booking belongs to whoever made it.** Only that person can cancel it, and every job card says who booked it. The office code from `config.js` is the exception — it can cancel anything, because somebody has to be able to.
+
+Everyone sees their own name at the top of the app, the office included — set yours under **Your name** in the same editor.
+
+Two people can't share a code, and nobody can be saved without one. The roster lives in the database so a change reaches every phone; each device also caches it so codes still work with no signal.
 
 **Office view** — the crew down the side, a month calendar for whoever is selected, and a day sheet for adding jobs. Days show the **project number** and unit.
 
@@ -50,7 +61,9 @@ Once that's done the top right of the page says *"Shared — everyone with the l
 
 Each person types their code once and their phone remembers it; **Sign out** clears it.
 
-Be clear-eyed about what these codes are: they live in the page's JavaScript, so anyone who knows how to view a page's source can read all of them. They stop crew members casually opening each other's or the office's view. They are **not** account security. For that you want real logins — Firebase Authentication with a Firestore rule per person — which is a bigger job and gives every worker a username and password to manage.
+Be clear-eyed about what these codes are: they live in the page's JavaScript, so anyone who knows how to view a page's source can read all of them. They stop crew members casually opening each other's or the office's view. They are **not** account security. The same goes for the permission tickboxes and for who owns a booking: they decide what the app offers you, and the database itself does not enforce them. Someone who knows how to talk to Firestore directly could go around all of it.
+
+For real enforcement you want proper logins — Firebase Authentication with a Firestore rule per person — which is a bigger job and gives every worker a username and password to manage.
 
 ## Where the bookings live
 
