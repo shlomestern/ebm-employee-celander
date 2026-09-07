@@ -1,8 +1,9 @@
+<meta charset="utf-8">
 <title>EBM Crew Calendar</title>
 <meta name="theme-color" content="#0C5A66">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Crew">
+<meta name="apple-mobile-web-app-title" content="EBM Crew">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,7 +73,15 @@ button{font:inherit; color:inherit; cursor:pointer}
   display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-2);
   padding:5px 11px 5px 9px; border:1px solid var(--line); border-radius:999px; background:var(--surface);
 }
-.signedin{font-size:12.5px; color:var(--ink-2); font-weight:500}
+.me{width:38px; height:38px; flex:none; border-radius:50%; display:grid; place-items:center;
+  border:none; background:var(--sel); color:#fff;
+  font-family:"Archivo",sans-serif; font-weight:700; font-size:15px; letter-spacing:0}
+.me:hover{filter:brightness(1.1)}
+.me-lg{width:52px; height:52px; font-size:21px; cursor:default}
+.mehead{display:flex; gap:13px; align-items:center; margin-bottom:6px}
+.mehead h3{margin:0}
+.mesec{border-top:1px solid var(--line); padding-top:12px; margin-top:14px}
+.mesec .btn{margin-top:9px}
 .status .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-3); flex:none}
 .status.live .dot{background:var(--open)}
 .status.local .dot{background:var(--elec)}
@@ -314,11 +323,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       <h1 id="appTitle">Crew Calendar</h1>
     </div>
     <div class="topbar-right">
-      <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading&hellip;</span></span>
+      <span class="status" id="status" hidden><span class="dot"></span><span id="statusText"></span></span>
       <button class="btn" id="installBtn">Install app</button>
-      <span class="signedin" id="signedIn"></span>
-      <button class="btn" id="crewBtn" hidden>Crew &amp; codes</button>
-      <button class="btn btn-quiet" id="whoBtn">Sign out</button>
+      <button class="me" id="meBtn" aria-label="Your account"><span id="meInitial">?</span></button>
     </div>
   </header>
 
@@ -349,6 +356,36 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <p class="footnote" id="footnote2"></p>
   </div>
 </div>
+
+<dialog id="meDlg">
+  <div class="dlg">
+    <div class="mehead">
+      <span class="me me-lg" id="meBigInitial">?</span>
+      <div>
+        <h3 id="meName">&nbsp;</h3>
+        <div class="job-sub" id="meRole"></div>
+      </div>
+    </div>
+
+    <div class="mesec">
+      <div class="eyebrow">Notifications</div>
+      <p class="sub" id="meNotifText" style="margin:6px 0 0"></p>
+      <button type="button" class="btn" id="meNotifBtn" hidden>Turn on notifications</button>
+    </div>
+
+    <div class="mesec" id="meConnSec">
+      <div class="eyebrow">Connection</div>
+      <p class="sub" id="meConnText" style="margin:6px 0 0"></p>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn" id="meCrewBtn" hidden>Crew &amp; codes</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-danger" id="meSignOut">Sign out</button>
+      <button type="button" class="btn" id="meClose">Close</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="crewDlg">
   <form method="dialog" class="dlg" id="crewForm">
@@ -698,24 +735,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   /* ---------- rendering: shared bits ---------- */
   function renderStatus(){
-    var el=$("status"), txt=$("statusText");
+    var el=$("status"), txt=$("statusText"), note="", warn=false;
     el.classList.remove("live","local");
-    var note = "";
     if (state.mode==="cloud" || state.mode==="shared"){
-      el.classList.add("live");
-      txt.textContent = "Shared — everyone with the link";
       note = "Jobs save straight away and every open calendar updates within seconds.";
     } else if (state.mode==="offline"){
-      el.classList.add("local");
+      warn = true; el.classList.add("local");
       txt.textContent = "No connection";
       note = "<strong>Can't reach the calendar right now.</strong> You are seeing what was last saved on this device. Anything you change here will not reach anyone else — check your signal and reload.";
     } else if (state.mode==="device"){
-      el.classList.add("local");
+      warn = true; el.classList.add("local");
       txt.textContent = "Saved on this device only";
       note = "<strong>Heads up:</strong> this copy keeps jobs in this browser only — nobody else sees them.";
-    } else {
-      txt.textContent = "Loading…";
     }
+    // Nothing to say when it is simply working, so the bar stays clean.
+    el.hidden = !warn;
     $("footnote").innerHTML = note;
     $("footnote2").innerHTML = note;
   }
@@ -957,8 +991,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function render(){
     renderStatus();
     if (!state.me) return;
-    $("signedIn").textContent = meName();
-    $("crewBtn").hidden = !can("manage");
+    var nm = meName();
+    $("meInitial").textContent = (nm || "?").trim().charAt(0).toUpperCase();
     $("officeView").hidden = !isOffice();
     $("workerView").hidden = isOffice();
     if (isOffice()){
@@ -1067,8 +1101,54 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,"The job did not save."); });
   });
 
-  /* ---------- who am I ---------- */
-  $("whoBtn").addEventListener("click", function(){
+  /* ---------- the account sheet behind the avatar ---------- */
+  function roleLabel(){
+    if (state.me === "office") return "Office";
+    var p = member(state.me);
+    if (!p) return "";
+    return isAdmin(p) ? "Office" : (TRADE[p.trade] || p.trade);
+  }
+  function notifState(){
+    if (isOffice()) return {text:"Notifications go to the crew's phones, not the office."};
+    if (!vapidKey()) return {text:"Not switched on yet. The office still has to finish setting these up."};
+    if (!("Notification" in window)) return {text:"This phone cannot show notifications."};
+    if (Notification.permission === "denied")
+      return {text:"Blocked. Allow notifications for this app in your phone's settings, then reopen it."};
+    if (Notification.permission === "granted" && state.pushOn)
+      return {text:"On. You'll get a buzz when a job is booked for you."};
+    if (Notification.permission === "granted")
+      return {text:"Allowed, but this phone has not registered yet. Reopen the app if it stays like this."};
+    return {text:"Off. Turn them on to hear about a new job without opening the app.", button:true};
+  }
+  function openMe(){
+    var nm = meName();
+    $("meBigInitial").textContent = (nm || "?").trim().charAt(0).toUpperCase();
+    $("meName").textContent = nm;
+    var role = roleLabel();
+    $("meRole").textContent = (role && role.toLowerCase() !== nm.toLowerCase()) ? role : "";
+
+    var n = notifState();
+    $("meNotifText").textContent = n.text;
+    $("meNotifBtn").hidden = !n.button;
+
+    var conn = state.mode==="offline" ? "No connection — showing what was last saved on this phone."
+             : state.mode==="device"  ? "Saved on this device only — nobody else sees these jobs."
+             : "Connected. Everyone sees the same calendar.";
+    $("meConnText").textContent = conn;
+
+    $("meCrewBtn").hidden = !can("manage");
+    $("meDlg").showModal();
+  }
+  $("meBtn").addEventListener("click", openMe);
+  $("meClose").addEventListener("click", function(){ $("meDlg").close(); });
+  $("meCrewBtn").addEventListener("click", function(){ $("meDlg").close(); openCrewEditor(); });
+  $("meNotifBtn").addEventListener("click", function(){
+    $("meNotifBtn").disabled = true;
+    state.pushDone = false;
+    setupPush();
+    setTimeout(function(){ $("meNotifBtn").disabled = false; openMe(); }, 1800);
+  });
+  $("meSignOut").addEventListener("click", function(){
     try{ localStorage.removeItem(LS_PASS); }catch(e){}
     location.reload();
   });
@@ -1299,7 +1379,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("crewSave").disabled = false;
     $("crewDlg").showModal();
   }
-  $("crewBtn").addEventListener("click", openCrewEditor);
   $("addPerson").addEventListener("click", function(){ addRosterRow(null).querySelector(".nm").focus(); });
   $("crewCancel").addEventListener("click", function(){ $("crewDlg").close(); });
 
@@ -1381,7 +1460,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     state.me = id;
     $("gate").hidden = true;
     $("app").hidden = false;
-    $("crewBtn").hidden = !can("manage");
     if (!state.started){ state.started = true; start(); } else { resubscribe(); render(); }
     setupPush();
   }
@@ -1450,6 +1528,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       });
     }).then(function(token){
       if (!token) return;
+      state.pushOn = true;
       return rememberToken(token).then(function(){
         // Foreground messages: the app is open, so show it ourselves.
         firebase.messaging().onMessage(function(payload){
