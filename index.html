@@ -1,0 +1,830 @@
+<title>EBM Crew Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ink:#131A20; --ink-2:#4B5964; --ink-3:#7A8892;
+  --ground:#E9EEF1; --surface:#FFFFFF; --surface-2:#F3F7F9; --surface-3:#E3EAEE;
+  --line:#D2DBE1; --line-2:#B6C3CB;
+  --accent:#0C5A66; --accent-ink:#FFFFFF; --accent-soft:#DCEDEF;
+  --plumb:#1B6B9E; --plumb-soft:#E2EFF8; --plumb-edge:#9DC6E3;
+  --elec:#A96406; --elec-soft:#FAEEDA; --elec-edge:#E0BC80;
+  --open:#2C7A58;
+  --danger:#A93226;
+  --shadow:0 1px 2px rgba(19,26,32,.06), 0 8px 24px -12px rgba(19,26,32,.22);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E7EDF2; --ink-2:#A5B3BE; --ink-3:#7E8D98;
+    --ground:#0D1418; --surface:#161F25; --surface-2:#1C262D; --surface-3:#243039;
+    --line:#2A363E; --line-2:#3B4A54;
+    --accent:#43B3C0; --accent-ink:#06181B; --accent-soft:#153236;
+    --plumb:#6DB6E9; --plumb-soft:#152B3C; --plumb-edge:#2C4E6B;
+    --elec:#E2A445; --elec-soft:#2F2410; --elec-edge:#5C4823;
+    --open:#5EBE8E;
+    --danger:#E4796B;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E7EDF2; --ink-2:#A5B3BE; --ink-3:#7E8D98;
+  --ground:#0D1418; --surface:#161F25; --surface-2:#1C262D; --surface-3:#243039;
+  --line:#2A363E; --line-2:#3B4A54;
+  --accent:#43B3C0; --accent-ink:#06181B; --accent-soft:#153236;
+  --plumb:#6DB6E9; --plumb-soft:#152B3C; --plumb-edge:#2C4E6B;
+  --elec:#E2A445; --elec-soft:#2F2410; --elec-edge:#5C4823;
+  --open:#5EBE8E;
+  --danger:#E4796B;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.face-display{font-family:"Archivo", ui-sans-serif, system-ui, sans-serif;}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+.eyebrow{
+  font-family:"Archivo", sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1120px; margin:0 auto; padding:20px 18px 64px}
+
+.topbar{
+  display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;
+  justify-content:space-between; padding-bottom:16px;
+  border-bottom:2px solid var(--ink); margin-bottom:20px;
+}
+.topbar h1{
+  margin:2px 0 0; font-size:29px; font-weight:700; letter-spacing:-.022em; line-height:1.05;
+}
+.topbar-right{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+
+.btn{
+  border:1px solid var(--line-2); background:var(--surface); border-radius:7px;
+  padding:7px 13px; font-size:13.5px; font-weight:500; white-space:nowrap;
+  transition:background .13s ease, border-color .13s ease;
+}
+.btn:hover{background:var(--surface-2); border-color:var(--ink-3)}
+.btn-primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600}
+.btn-primary:hover{background:var(--accent); border-color:var(--accent); filter:brightness(1.09)}
+.btn-danger{color:var(--danger); border-color:var(--line-2)}
+.btn-danger:hover{background:var(--danger); border-color:var(--danger); color:#fff}
+.btn[disabled]{opacity:.45; cursor:not-allowed}
+
+.status{
+  display:inline-flex; align-items:center; gap:7px;
+  font-size:12.5px; color:var(--ink-2); padding:5px 11px 5px 9px;
+  border:1px solid var(--line); border-radius:999px; background:var(--surface);
+}
+.status .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-3); flex:none}
+.status.live .dot{background:var(--open)}
+.status.local .dot{background:var(--elec)}
+
+/* ---------- week strip ---------- */
+.weekbar{
+  display:flex; align-items:center; gap:10px; margin-bottom:12px;
+}
+.weekbar .range{
+  font-family:"Archivo",sans-serif; font-weight:600; font-size:14px;
+  letter-spacing:-.01em; color:var(--ink-2); flex:1; min-width:0;
+}
+.nav{
+  width:34px; height:34px; display:grid; place-items:center; flex:none;
+  border:1px solid var(--line-2); background:var(--surface); border-radius:7px; font-size:15px;
+}
+.nav:hover{background:var(--surface-2)}
+
+.days{
+  display:grid; grid-template-columns:repeat(6, 1fr); gap:6px; margin-bottom:22px;
+}
+.day{
+  display:flex; flex-direction:column; gap:2px; align-items:flex-start;
+  padding:9px 10px 10px; border-radius:9px; text-align:left;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  transition:border-color .13s ease, background .13s ease;
+}
+.day:hover{border-color:var(--ink-3)}
+.day .dw{font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+.day .dn{font-family:"Archivo",sans-serif; font-size:21px; font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums}
+.day .df{font-size:11.5px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.day[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.day[aria-pressed="true"] .dw,.day[aria-pressed="true"] .df{color:var(--accent-ink); opacity:.82}
+.day.is-today .dn::after{
+  content:""; display:block; height:2px; background:currentColor; opacity:.6; margin-top:1px;
+}
+.day.is-past{opacity:.5}
+.day.is-full .df{color:var(--danger)}
+.day[aria-pressed="true"].is-full .df{color:var(--accent-ink)}
+
+/* ---------- board ---------- */
+.board-head{display:flex; align-items:baseline; gap:12px; margin-bottom:10px; flex-wrap:wrap}
+.board-head h2{margin:0; font-size:19px; font-weight:600; letter-spacing:-.015em}
+.board-head .hint{font-size:13px; color:var(--ink-3)}
+
+.board-scroll{overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch}
+.board{
+  min-width:520px;
+  display:grid; grid-template-columns:74px repeat(3, minmax(140px,1fr));
+  border:1px solid var(--line); border-radius:11px; overflow:hidden;
+  background:var(--surface); box-shadow:var(--shadow);
+}
+.col-head{
+  padding:11px 12px 10px; background:var(--surface-2);
+  border-bottom:1px solid var(--line); border-left:1px solid var(--line);
+}
+.col-head:first-child{border-left:none}
+.col-head .nm{font-family:"Archivo",sans-serif; font-weight:600; font-size:15px; letter-spacing:-.01em; display:block}
+.col-head .tr{
+  font-family:"Archivo",sans-serif; font-size:10px; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; display:inline-block; margin-top:2px;
+}
+.tr-plumbing{color:var(--plumb)}
+.tr-electrical{color:var(--elec)}
+
+.timecell{
+  padding:0 10px; display:flex; align-items:center; justify-content:flex-end;
+  border-top:1px solid var(--line); background:var(--surface-2);
+  font-size:12px; color:var(--ink-3); font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.board > .col-head:first-child{background:var(--surface-2)}
+
+.slot{
+  border:none; border-top:1px solid var(--line); border-left:1px solid var(--line);
+  background:var(--surface); text-align:left; padding:8px 10px; min-height:60px;
+  display:flex; flex-direction:column; gap:1px; justify-content:center;
+  transition:background .12s ease;
+}
+.slot .lbl{
+  font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+}
+.slot.free:hover{background:var(--accent-soft)}
+.slot.free:hover .lbl{color:var(--accent)}
+.slot.past{background:var(--surface-2); cursor:not-allowed}
+.slot.past .lbl{color:var(--ink-3); opacity:.55}
+.slot.booked{cursor:pointer}
+.slot .who{font-weight:600; font-size:14px; letter-spacing:-.01em; line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
+.slot .job{font-size:12px; color:var(--ink-2); line-height:1.3;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%}
+.slot.booked.plumbing{background:var(--plumb-soft); box-shadow:inset 3px 0 0 var(--plumb)}
+.slot.booked.plumbing .lbl{color:var(--plumb)}
+.slot.booked.electrical{background:var(--elec-soft); box-shadow:inset 3px 0 0 var(--elec)}
+.slot.booked.electrical .lbl{color:var(--elec)}
+.slot.booked:hover{filter:brightness(.98)}
+
+.footnote{margin-top:18px; font-size:12.5px; color:var(--ink-3); max-width:62ch}
+.footnote strong{color:var(--ink-2); font-weight:600}
+
+/* ---------- dialog ---------- */
+dialog{
+  border:1px solid var(--line-2); border-radius:13px; background:var(--surface);
+  color:var(--ink); padding:0; width:min(440px, calc(100vw - 32px));
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.45);
+}
+dialog::backdrop{background:rgba(10,18,22,.5)}
+.dlg{padding:20px}
+.dlg h3{margin:4px 0 2px; font-size:20px; font-weight:600; letter-spacing:-.016em}
+.dlg .sub{font-size:13.5px; color:var(--ink-2); margin-bottom:16px}
+.field{display:flex; flex-direction:column; gap:4px; margin-bottom:11px}
+.field label{font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+.field input, .field textarea{
+  font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:7px; padding:8px 10px; width:100%;
+}
+.field textarea{resize:vertical; min-height:60px}
+.field input::placeholder,.field textarea::placeholder{color:var(--ink-3)}
+.check{display:flex; gap:9px; align-items:flex-start; margin:2px 0 14px;
+  padding:10px 11px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px}
+.check input{margin:3px 0 0; flex:none; accent-color:var(--accent); width:15px; height:15px}
+.check span{font-size:13px; color:var(--ink-2)}
+.check b{color:var(--ink); font-weight:600; display:block; font-size:13.5px}
+.actions{display:flex; gap:8px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap}
+.actions .spacer{flex:1}
+.err{color:var(--danger); font-size:13px; margin-top:10px; min-height:1px}
+
+.detail-row{display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--line); font-size:14px}
+.detail-row .k{font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3); width:78px; flex:none; padding-top:3px}
+.detail-row .v{flex:1; min-width:0; overflow-wrap:anywhere}
+
+@media (max-width:560px){
+  .wrap{padding:16px 12px 56px}
+  .topbar h1{font-size:24px}
+  .days{grid-template-columns:repeat(3,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">Empire Building Management</div>
+      <h1>Crew Calendar</h1>
+    </div>
+    <div class="topbar-right">
+      <span class="status" id="status"><span class="dot"></span><span id="statusText">Loading…</span></span>
+      <button class="btn" id="crewBtn">Crew names</button>
+    </div>
+  </header>
+
+  <div class="weekbar">
+    <button class="nav" id="prevWeek" aria-label="Previous week">&#8249;</button>
+    <button class="nav" id="nextWeek" aria-label="Next week">&#8250;</button>
+    <span class="range" id="range"></span>
+    <button class="btn" id="todayBtn">Today</button>
+  </div>
+
+  <div class="days" id="days"></div>
+
+  <div class="board-head">
+    <h2 id="boardTitle"></h2>
+    <span class="hint">Tap an open hour to book it &middot; 8:00&nbsp;AM &ndash; 5:00&nbsp;PM</span>
+  </div>
+
+  <div class="board-scroll">
+    <div class="board" id="board"></div>
+  </div>
+
+  <p class="footnote" id="footnote"></p>
+</div>
+
+<dialog id="bookDlg">
+  <form method="dialog" class="dlg" id="bookForm">
+    <div class="eyebrow" id="bookWho"></div>
+    <h3 id="bookWhen"></h3>
+    <p class="sub">Fill in the job so the crew knows where to go.</p>
+
+    <div class="field">
+      <label for="fName">Customer / building</label>
+      <input id="fName" required maxlength="60" placeholder="e.g. 4820 Van Horne &mdash; Apt 3">
+    </div>
+    <div class="field">
+      <label for="fPhone">Phone</label>
+      <input id="fPhone" maxlength="30" placeholder="e.g. 514-555-0142">
+    </div>
+    <div class="field">
+      <label for="fAddr">Address</label>
+      <input id="fAddr" maxlength="90" placeholder="Street, city">
+    </div>
+    <div class="field">
+      <label for="fJob">Job</label>
+      <textarea id="fJob" maxlength="240" placeholder="e.g. Kitchen sink leaking under cabinet"></textarea>
+    </div>
+
+    <label class="check">
+      <input type="checkbox" id="fFullDay">
+      <span><b>Book the whole day</b>Holds every open hour from 8:00&nbsp;AM to 5:00&nbsp;PM. Hours already taken stay as they are.</span>
+    </label>
+
+    <p class="err" id="bookErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="bookCancel">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="bookSave">Book it</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="viewDlg">
+  <div class="dlg">
+    <div class="eyebrow" id="viewWho"></div>
+    <h3 id="viewWhen"></h3>
+    <div id="viewBody"></div>
+    <p class="err" id="viewErr"></p>
+    <div class="actions">
+      <button type="button" class="btn btn-danger" id="viewCancelBooking">Cancel this booking</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="viewClose">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="crewDlg">
+  <form method="dialog" class="dlg" id="crewForm">
+    <div class="eyebrow">Settings</div>
+    <h3>Crew names</h3>
+    <p class="sub">Change a name here and it updates for everyone who opens this calendar.</p>
+    <div id="crewFields"></div>
+    <p class="err" id="crewErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="crewCancel">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save names</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- constants ---------------- */
+  var DEFAULT_CREW = [
+    {id:"rodrigo",    name:"Rodrigo",    trade:"plumbing"},
+    {id:"zion",       name:"Zion",       trade:"plumbing"},
+    {id:"electrician",name:"Electrician",trade:"electrical"}
+  ];
+  var HOURS = [8,9,10,11,12,13,14,15,16];      // slot start hours, day ends 5 PM
+  var DAYS_SHOWN = 6;                           // Monday through Saturday
+  var LS_BOOKINGS = "ebm-crew-calendar:bookings:v1";
+  var LS_CREW = "ebm-crew-calendar:crew:v1";
+  var TRADE_LABEL = {plumbing:"Plumbing", electrical:"Electrical"};
+
+  /* ---------------- date helpers ---------------- */
+  function iso(d){
+    var m = d.getMonth()+1, day = d.getDate();
+    return d.getFullYear() + "-" + (m<10?"0":"") + m + "-" + (day<10?"0":"") + day;
+  }
+  function fromIso(s){
+    var p = s.split("-");
+    return new Date(+p[0], +p[1]-1, +p[2]);
+  }
+  function addDays(d,n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate()+n); return x; }
+  function mondayOf(d){
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var wd = x.getDay();                 // 0 Sun .. 6 Sat
+    return addDays(x, wd === 0 ? -6 : 1 - wd);
+  }
+  function hourLabel(h){
+    var ap = h < 12 ? "AM" : "PM";
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + ":00 " + ap;
+  }
+  function pad2(h){ return (h<10?"0":"") + h; }
+  function isPast(dateStr, hour){
+    var now = new Date();
+    var slotEnd = fromIso(dateStr);
+    slotEnd.setHours(hour+1, 0, 0, 0);
+    return slotEnd <= now;
+  }
+  var FMT_LONG = new Intl.DateTimeFormat(undefined, {weekday:"long", month:"long", day:"numeric"});
+  var FMT_MED  = new Intl.DateTimeFormat(undefined, {month:"short", day:"numeric"});
+  var FMT_DW   = new Intl.DateTimeFormat(undefined, {weekday:"short"});
+
+  /* ---------------- state ---------------- */
+  var state = {
+    weekStart: mondayOf(new Date()),
+    selected: null,          // iso date string
+    crew: DEFAULT_CREW.slice(),
+    days: {},                // iso -> { crewId -> { "08": booking | null } }
+    mode: "loading",         // "shared" | "device"
+    db: null,
+    unsubs: []
+  };
+  var todayIso = iso(new Date());
+  state.selected = pickInitialDay();
+
+  // Open on the first day that still has bookable hours, so the board is
+  // never a wall of passed slots (evenings, Sundays, weeks already worked).
+  function pickInitialDay(){
+    var t = new Date();
+    for (var i = 0; i < 14; i++){
+      var d = addDays(t, i);
+      if (d.getDay() === 0) continue;                 // closed Sundays
+      var ds = iso(d);
+      var openHour = HOURS.some(function(h){ return !isPast(ds, h); });
+      if (openHour){ state.weekStart = mondayOf(d); return ds; }
+    }
+    state.weekStart = mondayOf(t);
+    return iso(t);
+  }
+
+  /* ---------------- storage: device fallback ---------------- */
+  function lsRead(key, fallback){
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function lsWrite(key, val){
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch (e) { return false; }
+  }
+
+  /* ---------------- data access ---------------- */
+  function dayKey(dateStr, crewId){ return dateStr + "__" + crewId; }
+
+  function getSlots(dateStr, crewId){
+    var d = state.days[dateStr];
+    if (!d) return {};
+    return d[crewId] || {};
+  }
+  function getBooking(dateStr, crewId, hour){
+    var b = getSlots(dateStr, crewId)[pad2(hour)];
+    return b && b.name ? b : null;
+  }
+  function setLocalSlots(dateStr, crewId, patch){
+    if (!state.days[dateStr]) state.days[dateStr] = {};
+    var cur = state.days[dateStr][crewId] || {};
+    var next = {};
+    for (var k in cur) next[k] = cur[k];
+    for (var j in patch) next[j] = patch[j];
+    state.days[dateStr][crewId] = next;
+  }
+
+  // Write a partial map of hour -> booking|null for one crew member on one day.
+  function writeSlots(dateStr, crewId, patch){
+    if (state.mode === "shared" && state.db){
+      var ref = state.db.doc("bookings/" + dayKey(dateStr, crewId));
+      return ref.update({slots: patch}).catch(function(err){
+        // update() requires the document to exist; create it on first write.
+        if (err && (err.code === "invalid_argument")){
+          return ref.set({date: dateStr, crewId: crewId, slots: patch});
+        }
+        throw err;
+      });
+    }
+    setLocalSlots(dateStr, crewId, patch);
+    var all = lsRead(LS_BOOKINGS, {});
+    all[dayKey(dateStr, crewId)] = state.days[dateStr][crewId];
+    if (!lsWrite(LS_BOOKINGS, all)){
+      return Promise.reject({code:"storage", message:"This browser is blocking saved data, so the booking could not be kept."});
+    }
+    render();
+    return Promise.resolve();
+  }
+
+  function saveCrew(next){
+    state.crew = next;
+    if (state.mode === "shared" && state.db){
+      return state.db.doc("config/crew").set({members: next});
+    }
+    lsWrite(LS_CREW, next);
+    render();
+    return Promise.resolve();
+  }
+
+  /* ---------------- rendering ---------------- */
+  var $ = function(id){ return document.getElementById(id); };
+
+  function weekDays(){
+    var out = [];
+    for (var i=0; i<DAYS_SHOWN; i++) out.push(addDays(state.weekStart, i));
+    return out;
+  }
+
+  function openCount(dateStr){
+    var open = 0;
+    for (var c=0; c<state.crew.length; c++){
+      for (var h=0; h<HOURS.length; h++){
+        if (isPast(dateStr, HOURS[h])) continue;
+        if (!getBooking(dateStr, state.crew[c].id, HOURS[h])) open++;
+      }
+    }
+    return open;
+  }
+
+  function renderStatus(){
+    var el = $("status"), txt = $("statusText");
+    el.classList.remove("live","local");
+    if (state.mode === "shared"){
+      el.classList.add("live");
+      txt.textContent = "Shared — everyone sees the same bookings";
+    } else if (state.mode === "device"){
+      el.classList.add("local");
+      txt.textContent = "Saved on this device only";
+    } else {
+      txt.textContent = "Loading…";
+    }
+    $("footnote").innerHTML = state.mode === "shared"
+      ? "Bookings save instantly and every open calendar updates. Hours in the past are locked."
+      : "<strong>Heads up:</strong> this copy keeps bookings in this browser only — nobody else sees them. Use the shared link for the whole team.";
+  }
+
+  function renderDays(){
+    var host = $("days");
+    host.innerHTML = "";
+    var list = weekDays();
+    var first = list[0], last = list[list.length-1];
+    $("range").textContent = FMT_MED.format(first) + " – " + FMT_MED.format(last) + ", " + last.getFullYear();
+
+    list.forEach(function(d){
+      var ds = iso(d);
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "day";
+      b.setAttribute("aria-pressed", ds === state.selected ? "true" : "false");
+      if (ds === todayIso) b.classList.add("is-today");
+
+      var allPast = HOURS.every(function(h){ return isPast(ds, h); });
+      if (allPast) b.classList.add("is-past");
+
+      var open = openCount(ds);
+      if (!allPast && open === 0) b.classList.add("is-full");
+
+      var dw = document.createElement("span"); dw.className = "dw"; dw.textContent = FMT_DW.format(d);
+      var dn = document.createElement("span"); dn.className = "dn"; dn.textContent = d.getDate();
+      var df = document.createElement("span"); df.className = "df";
+      df.textContent = allPast ? "Done" : (open === 0 ? "Fully booked" : open + " open");
+
+      b.appendChild(dw); b.appendChild(dn); b.appendChild(df);
+      b.addEventListener("click", function(){ state.selected = ds; render(); });
+      host.appendChild(b);
+    });
+  }
+
+  function renderBoard(){
+    var board = $("board");
+    board.innerHTML = "";
+    var ds = state.selected;
+    $("boardTitle").textContent = FMT_LONG.format(fromIso(ds));
+
+    var corner = document.createElement("div");
+    corner.className = "col-head";
+    corner.innerHTML = '<span class="eyebrow">Hour</span>';
+    board.appendChild(corner);
+
+    state.crew.forEach(function(m){
+      var h = document.createElement("div");
+      h.className = "col-head";
+      var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = m.name;
+      var tr = document.createElement("span"); tr.className = "tr tr-" + m.trade; tr.textContent = TRADE_LABEL[m.trade] || m.trade;
+      h.appendChild(nm); h.appendChild(tr);
+      board.appendChild(h);
+    });
+
+    HOURS.forEach(function(hour){
+      var t = document.createElement("div");
+      t.className = "timecell";
+      t.textContent = hourLabel(hour);
+      board.appendChild(t);
+
+      state.crew.forEach(function(m){
+        var bk = getBooking(ds, m.id, hour);
+        var past = isPast(ds, hour);
+        var cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "slot " + (bk ? "booked " + m.trade : (past ? "past" : "free"));
+
+        if (bk){
+          var lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "Booked";
+          var who = document.createElement("span"); who.className = "who"; who.textContent = bk.name;
+          cell.appendChild(lbl); cell.appendChild(who);
+          if (bk.job){
+            var job = document.createElement("span"); job.className = "job"; job.textContent = bk.job;
+            cell.appendChild(job);
+          }
+          cell.setAttribute("aria-label", "Booked: " + bk.name + ", " + m.name + " at " + hourLabel(hour));
+          cell.addEventListener("click", function(){ openView(ds, m, hour, bk); });
+        } else if (past){
+          var pl = document.createElement("span"); pl.className = "lbl"; pl.textContent = "Passed";
+          cell.appendChild(pl);
+          cell.disabled = true;
+        } else {
+          var fl = document.createElement("span"); fl.className = "lbl"; fl.textContent = "Open";
+          cell.appendChild(fl);
+          cell.setAttribute("aria-label", "Book " + m.name + " at " + hourLabel(hour));
+          cell.addEventListener("click", function(){ openBook(ds, m, hour); });
+        }
+        board.appendChild(cell);
+      });
+    });
+  }
+
+  function render(){ renderStatus(); renderDays(); renderBoard(); }
+
+  /* ---------------- booking dialog ---------------- */
+  var pending = null;
+
+  function openBook(dateStr, member, hour){
+    pending = {date:dateStr, member:member, hour:hour};
+    $("bookWho").textContent = member.name + " · " + (TRADE_LABEL[member.trade] || member.trade);
+    $("bookWhen").textContent = hourLabel(hour) + " — " + FMT_LONG.format(fromIso(dateStr));
+    $("bookErr").textContent = "";
+    $("bookForm").reset();
+    $("bookSave").disabled = false;
+    $("bookDlg").showModal();
+    setTimeout(function(){ $("fName").focus(); }, 30);
+  }
+
+  $("bookCancel").addEventListener("click", function(){ $("bookDlg").close(); });
+
+  $("bookForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    if (!pending) return;
+    var name = $("fName").value.trim();
+    if (!name){ $("bookErr").textContent = "Add a customer or building name first."; return; }
+
+    var booking = {
+      name: name,
+      phone: $("fPhone").value.trim(),
+      address: $("fAddr").value.trim(),
+      job: $("fJob").value.trim(),
+      bookedAt: new Date().toISOString()
+    };
+
+    var patch = {};
+    if ($("fFullDay").checked){
+      HOURS.forEach(function(h){
+        if (isPast(pending.date, h)) return;
+        if (getBooking(pending.date, pending.member.id, h)) return;   // leave taken hours alone
+        patch[pad2(h)] = booking;
+      });
+    } else {
+      if (getBooking(pending.date, pending.member.id, pending.hour)){
+        $("bookErr").textContent = "Someone just took this hour. Pick another one.";
+        render();
+        return;
+      }
+      patch[pad2(pending.hour)] = booking;
+    }
+
+    if (!Object.keys(patch).length){
+      $("bookErr").textContent = "There are no open hours left to book on this day.";
+      return;
+    }
+
+    $("bookSave").disabled = true;
+    writeSlots(pending.date, pending.member.id, patch).then(function(){
+      $("bookDlg").close();
+      pending = null;
+    }).catch(function(err){
+      $("bookSave").disabled = false;
+      $("bookErr").textContent = errText(err, "The booking did not save.");
+    });
+  });
+
+  function errText(err, fallback){
+    var code = err && err.code;
+    if (code === "revoked" || code === "not_granted") return "You no longer have access to this calendar. Reload the page.";
+    if (code === "resource_exhausted") return "Too many changes at once. Wait a moment and try again.";
+    if (code === "quota_exceeded") return "The calendar is full. Delete some old bookings first.";
+    if (code === "unavailable") return "Connection hiccup. Try that again.";
+    if (err && err.message) return err.message;
+    return fallback;
+  }
+
+  /* ---------------- detail dialog ---------------- */
+  var viewing = null;
+
+  function openView(dateStr, member, hour, bk){
+    viewing = {date:dateStr, member:member, hour:hour};
+    $("viewWho").textContent = member.name + " · " + (TRADE_LABEL[member.trade] || member.trade);
+    $("viewWhen").textContent = hourLabel(hour) + " — " + FMT_LONG.format(fromIso(dateStr));
+    $("viewErr").textContent = "";
+    var rows = [
+      ["Customer", bk.name],
+      ["Phone", bk.phone],
+      ["Address", bk.address],
+      ["Job", bk.job]
+    ];
+    var body = $("viewBody");
+    body.innerHTML = "";
+    rows.forEach(function(r){
+      if (!r[1]) return;
+      var d = document.createElement("div"); d.className = "detail-row";
+      var k = document.createElement("div"); k.className = "k"; k.textContent = r[0];
+      var v = document.createElement("div"); v.className = "v"; v.textContent = r[1];
+      d.appendChild(k); d.appendChild(v); body.appendChild(d);
+    });
+    $("viewCancelBooking").disabled = isPast(dateStr, hour);
+    $("viewCancelBooking").textContent = "Cancel this booking";
+    $("viewDlg").showModal();
+  }
+
+  $("viewClose").addEventListener("click", function(){ $("viewDlg").close(); });
+
+  $("viewCancelBooking").addEventListener("click", function(){
+    if (!viewing) return;
+    var btn = $("viewCancelBooking");
+    if (btn.dataset.armed !== "1"){
+      btn.dataset.armed = "1";
+      btn.textContent = "Tap again to confirm";
+      return;
+    }
+    btn.disabled = true;
+    var patch = {};
+    patch[pad2(viewing.hour)] = null;
+    writeSlots(viewing.date, viewing.member.id, patch).then(function(){
+      $("viewDlg").close();
+      viewing = null;
+    }).catch(function(err){
+      btn.disabled = false;
+      $("viewErr").textContent = errText(err, "The booking could not be cancelled.");
+    });
+  });
+
+  $("viewDlg").addEventListener("close", function(){
+    var b = $("viewCancelBooking");
+    b.dataset.armed = "0";
+    b.textContent = "Cancel this booking";
+  });
+
+  /* ---------------- crew dialog ---------------- */
+  $("crewBtn").addEventListener("click", function(){
+    var host = $("crewFields");
+    host.innerHTML = "";
+    state.crew.forEach(function(m, i){
+      var f = document.createElement("div"); f.className = "field";
+      var l = document.createElement("label");
+      l.setAttribute("for", "crew" + i);
+      l.textContent = TRADE_LABEL[m.trade] || m.trade;
+      var inp = document.createElement("input");
+      inp.id = "crew" + i; inp.value = m.name; inp.maxLength = 30; inp.required = true;
+      f.appendChild(l); f.appendChild(inp); host.appendChild(f);
+    });
+    $("crewErr").textContent = "";
+    $("crewDlg").showModal();
+  });
+
+  $("crewCancel").addEventListener("click", function(){ $("crewDlg").close(); });
+
+  $("crewForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var next = state.crew.map(function(m, i){
+      var v = ($("crew" + i).value || "").trim();
+      return {id:m.id, name: v || m.name, trade:m.trade};
+    });
+    saveCrew(next).then(function(){
+      $("crewDlg").close();
+    }).catch(function(err){
+      $("crewErr").textContent = errText(err, "The names did not save.");
+    });
+  });
+
+  /* ---------------- navigation ---------------- */
+  $("prevWeek").addEventListener("click", function(){ shiftWeek(-7); });
+  $("nextWeek").addEventListener("click", function(){ shiftWeek(7); });
+  $("todayBtn").addEventListener("click", function(){
+    state.weekStart = mondayOf(new Date());
+    state.selected = pickInitialDay();
+    resubscribe();
+    render();
+  });
+  function shiftWeek(n){
+    state.weekStart = addDays(state.weekStart, n);
+    state.selected = iso(state.weekStart);
+    resubscribe();
+    render();
+  }
+
+  /* ---------------- boot ---------------- */
+  function bootDevice(){
+    state.mode = "device";
+    var crew = lsRead(LS_CREW, null);
+    if (Array.isArray(crew) && crew.length === 3) state.crew = crew;
+    var all = lsRead(LS_BOOKINGS, {});
+    state.days = {};
+    Object.keys(all).forEach(function(k){
+      var parts = k.split("__");
+      if (parts.length !== 2) return;
+      if (!state.days[parts[0]]) state.days[parts[0]] = {};
+      state.days[parts[0]][parts[1]] = all[k] || {};
+    });
+    render();
+  }
+
+  function resubscribe(){
+    if (state.mode !== "shared" || !state.db) return;
+    state.unsubs.forEach(function(u){ try { u(); } catch(e){} });
+    state.unsubs = [];
+
+    var from = iso(addDays(state.weekStart, -1));
+    var to   = iso(addDays(state.weekStart, DAYS_SHOWN + 1));
+
+    var un = state.db.collection("bookings")
+      .where("date", ">=", from)
+      .where("date", "<=", to)
+      .onSnapshot(function(snap){
+        var fresh = {};
+        snap.docs.forEach(function(doc){
+          var d = doc.data() || {};
+          if (!d.date || !d.crewId) return;
+          if (!fresh[d.date]) fresh[d.date] = {};
+          fresh[d.date][d.crewId] = d.slots || {};
+        });
+        state.days = fresh;
+        render();
+      }, function(err){
+        console.warn("bookings subscription ended", err);
+      });
+    state.unsubs.push(un);
+  }
+
+  render();
+
+  if (typeof window.claude !== "undefined" && window.claude && typeof window.claude.use === "function"){
+    window.claude.use("db").then(function(db){
+      if (!db){ bootDevice(); return; }
+      state.db = db;
+      state.mode = "shared";
+      resubscribe();
+      state.unsubs.push(db.doc("config/crew").onSnapshot(function(snap){
+        var d = snap.exists ? snap.data() : null;
+        if (d && Array.isArray(d.members) && d.members.length === 3) state.crew = d.members;
+        render();
+      }, function(err){ console.warn("crew subscription ended", err); }));
+      render();
+    }).catch(function(){ bootDevice(); });
+  } else {
+    bootDevice();
+  }
+})();
+</script>
