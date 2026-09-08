@@ -447,6 +447,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       <p class="sub" id="meConnText" style="margin:6px 0 0"></p>
     </div>
 
+    <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55"></p>
+
     <div class="actions">
       <button type="button" class="btn" id="meCrewBtn" hidden>Crew &amp; codes</button>
       <span class="spacer"></span>
@@ -642,6 +644,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var end = fromIso(ds); end.setHours(DAY_END,0,0,0);
     return end <= new Date();
   }
+  // Bumped with sw.js's CACHE on every release, and shown in the account
+  // sheet: without it there is no way to tell a phone that has picked up a
+  // fix from one still running last week's copy out of its cache.
+  var APP_VERSION = "v44";
+
   var F_MONTH = new Intl.DateTimeFormat(undefined,{month:"long"});
   var F_LONG  = new Intl.DateTimeFormat(undefined,{weekday:"long", month:"long", day:"numeric"});
   var F_DOW   = new Intl.DateTimeFormat(undefined,{weekday:"short"});
@@ -1400,6 +1407,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("meConnText").textContent = conn;
 
     $("meCrewBtn").hidden = !can("manage");
+    $("meVersion").textContent = "EBM Crew Calendar " + APP_VERSION;
     $("meDlg").showModal();
   }
   $("meBtn").addEventListener("click", openMe);
