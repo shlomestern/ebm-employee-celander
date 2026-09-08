@@ -1,10 +1,11 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v40";
+var CACHE = "ebm-crew-v41";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
-  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"
+  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png",
+  "./icons/maskable-512.png", "./icons/badge-96.png"
 ];
 
 self.addEventListener("install", function(e){
@@ -56,12 +57,16 @@ try {
     importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
     firebase.initializeApp(FB);
     firebase.messaging().onBackgroundMessage(function(payload){
-      var n = payload.notification || {};
-      self.registration.showNotification(n.title || "New job", {
-        body: n.body || "",
+      // Anything carrying a notification block has already been put on screen
+      // by the SDK itself. Showing it again here was posting every job twice,
+      // under two different tags, so neither one replaced the other.
+      if (payload && payload.notification) return;
+      var d = (payload && payload.data) || {};
+      self.registration.showNotification(d.title || "New job", {
+        body: d.body || "",
         icon: "./icons/icon-192.png",
-        badge: "./icons/icon-192.png",
-        tag: (payload.data && payload.data.tag) || "ebm-job"
+        badge: "./icons/badge-96.png",
+        tag: d.tag || "ebm-job"
       });
     });
   }

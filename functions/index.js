@@ -51,7 +51,10 @@ async function push(db, map, tokens, title, body, tag) {
     webpush: {
       notification: {
         icon: "/ebm-employee-celander/icons/icon-192.png",
-        badge: "/ebm-employee-celander/icons/icon-192.png",
+        // Android throws the badge's colours away and keeps the alpha, so a
+        // full-colour square arrives as a solid white block. This one is the
+        // EBM mark cut out of nothing.
+        badge: "/ebm-employee-celander/icons/badge-96.png",
         tag,
       },
       fcmOptions: {link: "https://shlomestern.github.io/ebm-employee-celander/"},
