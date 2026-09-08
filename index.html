@@ -439,6 +439,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       <div class="eyebrow">Notifications</div>
       <p class="sub" id="meNotifText" style="margin:6px 0 0"></p>
       <button type="button" class="btn" id="meNotifBtn" hidden>Turn on notifications</button>
+      <button type="button" class="btn" id="meTestBtn" hidden>Send a test buzz</button>
     </div>
 
     <div class="mesec" id="meConnSec">
@@ -1382,6 +1383,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var n = notifState();
     $("meNotifText").textContent = n.text;
     $("meNotifBtn").hidden = !n.button;
+    // Proves the phone itself can show a notification, so a silent phone
+    // says whether the fault is here or on the way from the office.
+    $("meTestBtn").hidden = !("Notification" in window)
+                            || Notification.permission !== "granted";
 
     var conn = state.mode==="offline" ? "No connection — showing what was last saved on this phone."
              : state.mode==="device"  ? "Saved on this device only — nobody else sees these jobs."
@@ -1399,6 +1404,22 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     state.pushDone = false;
     setupPush();
     setTimeout(function(){ $("meNotifBtn").disabled = false; openMe(); }, 1800);
+  });
+  $("meTestBtn").addEventListener("click", function(){
+    var b = $("meTestBtn");
+    b.disabled = true; b.textContent = "Sending\u2026";
+    navigator.serviceWorker.ready.then(function(reg){
+      return reg.showNotification("EBM Crew \u2014 test", {
+        body: "If you can see this, this phone can buzz for " + meName() + ".",
+        icon: "icons/icon-192.png", badge: "icons/icon-192.png", tag: "ebm-test"
+      });
+    }).then(function(){
+      b.textContent = "Sent \u2014 check your notifications";
+    }).catch(function(){
+      b.textContent = "This phone would not show it";
+    }).then(function(){
+      setTimeout(function(){ b.disabled = false; b.textContent = "Send a test buzz"; }, 4000);
+    });
   });
   $("meSignOut").addEventListener("click", function(){
     try{ localStorage.removeItem(LS_PASS); }catch(e){}
