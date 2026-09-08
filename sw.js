@@ -1,6 +1,6 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v47";
+var CACHE = "ebm-crew-v48";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
@@ -31,8 +31,19 @@ self.addEventListener("fetch", function(e){
 
   // Network first so a deploy reaches phones on the next open; cache is the
   // fallback that keeps the app usable with no signal.
+  //
+  // The page and its scripts are asked for with the browser's own HTTP cache
+  // bypassed. GitHub serves them with ten minutes of freshness, so without
+  // this the network request is answered out of that cache and a phone keeps
+  // running the old app while appearing to have reloaded — the crew have no
+  // reason to know a hard reload exists. Images are left alone; they are the
+  // heavy ones and they change with their filename.
+  var fresh = /\.(?:html|js|webmanifest)$|\/$/.test(url.pathname)
+    ? new Request(req.url, {cache: "reload", credentials: "same-origin"})
+    : req;
+
   e.respondWith(
-    fetch(req).then(function(res){
+    fetch(fresh).catch(function(){ return fetch(req); }).then(function(res){
       var copy = res.clone();
       caches.open(CACHE).then(function(c){ c.put(req, copy); });
       return res;
