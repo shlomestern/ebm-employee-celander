@@ -463,6 +463,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <p class="sub">Give each person their own code and tell them what it is. A plumber or electrician signs in and sees only their own jobs. Set someone to <b>Admin (office)</b> and they get the calendar too — then tick exactly what they may do.</p>
     <div id="crewRows"></div>
     <button type="button" class="btn" id="addPerson">Add someone</button>
+
+    <div class="mesec" style="margin-top:18px">
+      <div class="eyebrow">Phones signed up for notifications</div>
+      <p class="sub" style="margin:6px 0 8px">A person with no phone here cannot be buzzed, however the job is booked. They fix it themselves: open the app on their own phone, sign in with their code, and allow notifications when it asks.</p>
+      <div id="crewPhones" class="sub"></div>
+    </div>
     <div class="field" style="margin-top:16px">
       <label for="fOfficeName">Your name</label>
       <input id="fOfficeName" maxlength="30" autocomplete="off" placeholder="Office">
@@ -1672,7 +1678,46 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("fOfficeCode").value = state.officeCode || masterOfficeCode();
     $("crewErr").textContent = "";
     $("crewSave").disabled = false;
+    renderPhones();
     $("crewDlg").showModal();
+  }
+
+  /* Who can actually be reached, straight from what the phones registered. */
+  function renderPhones(){
+    var host = $("crewPhones");
+    host.textContent = "Checking\u2026";
+    if (!state.fb){ host.textContent = "Only shown when the app is connected."; return; }
+    state.fb.collection("config").doc("tokens").get().then(function(snap){
+      var d = (snap.exists && snap.data()) || {};
+      var map = d.tokens || {}, seen = d.devices || {};
+      var by = {};
+      Object.keys(map).forEach(function(t){
+        if (!map[t]) return;
+        (by[map[t]] = by[map[t]] || []).push(seen[t] || {});
+      });
+      var rows = state.people.map(function(p){ return [p.id, p.name]; });
+      rows.push(["office", state.officeName || "Office"]);
+      host.innerHTML = "";
+      rows.forEach(function(r){
+        var list = by[r[0]] || [];
+        var line = document.createElement("div");
+        line.style.margin = "5px 0";
+        var b = document.createElement("b"); b.textContent = r[1];
+        line.appendChild(b);
+        if (!list.length){
+          line.style.color = "var(--danger)";
+          line.appendChild(document.createTextNode(" \u2014 no phone yet"));
+        } else {
+          line.appendChild(document.createTextNode(" \u2014 " + list.map(function(x){
+            return (x.kind || "a device") +
+                   (x.at ? ", " + F_MED.format(new Date(x.at)) : "");
+          }).join(" and ")));
+        }
+        host.appendChild(line);
+      });
+    }).catch(function(){
+      host.textContent = "Could not read the list just now.";
+    });
   }
   $("addPerson").addEventListener("click", function(){ addRosterRow(null).querySelector(".nm").focus(); });
   $("crewCancel").addEventListener("click", function(){ $("crewDlg").close(); });
@@ -1809,10 +1854,25 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     return !!vapidKey() && state.mode === "cloud" && !!state.me
            && "Notification" in window && "serviceWorker" in navigator;
   }
+  // Enough to tell a crew member's phone apart from an office desktop that
+  // happened to be signed in as them — which is the difference between a job
+  // buzzing in someone's pocket and landing on a browser tab nobody is at.
+  function deviceKind(){
+    var ua = navigator.userAgent || "";
+    if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "iPad";
+    if (/iPhone|iPod/.test(ua)) return "iPhone";
+    if (/Android/.test(ua)) return /Mobile/.test(ua) ? "Android phone" : "Android tablet";
+    if (/Windows/.test(ua)) return "Windows computer";
+    if (/Macintosh/.test(ua)) return "Mac";
+    return "Computer";
+  }
   function rememberToken(token){
     if (!state.fb) return Promise.resolve();
-    var patch = {}; patch[token] = state.me;
-    return state.fb.collection("config").doc("tokens").set({tokens: patch}, {merge: true});
+    var tokens = {}; tokens[token] = state.me;
+    var devices = {}; devices[token] =
+      {who: state.me, kind: deviceKind(), at: new Date().toISOString()};
+    return state.fb.collection("config").doc("tokens")
+      .set({tokens: tokens, devices: devices}, {merge: true});
   }
   function setupPush(){
     if (!notificationsPossible() || state.pushDone) return;
