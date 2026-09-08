@@ -185,6 +185,10 @@ button{font:inherit; color:inherit; cursor:pointer}
 .cell.out .dnum{opacity:.35}
 .cell.past{background:var(--surface-2)}
 .cell.off{background:var(--surface-2)}
+.cell.yomtov{box-shadow:inset 3px 0 0 var(--elec)}
+/* beats .cell.off .freehint, which would otherwise grey and italicise it */
+.cell .freehint.yt{color:var(--elec); font-style:normal; font-weight:600; font-size:10.5px;
+  line-height:1.2; white-space:normal; overflow-wrap:anywhere}
 .cell.off .dnum{color:var(--ink-3)}
 .cell.off .freehint{color:var(--ink-3); font-style:italic}
 .cell.past .dnum{color:var(--ink-3)}
@@ -359,6 +363,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   .chip{padding:3px 5px}
   .chip .t{font-size:12px}
   .freehint{display:none}
+  .cell .freehint.yt{display:block; font-size:9.5px}
   .row2{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
@@ -588,6 +593,36 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function rangeShort(j){
     return j.allDay ? "all day" : hourShort(j.from) + "–" + hourShort(j.to);
+  }
+  /* Yom tov, worked out from the Hebrew calendar the browser already carries,
+     so it stays right every year instead of ageing out of a hardcoded list.
+     Diaspora practice: two days for each festival. */
+  var YOM_TOV = {
+    Tishri: {1:"Rosh Hashana", 2:"Rosh Hashana", 10:"Yom Kippur",
+             15:"Sukkos", 16:"Sukkos", 22:"Shmini Atzeres", 23:"Simchas Torah"},
+    Nisan:  {15:"Pesach", 16:"Pesach", 21:"Pesach", 22:"Pesach"},
+    Sivan:  {6:"Shavuos", 7:"Shavuos"}
+  };
+  var hebFmt = null;
+  try { hebFmt = new Intl.DateTimeFormat("en-u-ca-hebrew", {day:"numeric", month:"long"}); }
+  catch(e){ hebFmt = null; }
+  var holidayCache = {};
+  function holidayFor(ds){
+    if (!hebFmt) return null;
+    if (holidayCache.hasOwnProperty(ds)) return holidayCache[ds];
+    var out = null;
+    try {
+      var d = fromIso(ds); d.setHours(12,0,0,0);   // midday, so no timezone edge
+      var mo = "", dy = 0;
+      hebFmt.formatToParts(d).forEach(function(p){
+        if (p.type === "month") mo = p.value;
+        if (p.type === "day")   dy = parseInt(p.value, 10);
+      });
+      var month = YOM_TOV[mo];
+      if (month && month[dy]) out = month[dy];
+    } catch(e){}
+    holidayCache[ds] = out;
+    return out;
   }
   function isWeekend(ds){
     var wd = fromIso(ds).getDay();
@@ -1086,6 +1121,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       cell.appendChild(num);
       if (!inMonth){ cell.disabled=true; cal.appendChild(cell); continue; }
 
+      var yt = holidayFor(ds);
+      if (yt){ cell.className += " off yomtov"; cell.title = yt; }
       var list=jobsOn(ds, viewCrewId());
       if (list.length){
         var chips=document.createElement("span"); chips.className="chips";
@@ -1103,13 +1140,19 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
           var mo=document.createElement("span"); mo.className="more";
           mo.textContent="+"+(list.length-cap)+" more"; cell.appendChild(mo);
         }
+        if (yt){
+          var ytl=document.createElement("span"); ytl.className="freehint yt";
+          ytl.textContent=yt; cell.appendChild(ytl);
+        }
       } else {
         var fh=document.createElement("span"); fh.className="freehint";
         fh.textContent = state.mode==="loading" ? ""
-          : (isWeekend(ds) ? "Off" : (dayIsPast(ds) ? "" : "Free"));
+          : (yt ? yt : (isWeekend(ds) ? "Off" : (dayIsPast(ds) ? "" : "Free")));
+        if (yt) fh.className = "freehint yt";
         cell.appendChild(fh);
       }
-      cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+", "+(list.length?list.length+" jobs":(isWeekend(ds)?"day off":"free")));
+      cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+
+        (yt ? ", "+yt : "")+", "+(list.length?list.length+" jobs":(isWeekend(ds)?"day off":"free")));
       (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
     }
@@ -1178,7 +1221,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("dayWhen").textContent = F_LONG.format(fromIso(ds));
     $("dayErr").textContent="";
     var free=freeHours(ds, viewCrewId());
-    var weekendNote = isWeekend(ds) ? "Normally a day off. " : "";
+    var yt = holidayFor(ds);
+    var weekendNote = yt ? (yt + " — normally a day off. ")
+                         : (isWeekend(ds) ? "Normally a day off. " : "");
     if (!can("book")){
       $("daySub").textContent = list0Text(ds);
     } else $("daySub").textContent = weekendNote + (dayIsPast(ds) ? "This day has passed."
