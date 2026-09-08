@@ -1,10 +1,10 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v31";
+var CACHE = "ebm-crew-v32";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
-  "./icons/ebm-192-v2.png", "./icons/ebm-512-v2.png", "./icons/ebm-apple-v2.png"
+  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", function(e){
@@ -59,8 +59,8 @@ try {
       var n = payload.notification || {};
       self.registration.showNotification(n.title || "New job", {
         body: n.body || "",
-        icon: "./icons/ebm-192-v2.png",
-        badge: "./icons/ebm-192-v2.png",
+        icon: "./icons/icon-192.png",
+        badge: "./icons/icon-192.png",
         tag: (payload.data && payload.data.tag) || "ebm-job"
       });
     });
