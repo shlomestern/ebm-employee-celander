@@ -520,7 +520,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
     <label class="check">
       <input type="checkbox" id="fAllDay">
-      <span><b>All day</b>8:00&nbsp;AM to 5:00&nbsp;PM.</span>
+      <span id="fAllDayText"><b>All day</b>8:00&nbsp;AM to 5:00&nbsp;PM.</span>
     </label>
 
     <div class="row2" id="timeRow">
@@ -791,20 +791,53 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     for (var i=0;i<p.buildings.length;i++) if (p.buildings[i].id===buildingId) return p.buildings[i];
     return null;
   }
-  function fillHours(){
-    var f = $("fFrom"), t = $("fTo"), i;
-    f.innerHTML = ""; t.innerHTML = "";
-    for (i=DAY_START;i<DAY_END;i++){
-      var o=document.createElement("option"); o.value=i; o.textContent=hourLong(i); f.appendChild(o);
-    }
-    for (i=DAY_START+1;i<=DAY_END;i++){
-      var o2=document.createElement("option"); o2.value=i; o2.textContent=hourLong(i); t.appendChild(o2);
+  /* Hours already taken by another job are not offered at all, rather than
+     accepted and then rejected on save. */
+  var busyMap = {};
+  function computeBusy(ds, crewId, skipId){
+    busyMap = {};
+    jobsOn(ds, crewId).forEach(function(j){
+      if (skipId && j.id === skipId) return;
+      for (var h=j.from; h<j.to; h++) busyMap[h] = true;
+    });
+  }
+  function firstFreeHour(){
+    for (var h=DAY_START; h<DAY_END; h++) if (!busyMap[h]) return h;
+    return DAY_START;
+  }
+  function fillFrom(){
+    var f=$("fFrom"); f.innerHTML="";
+    for (var i=DAY_START;i<DAY_END;i++){
+      var o=document.createElement("option");
+      o.value=i;
+      o.textContent = hourLong(i) + (busyMap[i] ? " — taken" : "");
+      o.disabled = !!busyMap[i];
+      f.appendChild(o);
     }
   }
-  function syncTo(){
-    var f = parseInt($("fFrom").value,10);
-    var t = parseInt($("fTo").value,10);
-    if (t <= f) $("fTo").value = String(Math.min(f+1, DAY_END));
+  /* The end times offered stop at the next taken hour, so a range can never be
+     dragged across somebody else's job. */
+  function fillTo(keep){
+    var from = parseInt($("fFrom").value,10);
+    var maxTo = DAY_END;
+    for (var h=from; h<DAY_END; h++){ if (busyMap[h]){ maxTo = h; break; } }
+    var t=$("fTo");
+    var want = keep || parseInt(t.value,10);
+    t.innerHTML="";
+    for (var i=from+1;i<=maxTo;i++){
+      var o=document.createElement("option"); o.value=i; o.textContent=hourLong(i); t.appendChild(o);
+    }
+    t.value = (want && want>from && want<=maxTo) ? String(want) : String(Math.min(from+1, maxTo));
+  }
+  function refreshAllDay(){
+    var taken = false, h;
+    for (h=DAY_START; h<DAY_END; h++) if (busyMap[h]) { taken = true; break; }
+    $("fAllDay").disabled = taken;
+    if (taken) $("fAllDay").checked = false;
+    $("fAllDayText").innerHTML = taken
+      ? "<b>All day</b>Not available — part of this day is already booked."
+      : "<b>All day</b>8:00&nbsp;AM to 5:00&nbsp;PM.";
+    $("timeRow").hidden = $("fAllDay").checked;
   }
 
   /* ---------- rendering: shared bits ---------- */
@@ -1185,7 +1218,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("formErr").textContent=""; $("formSave").disabled=false;
     $("formSave").textContent = editing ? "Save changes" : "Save job";
     $("paneForm").reset();
-    fillProjects(); fillHours();
+    fillProjects();
+    computeBusy(ds, editing ? editing.crewId : viewCrewId(), editing ? editing.id : null);
+    fillFrom();
 
     if (editing){
       $("fProject").value = editing.projectId;
@@ -1194,31 +1229,26 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       $("fUnit").value = editing.unit || "";
       $("fJob").value = editing.job || "";
       $("fAllDay").checked = !!editing.allDay;
-      $("timeRow").hidden = !!editing.allDay;
       $("fFrom").value = String(editing.from);
-      $("fTo").value = String(editing.to);
+      fillTo(editing.to);
     } else {
       fillBuildings("");
-      var startAt=DAY_START;
-      while (startAt<DAY_END && overlaps(ds,viewCrewId(),startAt,startAt+1)) startAt++;
-      $("fFrom").value=String(Math.min(startAt,DAY_END-1));
-      $("fTo").value=String(Math.min(startAt+1,DAY_END));
-      $("timeRow").hidden=false;
+      $("fFrom").value = String(firstFreeHour());
+      fillTo();
     }
+    refreshAllDay();
     setTimeout(function(){ $("fProject").focus(); },30);
   }
 
   $("fProject").addEventListener("change", function(){
     fillBuildings($("fProject").value);
   });
-  $("fFrom").addEventListener("change", syncTo);
-  $("fTo").addEventListener("change", function(){
-    var f=parseInt($("fFrom").value,10), t=parseInt($("fTo").value,10);
-    if (t<=f) $("fFrom").value=String(Math.max(DAY_START, t-1));
-  });
+  $("fFrom").addEventListener("change", function(){ fillTo(); });
+
   $("fAllDay").addEventListener("change", function(){
     $("timeRow").hidden = $("fAllDay").checked;
   });
+
 
   $("paneForm").addEventListener("submit", function(ev){
     ev.preventDefault();
