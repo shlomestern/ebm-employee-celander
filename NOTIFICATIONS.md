@@ -48,6 +48,10 @@ npx -y firebase-tools@latest login --no-localhost
 That prints a link. Open it, sign in, approve, copy the code it gives you, paste it back in the terminal.
 
 ```bash
+cd functions && npm install && cd ..
+```
+
+```bash
 npx -y firebase-tools@latest deploy --only functions --project ebm-crew-calendar
 ```
 
