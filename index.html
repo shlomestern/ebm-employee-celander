@@ -1791,7 +1791,19 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function isAndroid(){ return /Android/i.test(navigator.userAgent || ""); }
 
   function refreshInstallButton(){
-    $("installBtn").hidden = isStandalone();
+    // Hidden inside the installed app, and hidden in the browser once the app
+    // is on the phone — Chrome never offers to install something twice, so the
+    // button would only ever open a help dialog the user does not need.
+    $("installBtn").hidden = isStandalone() || state.alreadyInstalled;
+  }
+  function checkInstalled(){
+    if (isStandalone() || !navigator.getInstalledRelatedApps) return;
+    navigator.getInstalledRelatedApps().then(function(apps){
+      if (apps && apps.length){
+        state.alreadyInstalled = true;
+        refreshInstallButton();
+      }
+    }).catch(function(){});
   }
 
   window.addEventListener("beforeinstallprompt", function(e){
@@ -1816,11 +1828,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       ];
     } else if (isAndroid()){
       title = "Add to your phone";
-      sub = "Chrome can install this like a normal app.";
+      sub = "Chrome can install this like a normal app. If it is already on your home screen, you are done — Chrome will not offer to install it a second time.";
       steps = [
         "Tap the <b>⋮</b> menu in the top right of Chrome.",
         "Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see it.",
-        "Tap <b>Install</b>."
+        "Tap <b>Install</b>.",
+        "Already have it, but the icon looks old? Remove it from the home screen and add it again — Android keeps the icon it was installed with."
       ];
     } else {
       title = "Install on this computer";
@@ -1858,6 +1871,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   });
 
   refreshInstallButton();
+  checkInstalled();
 
   if ("serviceWorker" in navigator){
     window.addEventListener("load", function(){
