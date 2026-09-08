@@ -403,11 +403,15 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 <div class="screen" id="gate" hidden>
   <form class="card" id="gateForm">
     <div class="eyebrow">Empire Building Management</div>
-    <h2>Crew Calendar</h2>
-    <p>Enter your own code. Everyone has a different one.</p>
-    <input id="gateInput" type="password" autocomplete="current-password" placeholder="Your code" required>
-    <button type="submit" class="btn btn-primary btn-block" id="gateSubmit" disabled>Starting&hellip;</button>
+    <h2 data-t>Crew Calendar</h2>
+    <p data-t>Enter your own code. Everyone has a different one.</p>
+    <input id="gateInput" type="password" autocomplete="current-password" data-tp="Your code" placeholder="Your code" required>
+    <button type="submit" class="btn btn-primary btn-block" id="gateSubmit" disabled data-t>Starting…</button>
     <p class="err" id="gateErr"></p>
+    <div class="seg" id="gateLangSeg" role="group" style="margin-top:14px">
+      <button type="button" data-l="en">English</button>
+      <button type="button" data-l="fr">Français</button>
+    </div>
   </form>
 </div>
 
@@ -419,25 +423,25 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     </div>
     <div class="topbar-right">
       <span class="status" id="status" hidden><span class="dot"></span><span id="statusText"></span></span>
-      <button class="btn" id="installBtn">Install app</button>
-      <button class="me" id="meBtn" aria-label="Your account"><span id="meInitial">?</span></button>
+      <button class="btn" id="installBtn" data-t>Install app</button>
+      <button class="me" id="meBtn" data-ta="Your account" aria-label="Your account"><span id="meInitial">?</span></button>
     </div>
   </header>
 
   <!-- OFFICE / ADMIN -->
   <div id="calView" hidden>
     <div class="layout">
-      <aside class="crew" id="crew"><div class="eyebrow">Crew</div></aside>
+      <aside class="crew" id="crew"><div class="eyebrow" data-t>Crew</div></aside>
       <main>
         <div class="calbar">
-          <button class="nav" id="prevMonth" aria-label="Previous month">&#8249;</button>
-          <button class="nav" id="nextMonth" aria-label="Next month">&#8250;</button>
+          <button class="nav" id="prevMonth" data-ta="Previous month" aria-label="Previous month">&#8249;</button>
+          <button class="nav" id="nextMonth" data-ta="Next month" aria-label="Next month">&#8250;</button>
           <h2 id="monthLabel"></h2>
-          <button class="btn" id="todayBtn">Today</button>
-          <div class="seg" id="viewSeg" role="group" aria-label="Calendar layout">
-            <button type="button" data-v="month">Month</button>
-            <button type="button" data-v="week">Week</button>
-            <button type="button" data-v="list">List</button>
+          <button class="btn" id="todayBtn" data-t>Today</button>
+          <div class="seg" id="viewSeg" role="group" data-ta="Calendar layout" aria-label="Calendar layout">
+            <button type="button" data-v="month" data-t>Month</button>
+            <button type="button" data-v="week" data-t>Week</button>
+            <button type="button" data-v="list" data-t>List</button>
           </div>
         </div>
         <div class="cal" id="cal"></div>
@@ -464,69 +468,77 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     </div>
 
     <div class="mesec">
-      <div class="eyebrow">Notifications</div>
+      <div class="eyebrow" data-t>Notifications</div>
       <p class="sub" id="meNotifText" style="margin:6px 0 0"></p>
-      <button type="button" class="btn" id="meNotifBtn" hidden>Turn on notifications</button>
-      <button type="button" class="btn" id="meTestBtn" hidden>Send a test buzz</button>
+      <button type="button" class="btn" id="meNotifBtn" hidden data-t>Turn on notifications</button>
+      <button type="button" class="btn" id="meTestBtn" hidden data-t>Send a test buzz</button>
+    </div>
+
+    <div class="mesec">
+      <div class="eyebrow" data-t>Language</div>
+      <div class="seg" id="langSeg" role="group" style="margin-top:8px">
+        <button type="button" data-l="en">English</button>
+        <button type="button" data-l="fr">Français</button>
+      </div>
     </div>
 
     <div class="mesec" id="meConnSec">
-      <div class="eyebrow">Connection</div>
+      <div class="eyebrow" data-t>Connection</div>
       <p class="sub" id="meConnText" style="margin:6px 0 0"></p>
     </div>
 
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55"></p>
 
     <div class="actions">
-      <button type="button" class="btn" id="meCrewBtn" hidden>Crew &amp; codes</button>
+      <button type="button" class="btn" id="meCrewBtn" hidden data-t>Crew &amp; codes</button>
       <span class="spacer"></span>
-      <button type="button" class="btn btn-danger" id="meSignOut">Sign out</button>
-      <button type="button" class="btn" id="meClose">Close</button>
+      <button type="button" class="btn btn-danger" id="meSignOut" data-t>Sign out</button>
+      <button type="button" class="btn" id="meClose" data-t>Close</button>
     </div>
   </div>
 </dialog>
 
 <dialog id="crewDlg">
   <form method="dialog" class="dlg" id="crewForm">
-    <div class="eyebrow">Office only</div>
-    <h3>Crew &amp; codes</h3>
-    <p class="sub">Give each person their own code and tell them what it is. A plumber or electrician signs in and sees only their own jobs. Set someone to <b>Admin (office)</b> and they get the calendar too — then tick exactly what they may do.</p>
+    <div class="eyebrow" data-t>Office only</div>
+    <h3 data-t>Crew &amp; codes</h3>
+    <p class="sub" data-th>Give each person their own code and tell them what it is. A plumber or electrician signs in and sees only their own jobs. Set someone to <b>Admin (office)</b> and they get the calendar too — then tick exactly what they may do.</p>
     <div id="crewRows"></div>
-    <button type="button" class="btn" id="addPerson">Add someone</button>
+    <button type="button" class="btn" id="addPerson" data-t>Add someone</button>
 
     <div class="mesec" style="margin-top:18px">
-      <div class="eyebrow">Phones signed up for notifications</div>
-      <p class="sub" style="margin:6px 0 8px">A person with no phone here cannot be buzzed, however the job is booked. They fix it themselves: open the app on their own phone, sign in with their code, and allow notifications when it asks.</p>
+      <div class="eyebrow" data-t>Phones signed up for notifications</div>
+      <p class="sub" style="margin:6px 0 8px" data-t>A person with no phone here cannot be buzzed, however the job is booked. They fix it themselves: open the app on their own phone, sign in with their code, and allow notifications when it asks.</p>
       <div id="crewPhones" class="sub"></div>
     </div>
     <div class="field" style="margin-top:16px">
-      <label for="fOfficeName">Your name</label>
-      <input id="fOfficeName" maxlength="30" autocomplete="off" placeholder="Office">
-      <span class="hint">Shown at the top of the app when you are signed in with the office code.</span>
+      <label for="fOfficeName" data-t>Your name</label>
+      <input id="fOfficeName" maxlength="30" autocomplete="off" data-tp="Office" placeholder="Office">
+      <span class="hint" data-t>Shown at the top of the app when you are signed in with the office code.</span>
     </div>
     <div class="field">
-      <label for="fOfficeCode">Office code</label>
+      <label for="fOfficeCode" data-t>Office code</label>
       <input id="fOfficeCode" maxlength="40" autocomplete="off">
-      <span class="hint">Opens the whole calendar. Keep this one to yourself.</span>
+      <span class="hint" data-t>Opens the whole calendar. Keep this one to yourself.</span>
     </div>
     <p class="err" id="crewErr"></p>
     <div class="actions">
-      <button type="button" class="btn" id="crewCancel">Cancel</button>
+      <button type="button" class="btn" id="crewCancel" data-t>Cancel</button>
       <span class="spacer"></span>
-      <button type="submit" class="btn btn-primary" id="crewSave">Save</button>
+      <button type="submit" class="btn btn-primary" id="crewSave" data-t>Save</button>
     </div>
   </form>
 </dialog>
 
 <dialog id="installDlg">
   <div class="dlg">
-    <div class="eyebrow">Put it on your phone</div>
-    <h3 id="instTitle">Install the app</h3>
+    <div class="eyebrow" data-t>Put it on your phone</div>
+    <h3 id="instTitle" data-t>Install the app</h3>
     <p class="sub" id="instSub"></p>
     <ol class="steps" id="instSteps"></ol>
     <div class="actions">
       <span class="spacer"></span>
-      <button type="button" class="btn" id="instClose">Got it</button>
+      <button type="button" class="btn" id="instClose" data-t>Got it</button>
     </div>
   </div>
 </dialog>
@@ -539,29 +551,29 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="jobs" id="dayJobs"></div>
     <p class="err" id="dayErr"></p>
     <div class="actions">
-      <button type="button" class="btn btn-primary" id="addJobBtn">Add a job</button>
+      <button type="button" class="btn btn-primary" id="addJobBtn" data-t>Add a job</button>
       <span class="spacer"></span>
-      <button type="button" class="btn" id="dayClose">Close</button>
+      <button type="button" class="btn" id="dayClose" data-t>Close</button>
     </div>
   </div>
 
   <form method="dialog" class="dlg" id="paneForm" hidden>
     <div class="eyebrow" id="formWho"></div>
     <h3 id="formWhen"></h3>
-    <p class="sub">Pick the property, then the time.</p>
+    <p class="sub" data-t>Pick the property, then the time.</p>
 
     <div class="field">
-      <label for="fProject">Project</label>
+      <label for="fProject" data-t>Project</label>
       <select id="fProject" required></select>
     </div>
     <div class="field">
-      <label for="fBuilding">Building</label>
-      <select id="fBuilding" required></select>
+      <label for="fBuilding" data-t>Building (optional)</label>
+      <select id="fBuilding"></select>
       <span class="hint" id="managerHint"></span>
     </div>
     <div class="field">
-      <label for="fUnit">Unit</label>
-      <input id="fUnit" maxlength="20" placeholder="e.g. 3, or Basement">
+      <label for="fUnit" data-t>Unit</label>
+      <input id="fUnit" maxlength="20" data-tp="e.g. 3, or Basement" placeholder="e.g. 3, or Basement">
     </div>
 
     <label class="check">
@@ -571,25 +583,25 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
     <div class="row2" id="timeRow">
       <div class="field">
-        <label for="fFrom">From</label>
+        <label for="fFrom" data-t>From</label>
         <select id="fFrom"></select>
       </div>
       <div class="field">
-        <label for="fTo">To</label>
+        <label for="fTo" data-t>To</label>
         <select id="fTo"></select>
       </div>
     </div>
 
     <div class="field">
-      <label for="fJob">Work to do</label>
-      <textarea id="fJob" maxlength="400" placeholder="e.g. Kitchen sink leaking under the cabinet"></textarea>
+      <label for="fJob" data-t>Work to do</label>
+      <textarea id="fJob" maxlength="400" data-tp="e.g. Kitchen sink leaking under the cabinet" placeholder="e.g. Kitchen sink leaking under the cabinet"></textarea>
     </div>
 
     <p class="err" id="formErr"></p>
     <div class="actions">
-      <button type="button" class="btn" id="formBack">Back</button>
+      <button type="button" class="btn" id="formBack" data-t>Back</button>
       <span class="spacer"></span>
-      <button type="submit" class="btn btn-primary" id="formSave">Save job</button>
+      <button type="submit" class="btn btn-primary" id="formSave" data-t>Save job</button>
     </div>
   </form>
 </dialog>
@@ -603,11 +615,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   /* The roster lives in the database so the office can change it from inside
      the app. These are only the values seeded on first run. */
   var DEFAULT_PEOPLE = [
-    {id:"rodrigo",     name:"Rodrigo",     trade:"plumbing",   code:"rd7412"},
     {id:"zion",        name:"Zion",        trade:"plumbing",   code:"zn5836"},
+    {id:"rodrigo",     name:"Rodrigo",     trade:"plumbing",   code:"rd7412"},
     {id:"electrician", name:"Electrician", trade:"electrical", code:"el2947"}
   ];
   var DAY_START = 8, DAY_END = 17;          // 8:00 AM to 5:00 PM
+  function tradeName(k){ return tr(TRADE[k] || k); }
   var TRADE = {plumbing:"Plumbing", electrical:"Electrical", admin:"Admin"};
   var MAX_CHIPS = 2;
   var LS_PASS = "ebm-crew:pass:v2";
@@ -617,6 +630,297 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   var PROJECTS = window.EBM_PROJECTS || [];
 
+
+  /* ---------- language ----------
+     The English text is also the key, so the code still reads as English and
+     anything not yet translated falls back to it rather than to a blank.
+     Braces mark the parts filled in afterwards, because French seldom wants
+     them in the same order as English. */
+  var LS_LANG = "ebm-crew:lang:v1";
+  var FR = {
+    /* the shell */
+    "Crew Calendar": "Calendrier de l\u2019\u00e9quipe",
+    "My Schedule": "Mon horaire",
+    "Enter your own code. Everyone has a different one.":
+      "Entrez votre code personnel. Chacun a le sien.",
+    "Your code": "Votre code",
+    "Starting\u2026": "D\u00e9marrage\u2026",
+    "Open": "Ouvrir",
+    "That code does not match. Check with the office.":
+      "Ce code ne fonctionne pas. V\u00e9rifiez aupr\u00e8s du bureau.",
+    "Still starting up \u2014 try again in a second.":
+      "D\u00e9marrage en cours \u2014 r\u00e9essayez dans un instant.",
+    "Install app": "Installer l\u2019application",
+    "Your account": "Votre compte",
+    "Crew": "\u00c9quipe",
+    "Previous month": "Mois pr\u00e9c\u00e9dent",
+    "Next month": "Mois suivant",
+    "Today": "Aujourd\u2019hui",
+    "Calendar layout": "Affichage du calendrier",
+    "Month": "Mois", "Week": "Semaine", "List": "Liste",
+
+    /* trades */
+    "Plumbing": "Plomberie", "Electrical": "\u00c9lectricit\u00e9",
+    "Admin": "Bureau", "Admin (office)": "Bureau (administration)",
+    "Office": "Bureau",
+
+    /* the calendar */
+    "{name}\u2019s jobs": "Travaux de {name}",
+    "Your jobs": "Vos travaux",
+    "Click a day to see it or add a job":
+      "Cliquez sur une journ\u00e9e pour la voir ou ajouter un travail",
+    "Click a day to see what you have on":
+      "Cliquez sur une journ\u00e9e pour voir ce qui vous attend",
+    "Jobs save straight away and every open calendar updates within seconds.":
+      "Les travaux s\u2019enregistrent imm\u00e9diatement et tous les calendriers ouverts se mettent \u00e0 jour en quelques secondes.",
+    "off": "cong\u00e9",
+    "New job \u2014 {when}": "Nouveau travail \u2014 {when}", "today": "aujourd\u2019hui",
+    "Free": "Libre", "free": "libre", "Off": "Cong\u00e9", "day off": "cong\u00e9",
+    "Edit": "Modifier", "Sure?": "Certain\u00a0?", "Add": "Ajouter",
+    "EBM Crew Calendar": "Calendrier de l\u2019\u00e9quipe EBM",
+    "Checking\u2026": "V\u00e9rification\u2026",
+    "Full": "Complet",
+    "All day": "Journ\u00e9e compl\u00e8te",
+    "all day": "journ\u00e9e compl\u00e8te",
+    "+{n} more": "+{n} de plus",
+    "Everything coming up": "Tout ce qui s\u2019en vient",
+    "Checking the calendar\u2026": "V\u00e9rification du calendrier\u2026",
+    "Nothing booked from today onwards.": "Rien de r\u00e9serv\u00e9 \u00e0 partir d\u2019aujourd\u2019hui.",
+    "No crew yet. Add someone under Crew & codes.":
+      "Aucun employ\u00e9 pour l\u2019instant. Ajoutez quelqu\u2019un dans \u00c9quipe et codes.",
+    "no jobs": "aucun travail",
+    "{n} job": "{n} travail", "{n} jobs": "{n} travaux",
+
+    /* a day */
+    "Nothing booked for you this day.": "Rien de r\u00e9serv\u00e9 pour vous cette journ\u00e9e.",
+    "Nothing booked this day.": "Rien de r\u00e9serv\u00e9 cette journ\u00e9e.",
+    "Checking this day\u2026": "V\u00e9rification de la journ\u00e9e\u2026",
+    "One job.": "Un travail.",
+    "{n} jobs.": "{n} travaux.",
+    "{holiday} \u2014 normally a day off. ": "{holiday} \u2014 normalement cong\u00e9. ",
+    "Normally a day off. ": "Normalement cong\u00e9. ",
+    "This day has passed.": "Cette journ\u00e9e est pass\u00e9e.",
+    "Fully booked.": "Compl\u00e8tement r\u00e9serv\u00e9.",
+    "{n} hour still free, {a} to {b}.": "{n} heure encore libre, de {a} \u00e0 {b}.",
+    "{n} hours still free, {a} to {b}.": "{n} heures encore libres, de {a} \u00e0 {b}.",
+    "Add a job": "Ajouter un travail",
+    "Close": "Fermer",
+
+    /* a job */
+    "On site": "Sur place", "Finished": "Termin\u00e9",
+    "Booked by {name}": "R\u00e9serv\u00e9 par {name}",
+    "In {t}": "Arriv\u00e9e {t}",
+    "In {t} \u00b7 Out {u}": "Arriv\u00e9e {t} \u00b7 D\u00e9part {u}",
+    "Clock in": "Pointer l\u2019arriv\u00e9e",
+    "Clock out": "Pointer le d\u00e9part",
+    "Could not clock in.": "Impossible de pointer l\u2019arriv\u00e9e.",
+    "Could not clock out.": "Impossible de pointer le d\u00e9part.",
+    "Cancel job": "Annuler le travail",
+    "Could not cancel.": "Annulation impossible.",
+    "Add a note\u2026": "Ajouter une note\u2026",
+    "Note not saved.": "La note n\u2019a pas \u00e9t\u00e9 enregistr\u00e9e.",
+    "Unit {u}": "Logement {u}",
+
+    /* booking */
+    "Pick the property, then the time.": "Choisissez l\u2019immeuble, puis l\u2019heure.",
+    "Project": "Projet", "Building (optional)": "Immeuble (facultatif)",
+    "Whole project": "Tout le projet", "Unit": "Logement",
+    "Choose a project\u2026": "Choisissez un projet\u2026",
+    "No projects loaded": "Aucun projet charg\u00e9",
+    "Pick a project first": "Choisissez d\u2019abord un projet",
+    "Manager: ": "Gestionnaire\u00a0: ",
+    "e.g. 3, or Basement": "ex.\u00a0: 3, ou Sous-sol",
+    "{h} \u2014 taken": "{h} \u2014 occup\u00e9",
+    "From": "De", "To": "\u00c0",
+    "Work to do": "Travail \u00e0 faire",
+    "e.g. Kitchen sink leaking under the cabinet":
+      "ex.\u00a0: \u00c9vier de cuisine qui coule sous l\u2019armoire",
+    "Back": "Retour",
+    "Save job": "Enregistrer le travail",
+    "Save changes": "Enregistrer les modifications",
+    "Edit \u2014 ": "Modifier \u2014 ",
+    "Pick a project first.": "Choisissez d\u2019abord un projet.",
+    "The end time has to be after the start time.":
+      "L\u2019heure de fin doit \u00eatre apr\u00e8s l\u2019heure de d\u00e9but.",
+    "{name} already has a job in those hours. Pick another time.":
+      "{name} a d\u00e9j\u00e0 un travail \u00e0 ces heures. Choisissez un autre moment.",
+    "The changes did not save.": "Les modifications n\u2019ont pas \u00e9t\u00e9 enregistr\u00e9es.",
+    "The job did not save.": "Le travail n\u2019a pas \u00e9t\u00e9 enregistr\u00e9.",
+    "<b>All day</b>{a} to {b}.": "<b>Journ\u00e9e compl\u00e8te</b>de {a} \u00e0 {b}.",
+    "<b>All day</b>Not available \u2014 part of this day is already booked.":
+      "<b>Journ\u00e9e compl\u00e8te</b>Impossible \u2014 une partie de la journ\u00e9e est d\u00e9j\u00e0 r\u00e9serv\u00e9e.",
+
+    /* the account sheet */
+    "Notifications": "Notifications",
+    "Turn on notifications": "Activer les notifications",
+    "Send a test buzz": "Envoyer un test",
+    "Sending\u2026": "Envoi\u2026",
+    "Sent \u2014 check your notifications": "Envoy\u00e9 \u2014 regardez vos notifications",
+    "This phone would not show it": "Cet appareil ne l\u2019a pas affich\u00e9e",
+    "EBM Crew \u2014 test": "\u00c9quipe EBM \u2014 test",
+    "If you can see this, this phone can buzz for {name}.":
+      "Si vous voyez ceci, cet appareil peut sonner pour {name}.",
+    "Connection": "Connexion",
+    "Crew & codes": "\u00c9quipe et codes",
+    "Sign out": "Se d\u00e9connecter",
+    "Language": "Langue",
+    "Not switched on yet \u2014 the setup still has to be finished.":
+      "Pas encore activ\u00e9es \u2014 la configuration n\u2019est pas termin\u00e9e.",
+    "Not switched on yet. The office still has to finish setting these up.":
+      "Pas encore activ\u00e9es. Le bureau doit terminer la configuration.",
+    "This phone cannot show notifications.":
+      "Cet appareil ne peut pas afficher de notifications.",
+    "Blocked. Allow notifications for this app in your phone's settings, then reopen it.":
+      "Bloqu\u00e9es. Autorisez les notifications pour cette application dans les r\u00e9glages de votre appareil, puis rouvrez-la.",
+    "On. You'll hear when the crew clock in, clock out and finish a job.":
+      "Activ\u00e9es. Vous serez averti quand l\u2019\u00e9quipe pointe son arriv\u00e9e, son d\u00e9part et termine un travail.",
+    "On. You'll get a buzz when a job is booked for you.":
+      "Activ\u00e9es. Vous serez averti quand un travail vous est assign\u00e9.",
+    " This phone is registered as {name}.":
+      " Cet appareil est enregistr\u00e9 au nom de {name}.",
+    "Allowed, but this phone has not registered yet. Reopen the app if it stays like this.":
+      "Autoris\u00e9es, mais cet appareil n\u2019est pas encore enregistr\u00e9. Rouvrez l\u2019application si rien ne change.",
+    "Off. Turn them on to hear when the crew clock in and out.":
+      "D\u00e9sactiv\u00e9es. Activez-les pour \u00eatre averti des arriv\u00e9es et des d\u00e9parts.",
+    "Off. Turn them on to hear about a new job without opening the app.":
+      "D\u00e9sactiv\u00e9es. Activez-les pour \u00eatre averti d\u2019un nouveau travail sans ouvrir l\u2019application.",
+    "No connection \u2014 showing what was last saved on this phone.":
+      "Aucune connexion \u2014 voici ce qui a \u00e9t\u00e9 enregistr\u00e9 en dernier sur cet appareil.",
+    "Saved on this device only \u2014 nobody else sees these jobs.":
+      "Enregistr\u00e9 sur cet appareil seulement \u2014 personne d\u2019autre ne voit ces travaux.",
+    "Connected. Everyone sees the same calendar.":
+      "Connect\u00e9. Tout le monde voit le m\u00eame calendrier.",
+
+    /* crew & codes */
+    "Office only": "Bureau seulement",
+    "Give each person their own code and tell them what it is. A plumber or electrician signs in and sees only their own jobs. Set someone to <b>Admin (office)</b> and they get the calendar too \u2014 then tick exactly what they may do.":
+      "Donnez \u00e0 chaque personne son propre code et communiquez-le-lui. Un plombier ou un \u00e9lectricien se connecte et ne voit que ses propres travaux. Choisissez <b>Bureau (administration)</b> pour donner acc\u00e8s \u00e0 tout le calendrier \u2014 puis cochez exactement ce que la personne peut faire.",
+    "Add someone": "Ajouter une personne",
+    "Name": "Nom", "Role": "R\u00f4le", "Code": "Code", "Remove": "Retirer",
+    "Can book and cancel jobs": "Peut r\u00e9server et annuler des travaux",
+    "Can add people and change codes": "Peut ajouter des personnes et changer les codes",
+    "Phones signed up for notifications": "Appareils inscrits aux notifications",
+    "A person with no phone here cannot be buzzed, however the job is booked. They fix it themselves: open the app on their own phone, sign in with their code, and allow notifications when it asks.":
+      "Une personne absente de cette liste ne peut pas \u00eatre avertie, peu importe comment le travail est r\u00e9serv\u00e9. Elle s\u2019en occupe elle-m\u00eame\u00a0: ouvrir l\u2019application sur son propre appareil, se connecter avec son code et autoriser les notifications.",
+    " \u2014 no phone yet": " \u2014 aucun appareil",
+    "a device": "un appareil",
+    " and ": " et ",
+    "Only shown when the app is connected.":
+      "Affich\u00e9 seulement quand l\u2019application est connect\u00e9e.",
+    "Could not read the list just now.": "Impossible de lire la liste pour l\u2019instant.",
+    "Your name": "Votre nom",
+    "Shown at the top of the app when you are signed in with the office code.":
+      "Affich\u00e9 en haut de l\u2019application quand vous \u00eates connect\u00e9 avec le code du bureau.",
+    "Office code": "Code du bureau",
+    "Opens the whole calendar. Keep this one to yourself.":
+      "Donne acc\u00e8s \u00e0 tout le calendrier. Gardez-le pour vous.",
+    "Cancel": "Annuler", "Save": "Enregistrer",
+    "The office needs a code.": "Le bureau a besoin d\u2019un code.",
+    "the office": "le bureau",
+    "Every person needs a name.": "Chaque personne a besoin d\u2019un nom.",
+    "{name} needs a code, or nobody can sign in as them.":
+      "{name} a besoin d\u2019un code, sinon personne ne peut se connecter en son nom.",
+    "Two people cannot share a code \u2014 {code} is already used by {name}.":
+      "Deux personnes ne peuvent pas partager un code \u2014 {code} est d\u00e9j\u00e0 utilis\u00e9 par {name}.",
+    "Keep at least one person on the crew.": "Gardez au moins une personne dans l\u2019\u00e9quipe.",
+    "The crew list did not save.": "La liste de l\u2019\u00e9quipe n\u2019a pas \u00e9t\u00e9 enregistr\u00e9e.",
+
+    /* connection */
+    "No connection": "Aucune connexion",
+    "<strong>Can't reach the calendar right now.</strong> You are seeing what was last saved on this device. Anything you change here will not reach anyone else \u2014 check your signal and reload.":
+      "<strong>Le calendrier est injoignable pour l\u2019instant.</strong> Vous voyez ce qui a \u00e9t\u00e9 enregistr\u00e9 en dernier sur cet appareil. Rien de ce que vous changez ici ne parviendra aux autres \u2014 v\u00e9rifiez votre connexion et rechargez.",
+    "Saved on this device only": "Enregistr\u00e9 sur cet appareil seulement",
+    "<strong>Heads up:</strong> this copy keeps jobs in this browser only \u2014 nobody else sees them.":
+      "<strong>\u00c0 noter\u00a0:</strong> cette copie garde les travaux dans ce navigateur seulement \u2014 personne d\u2019autre ne les voit.",
+    "You no longer have access. Reload the page.":
+      "Vous n\u2019avez plus acc\u00e8s. Rechargez la page.",
+    "Too many changes at once. Wait a moment and try again.":
+      "Trop de changements \u00e0 la fois. Attendez un moment et r\u00e9essayez.",
+    "The calendar is full. Delete some old jobs first.":
+      "Le calendrier est plein. Supprimez d\u2019abord d\u2019anciens travaux.",
+    "No connection right now. Try again in a moment.":
+      "Aucune connexion pour l\u2019instant. R\u00e9essayez dans un moment.",
+    "This calendar is not accepting changes. Check the Firebase rules.":
+      "Ce calendrier n\u2019accepte pas les modifications. V\u00e9rifiez les r\u00e8gles Firebase.",
+
+    /* installing */
+    "Put it on your phone": "Sur votre appareil",
+    "Install the app": "Installer l\u2019application",
+    "Got it": "Compris",
+    "Add to your iPhone": "Ajouter \u00e0 votre iPhone",
+    "Safari does not have an install button, so it takes three taps. Make sure you are in Safari, not Chrome.":
+      "Safari n\u2019a pas de bouton d\u2019installation, alors il faut trois touchers. Assurez-vous d\u2019\u00eatre dans Safari, pas dans Chrome.",
+    "Tap the <b>Share</b> button \u2014 the square with an arrow pointing up, at the bottom of the screen.":
+      "Touchez le bouton <b>Partager</b> \u2014 le carr\u00e9 avec une fl\u00e8che vers le haut, au bas de l\u2019\u00e9cran.",
+    "Scroll down the list and tap <b>Add to Home Screen</b>.":
+      "Faites d\u00e9filer la liste et touchez <b>Sur l\u2019\u00e9cran d\u2019accueil</b>.",
+    "Tap <b>Add</b> in the top right.": "Touchez <b>Ajouter</b> en haut \u00e0 droite.",
+    "Add to your phone": "Ajouter \u00e0 votre appareil",
+    "Chrome can install this like a normal app. If it is already on your home screen, you are done \u2014 Chrome will not offer to install it a second time.":
+      "Chrome peut l\u2019installer comme une application ordinaire. Si elle est d\u00e9j\u00e0 sur votre \u00e9cran d\u2019accueil, c\u2019est fait \u2014 Chrome ne proposera pas de l\u2019installer une deuxi\u00e8me fois.",
+    "Tap the <b>\u22ee</b> menu in the top right of Chrome.":
+      "Touchez le menu <b>\u22ee</b> en haut \u00e0 droite de Chrome.",
+    "Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see it.":
+      "Touchez <b>Installer l\u2019application</b>, ou <b>Ajouter \u00e0 l\u2019\u00e9cran d\u2019accueil</b> si vous ne la voyez pas.",
+    "Tap <b>Install</b>.": "Touchez <b>Installer</b>.",
+    "Already have it, but the icon looks old? Remove it from the home screen and add it again \u2014 Android keeps the icon it was installed with.":
+      "Vous l\u2019avez d\u00e9j\u00e0, mais l\u2019ic\u00f4ne semble ancienne\u00a0? Retirez-la de l\u2019\u00e9cran d\u2019accueil et ajoutez-la de nouveau \u2014 Android conserve l\u2019ic\u00f4ne d\u2019installation.",
+    "Install on this computer": "Installer sur cet ordinateur",
+    "Chrome and Edge can install this as a desktop app.":
+      "Chrome et Edge peuvent l\u2019installer comme application de bureau.",
+    "Look for the <b>install icon</b> at the right-hand end of the address bar \u2014 a screen with a downward arrow.":
+      "Cherchez l\u2019<b>ic\u00f4ne d\u2019installation</b> \u00e0 droite de la barre d\u2019adresse \u2014 un \u00e9cran avec une fl\u00e8che vers le bas.",
+    "Click it, then click <b>Install</b>.": "Cliquez dessus, puis sur <b>Installer</b>.",
+    "No icon there? Open the browser menu and look for <b>Install</b> or <b>Apps</b>.":
+      "Pas d\u2019ic\u00f4ne\u00a0? Ouvrez le menu du navigateur et cherchez <b>Installer</b> ou <b>Applications</b>.",
+
+    /* devices */
+    "Android phone": "T\u00e9l\u00e9phone Android", "Android tablet": "Tablette Android",
+    "iPhone": "iPhone", "iPad": "iPad",
+    "Windows computer": "Ordinateur Windows", "Mac": "Mac", "Computer": "Ordinateur"
+  };
+
+  function tr(str, vars){
+    var out = (state.lang === "fr" && FR[str]) || str;
+    if (vars) out = out.replace(/\{(\w+)\}/g, function(all, k){
+      return vars[k] === undefined ? all : vars[k];
+    });
+    return out;
+  }
+  function locale(){ return state.lang === "fr" ? "fr-CA" : "en-CA"; }
+
+  /* Static text keeps its English in a data attribute the first time round,
+     so switching back and forth never translates a translation. */
+  function applyStaticText(){
+    var all = document.querySelectorAll("[data-t]");
+    Array.prototype.forEach.call(all, function(el){
+      if (!el.dataset.t) el.dataset.t = el.textContent;
+      el.textContent = tr(el.dataset.t);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-th]"), function(el){
+      if (!el.dataset.th) el.dataset.th = el.innerHTML.trim();
+      el.innerHTML = tr(el.dataset.th);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-tp]"), function(el){
+      el.placeholder = tr(el.dataset.tp);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-ta]"), function(el){
+      el.setAttribute("aria-label", tr(el.dataset.ta));
+    });
+    document.documentElement.lang = state.lang === "fr" ? "fr-CA" : "en";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-l]"), function(b){
+      b.setAttribute("aria-pressed", b.dataset.l === state.lang ? "true" : "false");
+    });
+  }
+  function setLang(l){
+    state.lang = l === "fr" ? "fr" : "en";
+    try{ localStorage.setItem(LS_LANG, state.lang); }catch(e){}
+    buildFormats();
+    applyStaticText();
+    if (state.opened) render();
+  }
+  function nbsp(x){ return String(x).replace(/ /g, "\u00a0"); }
+
   /* ---------- dates ---------- */
   function iso(d){
     var m=d.getMonth()+1, day=d.getDate();
@@ -624,15 +928,24 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function fromIso(s){ var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
   function addDays(d,n){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
-  function hourLong(h){ var ap=h<12?"AM":"PM", hh=h%12; if(!hh) hh=12; return hh+":00 "+ap; }
-  function hourShort(h){ var ap=h<12?"a":"p", hh=h%12; if(!hh) hh=12; return hh+ap; }
-  function hourBare(h){ var hh=h%12; return hh===0 ? 12 : hh; }
+  function hourLong(h){
+    if (state.lang === "fr") return h + "\u00a0h";
+    var ap=h<12?"AM":"PM", hh=h%12; if(!hh) hh=12; return hh+":00 "+ap;
+  }
+  function hourShort(h){
+    if (state.lang === "fr") return h + "h";
+    var ap=h<12?"a":"p", hh=h%12; if(!hh) hh=12; return hh+ap;
+  }
+  function hourBare(h){
+    if (state.lang === "fr") return h;
+    var hh=h%12; return hh===0 ? 12 : hh;
+  }
   function rangeLabel(j){
-    if (j.allDay) return "All day";
-    return hourLong(j.from) + " – " + hourLong(j.to);
+    if (j.allDay) return tr("All day");
+    return hourLong(j.from) + " \u2013 " + hourLong(j.to);
   }
   function rangeShort(j){
-    return j.allDay ? "all day" : hourShort(j.from) + "–" + hourShort(j.to);
+    return j.allDay ? tr("all day") : hourShort(j.from) + "\u2013" + hourShort(j.to);
   }
   /* Yom tov, worked out from the Hebrew calendar the browser already carries,
      so it stays right every year instead of ageing out of a hardcoded list.
@@ -675,13 +988,17 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v46";
+  var APP_VERSION = "v47";
 
-  var F_MONTH = new Intl.DateTimeFormat(undefined,{month:"long"});
-  var F_LONG  = new Intl.DateTimeFormat(undefined,{weekday:"long", month:"long", day:"numeric"});
-  var F_DOW   = new Intl.DateTimeFormat(undefined,{weekday:"short"});
-  var F_MED   = new Intl.DateTimeFormat(undefined,{month:"short", day:"numeric"});
-  var F_TIME  = new Intl.DateTimeFormat(undefined,{hour:"numeric", minute:"2-digit"});
+  var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
+  function buildFormats(){
+    var L = locale();
+    F_MONTH = new Intl.DateTimeFormat(L,{month:"long"});
+    F_LONG  = new Intl.DateTimeFormat(L,{weekday:"long", month:"long", day:"numeric"});
+    F_DOW   = new Intl.DateTimeFormat(L,{weekday:"short"});
+    F_MED   = new Intl.DateTimeFormat(L,{month:"short", day:"numeric"});
+    F_TIME  = new Intl.DateTimeFormat(L,{hour:"numeric", minute:"2-digit"});
+  }
 
   /* ---------- state ---------- */
   var today = new Date(), todayIso = iso(today);
@@ -695,7 +1012,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     db: null, fb: null, unsubs: [], seen: {},
     people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
     officeCode: "", officeName: "Office",
-    rosterReady: false, rosterUnsub: null, opened: false
+    rosterReady: false, rosterUnsub: null, opened: false,
+    lang: "en"
   };
 
   function member(id){
@@ -790,11 +1108,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function errText(err, fallback){
     var c = err && err.code;
-    if (c==="revoked"||c==="not_granted") return "You no longer have access. Reload the page.";
-    if (c==="resource_exhausted") return "Too many changes at once. Wait a moment and try again.";
-    if (c==="quota_exceeded") return "The calendar is full. Delete some old jobs first.";
-    if (c==="unavailable") return "No connection right now. Try again in a moment.";
-    if (c==="permission-denied") return "This calendar is not accepting changes. Check the Firebase rules.";
+    if (c==="revoked"||c==="not_granted") return tr("You no longer have access. Reload the page.");
+    if (c==="resource_exhausted") return tr("Too many changes at once. Wait a moment and try again.");
+    if (c==="quota_exceeded") return tr("The calendar is full. Delete some old jobs first.");
+    if (c==="unavailable") return tr("No connection right now. Try again in a moment.");
+    if (c==="permission-denied") return tr("This calendar is not accepting changes. Check the Firebase rules.");
     if (err && err.message) return err.message;
     return fallback;
   }
@@ -830,7 +1148,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var sel = $("fProject");
     sel.innerHTML = "";
     var ph = document.createElement("option");
-    ph.value=""; ph.textContent = PROJECTS.length ? "Choose a project…" : "No projects loaded";
+    ph.value=""; ph.textContent = PROJECTS.length ? tr("Choose a project\u2026") : tr("No projects loaded");
     sel.appendChild(ph);
     PROJECTS.forEach(function(p){
       var o = document.createElement("option");
@@ -845,7 +1163,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var p = project(projectId);
     if (!p){
       var none = document.createElement("option");
-      none.value=""; none.textContent = "Pick a project first";
+      none.value=""; none.textContent = tr("Pick a project first");
       sel.appendChild(none); sel.disabled = true;
       $("managerHint").textContent = "";
       return;
@@ -853,7 +1171,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     sel.disabled = false;
     if (p.buildings.length > 1){
       var ph = document.createElement("option");
-      ph.value=""; ph.textContent = "Choose a building…";
+      ph.value=""; ph.textContent = tr("Whole project");
       sel.appendChild(ph);
     }
     p.buildings.forEach(function(b){
@@ -863,7 +1181,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       sel.appendChild(o);
     });
     $("managerHint").textContent = p.manager
-      ? "Manager: " + p.manager + (p.managerPhone ? " · " + p.managerPhone : "")
+      ? tr("Manager: ") + p.manager + (p.managerPhone ? " · " + p.managerPhone : "")
       : "";
   }
   function buildingOf(projectId, buildingId){
@@ -891,7 +1209,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     for (var i=DAY_START;i<DAY_END;i++){
       var o=document.createElement("option");
       o.value=i;
-      o.textContent = hourLong(i) + (busyMap[i] ? " — taken" : "");
+      o.textContent = busyMap[i] ? tr("{h} \u2014 taken", {h: hourLong(i)}) : hourLong(i);
       o.disabled = !!busyMap[i];
       f.appendChild(o);
     }
@@ -916,8 +1234,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("fAllDay").disabled = taken;
     if (taken) $("fAllDay").checked = false;
     $("fAllDayText").innerHTML = taken
-      ? "<b>All day</b>Not available — part of this day is already booked."
-      : "<b>All day</b>8:00&nbsp;AM to 5:00&nbsp;PM.";
+      ? tr("<b>All day</b>Not available \u2014 part of this day is already booked.")
+      : tr("<b>All day</b>{a} to {b}.", {a: nbsp(hourLong(DAY_START)), b: nbsp(hourLong(DAY_END))});
     $("timeRow").hidden = $("fAllDay").checked;
   }
 
@@ -926,15 +1244,15 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var el=$("status"), txt=$("statusText"), note="", warn=false;
     el.classList.remove("live","local");
     if (state.mode==="cloud" || state.mode==="shared"){
-      note = "Jobs save straight away and every open calendar updates within seconds.";
+      note = tr("Jobs save straight away and every open calendar updates within seconds.");
     } else if (state.mode==="offline"){
       warn = true; el.classList.add("local");
-      txt.textContent = "No connection";
-      note = "<strong>Can't reach the calendar right now.</strong> You are seeing what was last saved on this device. Anything you change here will not reach anyone else — check your signal and reload.";
+      txt.textContent = tr("No connection");
+      note = tr("<strong>Can't reach the calendar right now.</strong> You are seeing what was last saved on this device. Anything you change here will not reach anyone else \u2014 check your signal and reload.");
     } else if (state.mode==="device"){
       warn = true; el.classList.add("local");
-      txt.textContent = "Saved on this device only";
-      note = "<strong>Heads up:</strong> this copy keeps jobs in this browser only — nobody else sees them.";
+      txt.textContent = tr("Saved on this device only");
+      note = tr("<strong>Heads up:</strong> this copy keeps jobs in this browser only \u2014 nobody else sees them.");
     }
     // Nothing to say when it is simply working, so the bar stays clean.
     el.hidden = !warn;
@@ -950,12 +1268,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var top = document.createElement("div"); top.className="job-top";
     var t = document.createElement("span"); t.className="job-time"; t.textContent = rangeShort(j);
     var w = document.createElement("span"); w.className="job-where";
-    w.textContent = j.buildingName + (j.unit ? " · Unit " + j.unit : "");
+    w.textContent = j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "");
     top.appendChild(t); top.appendChild(w);
     if (j.clockOut){
-      var p1=document.createElement("span"); p1.className="pill off"; p1.textContent="Finished"; top.appendChild(p1);
+      var p1=document.createElement("span"); p1.className="pill off"; p1.textContent=tr("Finished"); top.appendChild(p1);
     } else if (j.clockIn){
-      var p2=document.createElement("span"); p2.className="pill on"; p2.textContent="On site"; top.appendChild(p2);
+      var p2=document.createElement("span"); p2.className="pill on"; p2.textContent=tr("On site"); top.appendChild(p2);
     }
     card.appendChild(top);
 
@@ -965,7 +1283,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
     if (j.createdBy){
       var by = document.createElement("div"); by.className="job-sub";
-      by.textContent = "Booked by " + j.createdBy;
+      by.textContent = tr("Booked by {name}", {name: j.createdBy});
       card.appendChild(by);
     }
 
@@ -974,43 +1292,45 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     }
     if (j.clockIn){
       var cs=document.createElement("div"); cs.className="job-sub";
-      cs.textContent = "In " + F_TIME.format(new Date(j.clockIn)) +
-        (j.clockOut ? " · Out " + F_TIME.format(new Date(j.clockOut)) : "");
+      cs.textContent = j.clockOut
+        ? tr("In {t} \u00b7 Out {u}", {t: F_TIME.format(new Date(j.clockIn)),
+                                      u: F_TIME.format(new Date(j.clockOut))})
+        : tr("In {t}", {t: F_TIME.format(new Date(j.clockIn))});
       card.appendChild(cs);
     }
 
     var acts = document.createElement("div"); acts.className="job-actions";
     if (opts.clock){
       if (!j.clockIn){
-        var bi=document.createElement("button"); bi.type="button"; bi.className="btn btn-go"; bi.textContent="Clock in";
+        var bi=document.createElement("button"); bi.type="button"; bi.className="btn btn-go"; bi.textContent=tr("Clock in");
         bi.addEventListener("click", function(){
           bi.disabled=true;
-          patchJob(j.id, {clockIn:new Date().toISOString()}).catch(function(e){ bi.disabled=false; alert(errText(e,"Could not clock in.")); });
+          patchJob(j.id, {clockIn:new Date().toISOString()}).catch(function(e){ bi.disabled=false; alert(errText(e,tr("Could not clock in."))); });
         });
         acts.appendChild(bi);
       } else if (!j.clockOut){
-        var bo=document.createElement("button"); bo.type="button"; bo.className="btn"; bo.textContent="Clock out";
+        var bo=document.createElement("button"); bo.type="button"; bo.className="btn"; bo.textContent=tr("Clock out");
         bo.addEventListener("click", function(){
           bo.disabled=true;
-          patchJob(j.id, {clockOut:new Date().toISOString()}).catch(function(e){ bo.disabled=false; alert(errText(e,"Could not clock out.")); });
+          patchJob(j.id, {clockOut:new Date().toISOString()}).catch(function(e){ bo.disabled=false; alert(errText(e,tr("Could not clock out."))); });
         });
         acts.appendChild(bo);
       }
     }
     if (opts.edit){
-      var ed=document.createElement("button"); ed.type="button"; ed.className="btn"; ed.textContent="Edit";
+      var ed=document.createElement("button"); ed.type="button"; ed.className="btn"; ed.textContent=tr("Edit");
       ed.addEventListener("click", function(){ editJob(j); });
       acts.appendChild(ed);
     }
     acts.appendChild(Object.assign(document.createElement("span"), {className:"spacer"}));
     if (opts.remove && !dayIsPast(j.date)){
-      var del=document.createElement("button"); del.type="button"; del.className="btn btn-danger"; del.textContent="Cancel job";
+      var del=document.createElement("button"); del.type="button"; del.className="btn btn-danger"; del.textContent=tr("Cancel job");
       del.addEventListener("click", function(){
-        if (del.dataset.armed!=="1"){ del.dataset.armed="1"; del.textContent="Sure?"; return; }
+        if (del.dataset.armed!=="1"){ del.dataset.armed="1"; del.textContent=tr("Sure?"); return; }
         del.disabled=true;
         removeJob(j.id).then(opts.after||function(){}).catch(function(e){
-          del.disabled=false; del.dataset.armed="0"; del.textContent="Cancel job";
-          alert(errText(e,"Could not cancel."));
+          del.disabled=false; del.dataset.armed="0"; del.textContent=tr("Cancel job");
+          alert(errText(e,tr("Could not cancel.")));
         });
       });
       acts.appendChild(del);
@@ -1035,13 +1355,13 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     }
     var add=document.createElement("div"); add.className="noteadd";
     var inp=document.createElement("input"); inp.placeholder="Add a note…"; inp.maxLength=200;
-    var go=document.createElement("button"); go.type="button"; go.className="btn"; go.textContent="Add";
+    var go=document.createElement("button"); go.type="button"; go.className="btn"; go.textContent=tr("Add");
     function submitNote(){
       var text=inp.value.trim(); if(!text) return;
       go.disabled=true;
       var next=(j.notes||[]).concat([{by:meName(), text:text, at:new Date().toISOString()}]);
       patchJob(j.id,{notes:next}).then(function(){ inp.value=""; go.disabled=false; })
-        .catch(function(e){ go.disabled=false; alert(errText(e,"Note not saved.")); });
+        .catch(function(e){ go.disabled=false; alert(errText(e,tr("Note not saved."))); });
     }
     go.addEventListener("click", submitNote);
     inp.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitNote(); } });
@@ -1087,12 +1407,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function renderCrew(){
     var host=$("crew");
-    host.innerHTML='<div class="eyebrow">Crew</div>';
+    host.innerHTML='<div class="eyebrow">' + tr("Crew") + '</div>';
     var crew = crewPeople();
     if (!member(state.who) || isAdmin(member(state.who))) state.who = firstCrewId();
     if (!crew.length){
       var none=document.createElement("div"); none.className="empty";
-      none.textContent="No crew yet. Add someone under Crew & codes.";
+      none.textContent=tr("No crew yet. Add someone under Crew & codes.");
       host.appendChild(none);
     }
     crew.forEach(function(m){
@@ -1104,14 +1424,15 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var nm=document.createElement("span"); nm.className="nm"; nm.textContent=m.name;
       var mt=document.createElement("span"); mt.className="mt";
       var n=monthCount(m.id);
-      mt.textContent=(TRADE[m.trade]||m.trade)+" · "+(n===0?"no jobs":n+(n===1?" job":" jobs"));
+      mt.textContent=tradeName(m.trade)+" \u00b7 "+
+        (n===0 ? tr("no jobs") : tr(n===1 ? "{n} job" : "{n} jobs", {n:n}));
       tx.appendChild(nm); tx.appendChild(mt); b.appendChild(av); b.appendChild(tx);
       b.addEventListener("click", function(){ state.who=m.id; render(); });
       host.appendChild(b);
     });
   }
   function periodLabel(){
-    if (state.view === "list") return "Everything coming up";
+    if (state.view === "list") return tr("Everything coming up");
     if (state.view === "week"){
       var a = weekFirst(), b = addDays(a,6);
       return F_MED.format(a) + " – " + F_MED.format(b) + ", " + b.getFullYear();
@@ -1124,10 +1445,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var m = memberOr(viewCrewId());
     applyAccent(m.id);
     $("monthLabel").innerHTML = periodLabel();
-    $("legendName").textContent = isOffice() ? (m.name + "'s jobs") : "Your jobs";
+    $("legendName").textContent = isOffice()
+      ? tr("{name}\u2019s jobs", {name: m.name}) : tr("Your jobs");
     $("legendHint").textContent = can("book")
-      ? "Click a day to see it or add a job"
-      : "Click a day to see what you have on";
+      ? tr("Click a day to see it or add a job")
+      : tr("Click a day to see what you have on");
 
     Array.prototype.forEach.call($("viewSeg").children, function(b){
       b.setAttribute("aria-pressed", b.dataset.v === state.view ? "true" : "false");
@@ -1192,7 +1514,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         cell.appendChild(chips);
         if (list.length>cap){
           var mo=document.createElement("span"); mo.className="more";
-          mo.textContent="+"+(list.length-cap)+" more"; cell.appendChild(mo);
+          mo.textContent=tr("+{n} more", {n: list.length-cap}); cell.appendChild(mo);
         }
         if (yt){
           var ytl=document.createElement("span"); ytl.className="freehint yt";
@@ -1201,12 +1523,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       } else {
         var fh=document.createElement("span"); fh.className="freehint";
         fh.textContent = state.mode==="loading" ? ""
-          : (yt ? yt : (isWeekend(ds) ? "Off" : (dayIsPast(ds) ? "" : "Free")));
+          : (yt ? yt : (isWeekend(ds) ? tr("Off") : (dayIsPast(ds) ? "" : tr("Free"))));
         if (yt) fh.className = "freehint yt";
         cell.appendChild(fh);
       }
       cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+
-        (yt ? ", "+yt : "")+", "+(list.length?list.length+" jobs":(isWeekend(ds)?"day off":"free")));
+        (yt ? ", "+yt : "")+", "+(list.length ? tr("{n} jobs", {n:list.length}) : (isWeekend(ds) ? tr("day off") : tr("free"))));
       (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
     }
@@ -1220,7 +1542,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
     if (!mine.length){
       var e=document.createElement("div"); e.className="empty";
-      e.textContent = state.mode==="loading" ? "Checking the calendar…" : "Nothing booked from today onwards.";
+      e.textContent = state.mode==="loading" ? tr("Checking the calendar…") : tr("Nothing booked from today onwards.");
       host.appendChild(e); return;
     }
     var groups={}, order=[];
@@ -1231,7 +1553,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     order.forEach(function(ds){
       var g=document.createElement("section"); g.className="daygroup";
       var h=document.createElement("h3");
-      h.textContent = ds===todayIso ? "Today" : F_LONG.format(fromIso(ds));
+      h.textContent = ds===todayIso ? tr("Today") : F_LONG.format(fromIso(ds));
       var sp=document.createElement("span");
       sp.textContent = groups[ds].length + (groups[ds].length===1?" job":" jobs");
       h.appendChild(sp); g.appendChild(h);
@@ -1251,7 +1573,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("calView").hidden = false;
     $("crew").hidden = !isOffice();          // crew see only their own calendar
     document.body.classList.toggle("nocrewbar", !isOffice());
-    $("appTitle").textContent = isOffice() ? "Crew Calendar" : "My Schedule";
+    $("appTitle").textContent = isOffice() ? tr("Crew Calendar") : tr("My Schedule");
     if (isOffice()) renderCrew();
     renderCalendar();
   }
@@ -1265,23 +1587,26 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function list0Text(ds){
     var n = jobsOn(ds, viewCrewId()).length;
-    if (!n) return "Nothing booked for you this day.";
-    return n === 1 ? "One job." : n + " jobs.";
+    if (!n) return tr("Nothing booked for you this day.");
+    return n === 1 ? tr("One job.") : n + " jobs.";
   }
   function showDayPane(){
     $("paneForm").hidden=true; $("paneDay").hidden=false;
     var m=memberOr(viewCrewId()), ds=openDate;
-    $("dayWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
+    $("dayWho").textContent = m.name+" \u00b7 "+tradeName(m.trade);
     $("dayWhen").textContent = F_LONG.format(fromIso(ds));
     $("dayErr").textContent="";
     var free=freeHours(ds, viewCrewId());
     var yt = holidayFor(ds);
-    var weekendNote = yt ? (yt + " — normally a day off. ")
-                         : (isWeekend(ds) ? "Normally a day off. " : "");
+    var weekendNote = yt ? tr("{holiday} \u2014 normally a day off. ", {holiday: yt})
+                         : (isWeekend(ds) ? tr("Normally a day off. ") : "");
     if (!can("book")){
       $("daySub").textContent = list0Text(ds);
-    } else $("daySub").textContent = weekendNote + (dayIsPast(ds) ? "This day has passed."
-      : (free===0 ? "Fully booked." : free+(free===1?" hour":" hours")+" still free, 8:00 AM to 5:00 PM."));
+    } else $("daySub").textContent = weekendNote + (dayIsPast(ds) ? tr("This day has passed.")
+      : (free===0 ? tr("Fully booked.")
+                  : tr(free===1 ? "{n} hour still free, {a} to {b}."
+                                : "{n} hours still free, {a} to {b}.",
+                       {n: free, a: hourLong(DAY_START), b: hourLong(DAY_END)})));
     $("addJobBtn").hidden = !can("book");
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
 
@@ -1289,7 +1614,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var list=jobsOn(ds, viewCrewId());
     if (!list.length){
       var e=document.createElement("div"); e.className="empty";
-      e.textContent = state.mode==="loading" ? "Checking this day…" : "Nothing booked this day.";
+      e.textContent = state.mode==="loading" ? tr("Checking this day…") : tr("Nothing booked this day.");
       host.appendChild(e);
     } else {
       list.forEach(function(j){ host.appendChild(jobCard(j,{remove:ownsJob(j), edit:ownsJob(j), clock:!isOffice(), after:showDayPane})); });
@@ -1313,10 +1638,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var ds = openDate;
     var m = memberOr(editing ? editing.crewId : viewCrewId());
     $("paneDay").hidden=true; $("paneForm").hidden=false;
-    $("formWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
+    $("formWho").textContent = m.name+" \u00b7 "+tradeName(m.trade);
     $("formWhen").textContent = (editing ? "Edit — " : "") + F_LONG.format(fromIso(ds));
     $("formErr").textContent=""; $("formSave").disabled=false;
-    $("formSave").textContent = editing ? "Save changes" : "Save job";
+    $("formSave").textContent = editing ? tr("Save changes") : tr("Save job");
     $("paneForm").reset();
     fillProjects();
     computeBusy(ds, editing ? editing.crewId : viewCrewId(), editing ? editing.id : null);
@@ -1355,17 +1680,20 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var ds=openDate, crewId=editing ? editing.crewId : viewCrewId();
     var pid=$("fProject").value;
     var p=project(pid);
-    if (!p){ $("formErr").textContent="Pick a project first."; return; }
+    if (!p){ $("formErr").textContent=tr("Pick a project first."); return; }
     var bid=$("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "");
-    var b=buildingOf(pid,bid);
-    if (!b){ $("formErr").textContent="Pick a building."; return; }
+    // Leaving the building unset books the whole project. The project's own
+    // name is stored as the label, so every card, chip and notification still
+    // has somewhere to say where the job is, with no special case for it.
+    var b=buildingOf(pid,bid) || {id:"", name:p.name};
 
     var allDay=$("fAllDay").checked;
     var from = allDay ? DAY_START : parseInt($("fFrom").value,10);
     var to   = allDay ? DAY_END   : parseInt($("fTo").value,10);
-    if (to<=from){ $("formErr").textContent="The end time has to be after the start time."; return; }
+    if (to<=from){ $("formErr").textContent=tr("The end time has to be after the start time."); return; }
     if (overlaps(ds, crewId, from, to, editing ? editing.id : null)){
-      $("formErr").textContent = memberOr(crewId).name+" already has a job in those hours. Pick another time.";
+      $("formErr").textContent = tr("{name} already has a job in those hours. Pick another time.",
+        {name: memberOr(crewId).name});
       return;
     }
 
@@ -1378,7 +1706,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
         manager:p.manager||"", managerPhone:p.managerPhone||""
       }).then(function(){ editing=null; showDayPane(); })
-        .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,"The changes did not save."); });
+        .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The changes did not save.")); });
       return;
     }
 
@@ -1395,7 +1723,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     };
     $("formSave").disabled=true;
     saveJob(job).then(function(){ showDayPane(); })
-      .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,"The job did not save."); });
+      .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The job did not save.")); });
   });
 
   /* ---------- the account sheet behind the avatar ---------- */
@@ -1403,25 +1731,25 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (state.me === "office") return "Office";
     var p = member(state.me);
     if (!p) return "";
-    return isAdmin(p) ? "Office" : (TRADE[p.trade] || p.trade);
+    return isAdmin(p) ? tr("Office") : tradeName(p.trade);
   }
   function notifState(){
     if (isOffice() && !vapidKey())
-      return {text:"Not switched on yet — the setup still has to be finished."};
-    if (!vapidKey()) return {text:"Not switched on yet. The office still has to finish setting these up."};
-    if (!("Notification" in window)) return {text:"This phone cannot show notifications."};
+      return {text:tr("Not switched on yet — the setup still has to be finished.")};
+    if (!vapidKey()) return {text:tr("Not switched on yet. The office still has to finish setting these up.")};
+    if (!("Notification" in window)) return {text:tr("This phone cannot show notifications.")};
     if (Notification.permission === "denied")
-      return {text:"Blocked. Allow notifications for this app in your phone's settings, then reopen it."};
+      return {text:tr("Blocked. Allow notifications for this app in your phone's settings, then reopen it.")};
     if (Notification.permission === "granted" && state.pushOn)
       return {text: (isOffice()
-        ? "On. You'll hear when the crew clock in, clock out and finish a job."
-        : "On. You'll get a buzz when a job is booked for you.")
-        + " This phone is registered as " + meName() + "."};
+        ? tr("On. You'll hear when the crew clock in, clock out and finish a job.")
+        : tr("On. You'll get a buzz when a job is booked for you."))
+        + tr(" This phone is registered as {name}.", {name: meName()})};
     if (Notification.permission === "granted")
-      return {text:"Allowed, but this phone has not registered yet. Reopen the app if it stays like this."};
+      return {text:tr("Allowed, but this phone has not registered yet. Reopen the app if it stays like this.")};
     return {text: isOffice()
-      ? "Off. Turn them on to hear when the crew clock in and out."
-      : "Off. Turn them on to hear about a new job without opening the app.", button:true};
+      ? tr("Off. Turn them on to hear when the crew clock in and out.")
+      : tr("Off. Turn them on to hear about a new job without opening the app."), button:true};
   }
   function openMe(){
     var nm = meName();
@@ -1438,13 +1766,13 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("meTestBtn").hidden = !("Notification" in window)
                             || Notification.permission !== "granted";
 
-    var conn = state.mode==="offline" ? "No connection — showing what was last saved on this phone."
-             : state.mode==="device"  ? "Saved on this device only — nobody else sees these jobs."
-             : "Connected. Everyone sees the same calendar.";
+    var conn = state.mode==="offline" ? tr("No connection — showing what was last saved on this phone.")
+             : state.mode==="device"  ? tr("Saved on this device only — nobody else sees these jobs.")
+             : tr("Connected. Everyone sees the same calendar.");
     $("meConnText").textContent = conn;
 
     $("meCrewBtn").hidden = !can("manage");
-    $("meVersion").textContent = "EBM Crew Calendar " + APP_VERSION;
+    $("meVersion").textContent = tr("EBM Crew Calendar") + " " + APP_VERSION;
     $("meDlg").showModal();
   }
   $("meBtn").addEventListener("click", openMe);
@@ -1458,18 +1786,18 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   });
   $("meTestBtn").addEventListener("click", function(){
     var b = $("meTestBtn");
-    b.disabled = true; b.textContent = "Sending\u2026";
+    b.disabled = true; b.textContent = tr("Sending\u2026");
     navigator.serviceWorker.ready.then(function(reg){
-      return reg.showNotification("EBM Crew \u2014 test", {
-        body: "If you can see this, this phone can buzz for " + meName() + ".",
+      return reg.showNotification(tr("EBM Crew \u2014 test"), {
+        body: tr("If you can see this, this phone can buzz for {name}.", {name: meName()}),
         icon: "icons/icon-192.png", badge: "icons/badge-96.png", tag: "ebm-test"
       });
     }).then(function(){
-      b.textContent = "Sent \u2014 check your notifications";
+      b.textContent = tr("Sent \u2014 check your notifications");
     }).catch(function(){
-      b.textContent = "This phone would not show it";
+      b.textContent = tr("This phone would not show it");
     }).then(function(){
-      setTimeout(function(){ b.disabled = false; b.textContent = "Send a test buzz"; }, 4000);
+      setTimeout(function(){ b.disabled = false; b.textContent = tr("Send a test buzz"); }, 4000);
     });
   });
   $("meSignOut").addEventListener("click", function(){
@@ -1505,8 +1833,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var j=fresh[k];
       if (j.crewId!==state.me || j.date<todayIso) return;
       try{
-        new Notification("New job — " + (j.date===todayIso ? "today" : F_LONG.format(fromIso(j.date))), {
-          body: rangeShort(j)+" · "+j.buildingName+(j.unit?" Unit "+j.unit:""),
+        new Notification(tr("New job \u2014 {when}",
+            {when: j.date===todayIso ? tr("today") : F_LONG.format(fromIso(j.date))}), {
+          body: rangeShort(j)+" \u00b7 "+j.buildingName+
+                (j.unit ? " " + tr("Unit {u}", {u: j.unit}) : ""),
           icon: "icons/icon-192.png", tag: j.id
         });
       }catch(e){}
@@ -1657,7 +1987,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function rosterSettled(){
     state.rosterReady = true;
     $("gateSubmit").disabled = false;
-    $("gateSubmit").textContent = "Open";
+    $("gateSubmit").dataset.t = "Open";
+    $("gateSubmit").textContent = tr("Open");
     if (!state.opened) tryAutoOpen();
   }
   function saveRoster(people, officeCode, officeName){
@@ -1676,21 +2007,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var row = document.createElement("div");
     row.className = "prow";
     var nm = document.createElement("input");
-    nm.className = "nm"; nm.placeholder = "Name"; nm.maxLength = 30;
+    nm.className = "nm"; nm.placeholder = tr("Name"); nm.maxLength = 30;
     nm.value = person ? person.name : "";
-    var tr = document.createElement("select");
-    tr.className = "tr";
-    [["plumbing","Plumbing"],["electrical","Electrical"],["admin","Admin (office)"]].forEach(function(o){
-      var op=document.createElement("option"); op.value=o[0]; op.textContent=o[1]; tr.appendChild(op);
+    var roleSel = document.createElement("select");
+    roleSel.className = "tr";
+    [["plumbing","Plumbing"],["electrical","Electrical"],["admin",tr("Admin (office)")]].forEach(function(o){
+      var op=document.createElement("option"); op.value=o[0]; op.textContent=o[1]; roleSel.appendChild(op);
     });
-    tr.value = person ? person.trade : "plumbing";
+    roleSel.value = person ? person.trade : "plumbing";
     var cd = document.createElement("input");
-    cd.className = "code"; cd.placeholder = "Code"; cd.maxLength = 40; cd.autocomplete = "off";
+    cd.className = "code"; cd.placeholder = tr("Code"); cd.maxLength = 40; cd.autocomplete = "off";
     cd.value = person ? (person.code||"") : "";
     var rm = document.createElement("button");
-    rm.type="button"; rm.className="rm"; rm.title="Remove"; rm.textContent="\u00d7";
+    rm.type="button"; rm.className="rm"; rm.title=tr("Remove"); rm.textContent="\u00d7";
     row.dataset.id = person ? person.id : ("p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
-    row.appendChild(nm); row.appendChild(tr); row.appendChild(cd); row.appendChild(rm);
+    row.appendChild(nm); row.appendChild(roleSel); row.appendChild(cd); row.appendChild(rm);
     $("crewRows").appendChild(row);
 
     // What an office person is allowed to do. Hidden for a trade.
@@ -1703,13 +2034,13 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       w.appendChild(i); w.appendChild(document.createTextNode(" "+label));
       perm.appendChild(w); return i;
     }
-    box("pbook",   "Can book and cancel jobs", c.book !== false);
-    box("pmanage", "Can add people and change codes", c.manage === true);
+    box("pbook",   tr("Can book and cancel jobs"), c.book !== false);
+    box("pmanage", tr("Can add people and change codes"), c.manage === true);
     $("crewRows").appendChild(perm);
     row.perm = perm;
 
-    function syncPerm(){ perm.hidden = tr.value !== "admin"; }
-    tr.addEventListener("change", syncPerm);
+    function syncPerm(){ perm.hidden = roleSel.value !== "admin"; }
+    roleSel.addEventListener("change", syncPerm);
     syncPerm();
 
     rm.addEventListener("click", function(){ perm.remove(); row.remove(); });
@@ -1717,7 +2048,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function openCrewEditor(){
     var host = $("crewRows");
-    host.innerHTML = '<div class="phead"><span>Name</span><span>Role</span><span>Code</span><span></span></div>';
+    host.innerHTML = '<div class="phead"><span>' + tr("Name") + '</span><span>' +
+      tr("Role") + '</span><span>' + tr("Code") + '</span><span></span></div>';
     state.people.forEach(addRosterRow);
     $("fOfficeName").value = state.officeName || "Office";
     $("fOfficeCode").value = state.officeCode || masterOfficeCode();
@@ -1730,8 +2062,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   /* Who can actually be reached, straight from what the phones registered. */
   function renderPhones(){
     var host = $("crewPhones");
-    host.textContent = "Checking\u2026";
-    if (!state.fb){ host.textContent = "Only shown when the app is connected."; return; }
+    host.textContent = tr("Checking\u2026");
+    if (!state.fb){ host.textContent = tr("Only shown when the app is connected."); return; }
     state.fb.collection("config").doc("tokens").get().then(function(snap){
       var d = (snap.exists && snap.data()) || {};
       var map = d.tokens || {}, seen = d.devices || {};
@@ -1751,17 +2083,17 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         line.appendChild(b);
         if (!list.length){
           line.style.color = "var(--danger)";
-          line.appendChild(document.createTextNode(" \u2014 no phone yet"));
+          line.appendChild(document.createTextNode(tr(" \u2014 no phone yet")));
         } else {
           line.appendChild(document.createTextNode(" \u2014 " + list.map(function(x){
-            return (x.kind || "a device") +
+            return (x.kind || tr("a device")) +
                    (x.at ? ", " + F_MED.format(new Date(x.at)) : "");
-          }).join(" and ")));
+          }).join(tr(" and "))));
         }
         host.appendChild(line);
       });
     }).catch(function(){
-      host.textContent = "Could not read the list just now.";
+      host.textContent = tr("Could not read the list just now.");
     });
   }
   $("addPerson").addEventListener("click", function(){ addRosterRow(null).querySelector(".nm").focus(); });
@@ -1772,16 +2104,18 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var rows = $("crewRows").querySelectorAll(".prow");
     var people = [], codes = {}, err = "";
     var office = $("fOfficeCode").value.trim();
-    if (!office){ $("crewErr").textContent = "The office needs a code."; return; }
-    codes[office] = "the office";
+    if (!office){ $("crewErr").textContent = tr("The office needs a code."); return; }
+    codes[office] = tr("the office");
     for (var i=0;i<rows.length;i++){
       var r = rows[i];
       var name = r.querySelector(".nm").value.trim();
       var code = r.querySelector(".code").value.trim();
       if (!name && !code) continue;
-      if (!name){ err = "Every person needs a name."; break; }
-      if (!code){ err = name + " needs a code, or nobody can sign in as them."; break; }
-      if (codes[code]){ err = "Two people cannot share a code — " + code + " is already used by " + codes[code] + "."; break; }
+      if (!name){ err = tr("Every person needs a name."); break; }
+      if (!code){ err = tr("{name} needs a code, or nobody can sign in as them.", {name:name}); break; }
+      if (codes[code]){
+        err = tr("Two people cannot share a code \u2014 {code} is already used by {name}.",
+                 {code:code, name:codes[code]}); break; }
       codes[code] = name;
       var role = r.querySelector(".tr").value;
       var entry = {id:r.dataset.id, name:name, trade:role, code:code};
@@ -1794,7 +2128,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       people.push(entry);
     }
     if (err){ $("crewErr").textContent = err; return; }
-    if (!people.length){ $("crewErr").textContent = "Keep at least one person on the crew."; return; }
+    if (!people.length){ $("crewErr").textContent = tr("Keep at least one person on the crew."); return; }
 
     $("crewSave").disabled = true;
     saveRoster(people, office, $("fOfficeName").value.trim() || "Office").then(function(){
@@ -1802,11 +2136,24 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       render();
     }).catch(function(e){
       $("crewSave").disabled = false;
-      $("crewErr").textContent = errText(e, "The crew list did not save.");
+      $("crewErr").textContent = errText(e, tr("The crew list did not save."));
     });
   });
 
   /* Start from the last roster this device saw, so codes work offline. */
+  (function loadLang(){
+    var stored = null;
+    try{ stored = localStorage.getItem(LS_LANG); }catch(e){}
+    state.lang = stored === "fr" || stored === "en" ? stored
+               : (/^fr/i.test(navigator.language || "") ? "fr" : "en");
+    buildFormats();
+    applyStaticText();
+  })();
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-l]"), function(b){
+    b.addEventListener("click", function(){ setLang(b.dataset.l); });
+  });
+
   (function loadView(){
     var v = lsRead(LS_VIEW, null);
     if (v === "month" || v === "week" || v === "list") state.view = v;
@@ -1873,8 +2220,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var id = whoFor(typed);
       if (!id || !validPerson(id)){
         $("gateErr").textContent = state.rosterReady
-          ? "That code does not match. Check with the office."
-          : "Still starting up — try again in a second.";
+          ? tr("That code does not match. Check with the office.")
+          : tr("Still starting up — try again in a second.");
         $("gateInput").select();
         return;
       }
@@ -1906,10 +2253,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var ua = navigator.userAgent || "";
     if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "iPad";
     if (/iPhone|iPod/.test(ua)) return "iPhone";
-    if (/Android/.test(ua)) return /Mobile/.test(ua) ? "Android phone" : "Android tablet";
-    if (/Windows/.test(ua)) return "Windows computer";
+    if (/Android/.test(ua)) return /Mobile/.test(ua) ? tr("Android phone") : tr("Android tablet");
+    if (/Windows/.test(ua)) return tr("Windows computer");
     if (/Macintosh/.test(ua)) return "Mac";
-    return "Computer";
+    return tr("Computer");
   }
   function rememberToken(token){
     if (!state.fb) return Promise.resolve();
@@ -1991,29 +2338,29 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function showInstallHelp(){
     var title, sub, steps;
     if (isIOS()){
-      title = "Add to your iPhone";
-      sub = "Safari does not have an install button, so it takes three taps. Make sure you are in Safari, not Chrome.";
+      title = tr("Add to your iPhone");
+      sub = tr("Safari does not have an install button, so it takes three taps. Make sure you are in Safari, not Chrome.");
       steps = [
-        "Tap the <b>Share</b> button — the square with an arrow pointing up, at the bottom of the screen.",
-        "Scroll down the list and tap <b>Add to Home Screen</b>.",
-        "Tap <b>Add</b> in the top right."
+        tr("Tap the <b>Share</b> button — the square with an arrow pointing up, at the bottom of the screen."),
+        tr("Scroll down the list and tap <b>Add to Home Screen</b>."),
+        tr("Tap <b>Add</b> in the top right.")
       ];
     } else if (isAndroid()){
-      title = "Add to your phone";
-      sub = "Chrome can install this like a normal app. If it is already on your home screen, you are done — Chrome will not offer to install it a second time.";
+      title = tr("Add to your phone");
+      sub = tr("Chrome can install this like a normal app. If it is already on your home screen, you are done — Chrome will not offer to install it a second time.");
       steps = [
-        "Tap the <b>⋮</b> menu in the top right of Chrome.",
-        "Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see it.",
-        "Tap <b>Install</b>.",
-        "Already have it, but the icon looks old? Remove it from the home screen and add it again — Android keeps the icon it was installed with."
+        tr("Tap the <b>⋮</b> menu in the top right of Chrome."),
+        tr("Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see it."),
+        tr("Tap <b>Install</b>."),
+        tr("Already have it, but the icon looks old? Remove it from the home screen and add it again — Android keeps the icon it was installed with.")
       ];
     } else {
-      title = "Install on this computer";
-      sub = "Chrome and Edge can install this as a desktop app.";
+      title = tr("Install on this computer");
+      sub = tr("Chrome and Edge can install this as a desktop app.");
       steps = [
-        "Look for the <b>install icon</b> at the right-hand end of the address bar — a screen with a downward arrow.",
-        "Click it, then click <b>Install</b>.",
-        "No icon there? Open the browser menu and look for <b>Install</b> or <b>Apps</b>."
+        tr("Look for the <b>install icon</b> at the right-hand end of the address bar — a screen with a downward arrow."),
+        tr("Click it, then click <b>Install</b>."),
+        tr("No icon there? Open the browser menu and look for <b>Install</b> or <b>Apps</b>.")
       ];
     }
     $("instTitle").textContent = title;
