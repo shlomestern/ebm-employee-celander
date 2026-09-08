@@ -11,16 +11,11 @@
     </radialGradient>
     <!-- userSpaceOnUse: a straight stroke has a zero-area bounding box, and a
          bounding-box gradient on one of those renders nothing at all. -->
-    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="86" y1="180" x2="400" y2="345">
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="120" y1="110" x2="400" y2="310">
       <stop offset="0%"   stop-color="#F5DE9E"/>
       <stop offset="38%"  stop-color="#E3BC63"/>
       <stop offset="66%"  stop-color="#C4922F"/>
       <stop offset="100%" stop-color="#9C6B18"/>
-    </linearGradient>
-    <linearGradient id="rule" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="362" y2="0">
-      <stop offset="0%"   stop-color="#C4922F" stop-opacity="0"/>
-      <stop offset="50%"  stop-color="#E3BC63" stop-opacity=".85"/>
-      <stop offset="100%" stop-color="#C4922F" stop-opacity="0"/>
     </linearGradient>
     <!-- Mitred joins on the M overshoot the cap height; clipping to the cap
          line flattens them instead of leaving spikes or notches. -->
@@ -29,29 +24,32 @@
 
   <rect width="512" height="512" fill="url(#ground)"/>
 
-  <!-- The lockup is EBM plus the word, so it is centred as one block. -->
-  <g transform="translate(0,-28)">
-  <!-- EBM, drawn as geometry so it needs no font -->
-  <g clip-path="url(#capline)" fill="none" stroke="url(#gold)" stroke-width="30" stroke-linecap="butt" stroke-linejoin="miter">
-    <!-- E -->
-    <path d="M101 192 V320"/>
-    <path d="M86 207 H176"/>
-    <path d="M86 256 H162"/>
-    <path d="M86 305 H176"/>
-    <!-- B -->
-    <path d="M212 192 V320"/>
-    <path d="M197 207 H253"/>
-    <path d="M197 256 H253"/>
-    <path d="M197 305 H253"/>
-    <path d="M253 207 a24.5 24.5 0 0 1 0 49"/>
-    <path d="M253 256 a24.5 24.5 0 0 1 0 49"/>
-    <!-- M as one path, so the joins are mitred instead of notched -->
-    <path d="M329 320 L329 192 L370 264 L411 192 L411 320"/>
+  <!-- the badge from the EBM mark -->
+  <rect x="112" y="126" width="288" height="188" rx="58" ry="58"
+        fill="none" stroke="url(#gold)" stroke-width="15"/>
+
+  <!-- EBM, drawn as geometry so it needs no font, scaled into the badge -->
+  <g transform="translate(256 220) scale(0.60) translate(-256 -256)">
+    <g clip-path="url(#capline)" fill="none" stroke="url(#gold)" stroke-width="30"
+       stroke-linecap="butt" stroke-linejoin="miter">
+      <!-- E -->
+      <path d="M101 192 V320"/>
+      <path d="M86 207 H176"/>
+      <path d="M86 256 H162"/>
+      <path d="M86 305 H176"/>
+      <!-- B -->
+      <path d="M212 192 V320"/>
+      <path d="M197 207 H253"/>
+      <path d="M197 256 H253"/>
+      <path d="M197 305 H253"/>
+      <path d="M253 207 a24.5 24.5 0 0 1 0 49"/>
+      <path d="M253 256 a24.5 24.5 0 0 1 0 49"/>
+      <!-- M as one path, so the joins are mitred instead of notched -->
+      <path d="M329 320 L329 192 L370 264 L411 192 L411 320"/>
+    </g>
   </g>
 
-  <rect x="150" y="344" width="212" height="5" rx="2.5" fill="url(#rule)" opacity=".85"/>
   <text x="256" y="392" text-anchor="middle"
         font-family="Liberation Sans, Arial, sans-serif" font-weight="700"
         font-size="34" letter-spacing="7" fill="#E7C273">SCHEDULE</text>
-  </g>
 </svg>

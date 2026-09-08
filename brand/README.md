@@ -1,7 +1,12 @@
 # Brand
 
-`logo.html` is the EBM monogram — gold on brown, letterforms drawn as geometry
-so it depends on no font. `render-icons.py` screenshots it at 512, 192 and 180
+`logo.html` is the EBM badge — the symbol from the company logo, a rounded
+rectangle enclosing EBM, in gold on brown. The letterforms are drawn as
+geometry so it depends on no font.
+
+It was rebuilt from a low-resolution copy of the real logo, so the badge's
+proportions and corner radius are approximate. Given the original artwork
+(SVG, PDF or a large PNG) the shape can be matched exactly. `render-icons.py` screenshots it at 512, 192 and 180
 into `../icons/`.
 
 Regenerate after editing the logo:
