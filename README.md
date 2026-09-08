@@ -21,7 +21,7 @@ A clean booking calendar for the Empire Building Management field crew.
 | Plumbing / Electrical | Their own jobs only. Clock in, clock out, notes. No calendar. |
 | Admin (office) | The whole calendar — plus two tickboxes for what they may do: **book and cancel jobs**, and **add people and change codes**. |
 
-**A booking belongs to whoever made it.** Only that person can cancel it or add notes to it — along with the crew member the job is for, who needs to write on their own work. Everyone who can see the job can still read its notes. Every card says who booked it. The office code from `config.js` is the exception throughout: it can do anything, because somebody has to be able to.
+**A booking belongs to whoever made it.** Only that person can edit it, cancel it, or add notes to it — along with the crew member the job is for, who needs to write on their own work. Everyone who can see the job can still read its notes. Every card says who booked it. The office code from `config.js` is the exception throughout: it can do anything, because somebody has to be able to.
 
 Everyone sees their own name at the top of the app, the office included — set yours under **Your name** in the same editor.
 
@@ -29,7 +29,9 @@ Two people can't share a code, and nobody can be saved without one. The roster l
 
 **One calendar, for everyone.** A month grid where each day shows the project number and unit. Click a day to see what's on it.
 
-- The **office** gets the crew down the side and can switch between them, add jobs, and cancel their own.
+- The **office** gets the crew down the side and can switch between them, add jobs, and edit or cancel their own. Editing keeps the job's history — its notes, and any clock in or out already recorded.
+
+The **Today** button only appears when today is off screen; there is nothing for it to do otherwise.
 - **Crew** get the same calendar showing only their own work. No crew column, no adding, no cancelling — they open a day, read the job, clock in, clock out, and leave notes.
 
 A job is booked against a real property: pick the **project** (23 companies), then the **building** (the list narrows to that project's addresses), then the **unit**. Choose **all day** or a **from–to** time inside 8:00 AM – 5:00 PM. Double-booking a crew member is refused.

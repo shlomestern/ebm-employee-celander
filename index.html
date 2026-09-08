@@ -845,6 +845,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         acts.appendChild(bo);
       }
     }
+    if (opts.edit){
+      var ed=document.createElement("button"); ed.type="button"; ed.className="btn"; ed.textContent="Edit";
+      ed.addEventListener("click", function(){ editJob(j); });
+      acts.appendChild(ed);
+    }
     acts.appendChild(Object.assign(document.createElement("span"), {className:"spacer"}));
     if (opts.remove && !dayIsPast(j.date)){
       var del=document.createElement("button"); del.type="button"; del.className="btn btn-danger"; del.textContent="Cancel job";
@@ -971,7 +976,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("calList").hidden = !isList;
     $("prevMonth").hidden = isList;
     $("nextMonth").hidden = isList;
-    $("todayBtn").hidden = isList;
+    // Nothing for it to do when today is already on screen.
+    var hasToday;
+    if (state.view === "week"){
+      var w0 = iso(weekFirst()), w1 = iso(addDays(weekFirst(),6));
+      hasToday = todayIso >= w0 && todayIso <= w1;
+    } else {
+      hasToday = monthFirst().getMonth() === today.getMonth() &&
+                 monthFirst().getFullYear() === today.getFullYear();
+    }
+    $("todayBtn").hidden = isList || hasToday;
 
     if (isList) renderList(); else renderGrid(m);
   }
@@ -1054,7 +1068,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       h.appendChild(sp); g.appendChild(h);
       var jobs=document.createElement("div"); jobs.className="jobs";
       groups[ds].forEach(function(j){
-        jobs.appendChild(jobCard(j,{clock:!isOffice(), remove:ownsJob(j), after:render}));
+        jobs.appendChild(jobCard(j,{clock:!isOffice(), remove:ownsJob(j), edit:ownsJob(j), after:render}));
       });
       g.appendChild(jobs); host.appendChild(g);
     });
@@ -1106,27 +1120,52 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       e.textContent = state.mode==="loading" ? "Checking this day…" : "Nothing booked this day.";
       host.appendChild(e);
     } else {
-      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:ownsJob(j), clock:!isOffice(), after:showDayPane})); });
+      list.forEach(function(j){ host.appendChild(jobCard(j,{remove:ownsJob(j), edit:ownsJob(j), clock:!isOffice(), after:showDayPane})); });
     }
   }
   $("dayClose").addEventListener("click", function(){ $("dayDlg").close(); });
-  $("addJobBtn").addEventListener("click", function(){ showFormPane(); });
-  $("formBack").addEventListener("click", showDayPane);
+  $("addJobBtn").addEventListener("click", function(){ showFormPane(null); });
+  $("formBack").addEventListener("click", function(){ editing=null; showDayPane(); });
 
-  function showFormPane(){
-    var m=memberOr(viewCrewId()), ds=openDate;
+  /* ---------- booking form: new, or editing an existing job ---------- */
+  var editing = null;
+
+  function editJob(j){
+    openDate = j.date;
+    if (!$("dayDlg").open) $("dayDlg").showModal();
+    showFormPane(j);
+  }
+
+  function showFormPane(job){
+    editing = job || null;
+    var ds = openDate;
+    var m = memberOr(editing ? editing.crewId : viewCrewId());
     $("paneDay").hidden=true; $("paneForm").hidden=false;
     $("formWho").textContent = m.name+" · "+(TRADE[m.trade]||m.trade);
-    $("formWhen").textContent = F_LONG.format(fromIso(ds));
+    $("formWhen").textContent = (editing ? "Edit — " : "") + F_LONG.format(fromIso(ds));
     $("formErr").textContent=""; $("formSave").disabled=false;
+    $("formSave").textContent = editing ? "Save changes" : "Save job";
     $("paneForm").reset();
-    fillProjects(); fillBuildings(""); fillHours();
-    // start at the first free hour
-    var startAt=DAY_START;
-    while (startAt<DAY_END && overlaps(ds,viewCrewId(),startAt,startAt+1)) startAt++;
-    $("fFrom").value=String(Math.min(startAt,DAY_END-1));
-    $("fTo").value=String(Math.min(startAt+1,DAY_END));
-    $("timeRow").hidden=false;
+    fillProjects(); fillHours();
+
+    if (editing){
+      $("fProject").value = editing.projectId;
+      fillBuildings(editing.projectId);
+      $("fBuilding").value = editing.buildingId;
+      $("fUnit").value = editing.unit || "";
+      $("fJob").value = editing.job || "";
+      $("fAllDay").checked = !!editing.allDay;
+      $("timeRow").hidden = !!editing.allDay;
+      $("fFrom").value = String(editing.from);
+      $("fTo").value = String(editing.to);
+    } else {
+      fillBuildings("");
+      var startAt=DAY_START;
+      while (startAt<DAY_END && overlaps(ds,viewCrewId(),startAt,startAt+1)) startAt++;
+      $("fFrom").value=String(Math.min(startAt,DAY_END-1));
+      $("fTo").value=String(Math.min(startAt+1,DAY_END));
+      $("timeRow").hidden=false;
+    }
     setTimeout(function(){ $("fProject").focus(); },30);
   }
 
@@ -1144,7 +1183,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   $("paneForm").addEventListener("submit", function(ev){
     ev.preventDefault();
-    var ds=openDate, crewId=viewCrewId();
+    var ds=openDate, crewId=editing ? editing.crewId : viewCrewId();
     var pid=$("fProject").value;
     var p=project(pid);
     if (!p){ $("formErr").textContent="Pick a project first."; return; }
@@ -1156,8 +1195,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var from = allDay ? DAY_START : parseInt($("fFrom").value,10);
     var to   = allDay ? DAY_END   : parseInt($("fTo").value,10);
     if (to<=from){ $("formErr").textContent="The end time has to be after the start time."; return; }
-    if (overlaps(ds, crewId, from, to)){
+    if (overlaps(ds, crewId, from, to, editing ? editing.id : null)){
       $("formErr").textContent = memberOr(crewId).name+" already has a job in those hours. Pick another time.";
+      return;
+    }
+
+    if (editing){
+      $("formSave").disabled=true;
+      patchJob(editing.id, {
+        from:from, to:to, allDay:allDay,
+        projectId:p.id, projectName:p.name,
+        buildingId:b.id, buildingName:b.name,
+        unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
+        manager:p.manager||"", managerPhone:p.managerPhone||""
+      }).then(function(){ editing=null; showDayPane(); })
+        .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,"The changes did not save."); });
       return;
     }
 
