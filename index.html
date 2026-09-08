@@ -302,41 +302,56 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
 
 @media (max-width:1100px){
-  /* On anything held in the hands — phone or tablet — the layout switcher
-     becomes a bottom bar, where the thumb already is. */
-  .seg{
+  /* On anything held in the hands — phone or tablet — whose calendar you are
+     looking at becomes a bottom bar, where the thumb already is. */
+  .crew{
     position:fixed; left:0; right:0; bottom:0; z-index:40;
-    border:none; border-top:1px solid var(--line); border-radius:0;
-    background:var(--surface); box-shadow:0 -2px 16px rgba(19,26,32,.07);
+    flex-direction:row; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    background:var(--surface); border-top:1px solid var(--line);
+    box-shadow:0 -2px 16px rgba(19,26,32,.07);
     padding-bottom:env(safe-area-inset-bottom);
   }
-  .seg button{
-    flex:1; padding:14px 8px 13px; font-size:14px; border-left:none;
-    border-top:3px solid transparent; color:var(--ink-3);
+  .crew .eyebrow{display:none}
+  .crew .empty{border:none; padding:16px 12px; font-size:12.5px}
+  .person{
+    flex:1 1 92px; min-width:92px; width:auto;
+    border:none; border-radius:0; border-top:3px solid transparent;
+    background:transparent; box-shadow:none; padding:9px 12px; gap:9px;
   }
-  .seg button[aria-pressed="true"]{
-    background:transparent; color:var(--sel); font-weight:700;
-    border-top-color:var(--sel);
+  .person:hover{border-color:transparent; border-top-color:transparent}
+  .person[aria-pressed="true"]{
+    background:transparent; box-shadow:none; border-top-color:var(--pc);
   }
-  .seg button:not([aria-pressed="true"]):hover{background:transparent}
-  .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .person .av{width:30px; height:30px; font-size:13px; border-radius:9px}
+  .person .txt{min-width:0}
+  .person .nm{font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .person .mt{font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .wrap{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  body.nocrewbar .wrap{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
   .calbar h2{font-size:17px; white-space:nowrap; flex:1 1 auto}
+  .seg{flex:1 1 100%}
+  .seg button{flex:1; padding:9px 8px}
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .seg{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
+  :root:not([data-theme="light"]) .crew{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
 }
-:root[data-theme="dark"] .seg{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
+:root[data-theme="dark"] .crew{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
 @media (max-width:1100px){
-  .wrap{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+}
+@media (max-width:1100px){
+  .layout{grid-template-columns:minmax(0,1fr); gap:14px}
 }
 @media (max-width:820px){
-  .layout{grid-template-columns:minmax(0,1fr); gap:14px}
-  .crew{flex-direction:row; flex-wrap:wrap; gap:6px}
-  .person{width:auto; flex:1 1 148px; padding:9px 10px}
   .cell{min-height:74px; padding:5px}
 }
+@media (max-width:620px){
+  .crew .person .mt{display:none}
+  .crew .person{padding:11px 8px; gap:8px}
+  .crew .person .nm{font-size:13px}
+  .wrap{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+}
 @media (max-width:520px){
-  .wrap{padding:14px 10px calc(84px + env(safe-area-inset-bottom))}
+  .wrap{padding-left:10px; padding-right:10px; padding-top:14px}
   .topbar h1{font-size:22px}
   .dow{padding:6px 4px; font-size:9.5px; letter-spacing:.05em}
   .cell{min-height:58px; padding:4px}
@@ -1104,6 +1119,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("meInitial").textContent = (nm || "?").trim().charAt(0).toUpperCase();
     $("calView").hidden = false;
     $("crew").hidden = !isOffice();          // crew see only their own calendar
+    document.body.classList.toggle("nocrewbar", !isOffice());
     $("appTitle").textContent = isOffice() ? "Crew Calendar" : "My Schedule";
     if (isOffice()) renderCrew();
     renderCalendar();
