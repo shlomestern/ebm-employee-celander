@@ -47,8 +47,8 @@ async function push(db, map, tokens, title, body, tag) {
     notification: {title, body},
     webpush: {
       notification: {
-        icon: "/ebm-employee-celander/icons/icon-192.png",
-        badge: "/ebm-employee-celander/icons/icon-192.png",
+        icon: "/ebm-employee-celander/icons/ebm-192-v2.png",
+        badge: "/ebm-employee-celander/icons/ebm-192-v2.png",
         tag,
       },
       fcmOptions: {link: "https://shlomestern.github.io/ebm-employee-celander/"},

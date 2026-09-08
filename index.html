@@ -6,8 +6,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EBM Crew">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/ebm-apple-v2.png">
+<link rel="icon" href="icons/ebm-192-v2.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
@@ -1386,7 +1386,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       try{
         new Notification("New job — " + (j.date===todayIso ? "today" : F_LONG.format(fromIso(j.date))), {
           body: rangeShort(j)+" · "+j.buildingName+(j.unit?" Unit "+j.unit:""),
-          icon: "icons/icon-192.png", tag: j.id
+          icon: "icons/ebm-192-v2.png", tag: j.id
         });
       }catch(e){}
     });
@@ -1764,7 +1764,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         firebase.messaging().onMessage(function(payload){
           var n = (payload && payload.notification) || {};
           try{
-            new Notification(n.title || "New job", {body: n.body || "", icon: "icons/icon-192.png"});
+            new Notification(n.title || "New job", {body: n.body || "", icon: "icons/ebm-192-v2.png"});
           }catch(e){}
         });
       });
