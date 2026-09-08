@@ -1,6 +1,6 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v44";
+var CACHE = "ebm-crew-v45";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
@@ -44,35 +44,27 @@ self.addEventListener("fetch", function(e){
   );
 });
 
-/* ---- background notifications ----------------------------------------
-   Only wires up once a vapidKey is set in config.js. Wrapped because these
-   scripts come off the network: a phone installing the app on bad signal must
-   still get a working service worker for caching. */
-try {
-  importScripts("./config.js");
-  var FB = self.EBM_CONFIG && self.EBM_CONFIG.firebase;
-  var VAPID = self.EBM_CONFIG && self.EBM_CONFIG.vapidKey;
-  if (FB && FB.apiKey && VAPID) {
-    importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js");
-    importScripts("https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js");
-    firebase.initializeApp(FB);
-    firebase.messaging().onBackgroundMessage(function(payload){
-      // Anything carrying a notification block has already been put on screen
-      // by the SDK itself. Showing it again here was posting every job twice,
-      // under two different tags, so neither one replaced the other.
-      if (payload && payload.notification) return;
-      var d = (payload && payload.data) || {};
-      self.registration.showNotification(d.title || "New job", {
-        body: d.body || "",
-        icon: "./icons/icon-192.png",
-        badge: "./icons/badge-96.png",
-        tag: d.tag || "ebm-job"
-      });
-    });
-  }
-} catch (e) {
-  /* no notifications this session; caching still works */
-}
+/* ---- notifications ---------------------------------------------------
+   A push from Firebase is an ordinary web push carrying JSON, so it is read
+   here directly. The SDK used to be pulled off Google's CDN at worker
+   startup to do this, which meant a slow or blocked fetch left the worker
+   with no push handler at all: the job vanished, and the server still
+   recorded it as delivered. Nothing is fetched now, so the only way a job
+   goes unseen is if it never reached the device.
+
+   The title is filled in even when the payload cannot be read, so silence
+   always means the push did not arrive. */
+self.addEventListener("push", function(e){
+  var p = {};
+  try { p = e.data ? e.data.json() : {}; } catch (err) { p = {}; }
+  var n = p.notification || (p.data && p.data.notification) || p.data || {};
+  e.waitUntil(self.registration.showNotification(n.title || "New job", {
+    body: n.body || "",
+    icon: "./icons/icon-192.png",
+    badge: "./icons/badge-96.png",
+    tag: n.tag || "ebm-job"
+  }));
+});
 
 self.addEventListener("notificationclick", function(e){
   e.notification.close();
