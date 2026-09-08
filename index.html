@@ -1362,9 +1362,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (Notification.permission === "denied")
       return {text:"Blocked. Allow notifications for this app in your phone's settings, then reopen it."};
     if (Notification.permission === "granted" && state.pushOn)
-      return {text: isOffice()
+      return {text: (isOffice()
         ? "On. You'll hear when the crew clock in, clock out and finish a job."
-        : "On. You'll get a buzz when a job is booked for you."};
+        : "On. You'll get a buzz when a job is booked for you.")
+        + " This phone is registered as " + meName() + "."};
     if (Notification.permission === "granted")
       return {text:"Allowed, but this phone has not registered yet. Reopen the app if it stays like this."};
     return {text: isOffice()
@@ -1736,6 +1737,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (state.opened && state.me === id) return;
     state.opened = true;
     state.me = id;
+    state.pushDone = false;      // whoever this phone belongs to just changed
     $("gate").hidden = true;
     $("app").hidden = false;
     if (!state.started){ state.started = true; start(); } else { resubscribe(); render(); }
@@ -1781,7 +1783,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     return String((window.EBM_CONFIG && window.EBM_CONFIG.vapidKey) || "").trim();
   }
   function notificationsPossible(){
-    return !!vapidKey() && state.mode === "cloud"
+    // state.me matters: registering before anyone has signed in stores the
+    // phone against nobody, and the notifier then has no one to send to.
+    return !!vapidKey() && state.mode === "cloud" && !!state.me
            && "Notification" in window && "serviceWorker" in navigator;
   }
   function rememberToken(token){
