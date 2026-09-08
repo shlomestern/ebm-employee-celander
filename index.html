@@ -125,6 +125,9 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 /* ---------- crew list ---------- */
 .layout{display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; align-items:start}
+/* A crew member has no crew column. Without this the hidden aside leaves the
+   calendar to fall into the 230px track meant for it. */
+body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .crew{display:flex; flex-direction:column; gap:7px}
 .person{
   display:flex; align-items:center; gap:11px; text-align:left; width:100%;
