@@ -17,5 +17,9 @@ Two things that bite when editing it:
 - The letters are clipped to the cap line, because the mitred joins on the M
   overshoot it otherwise.
 
+The word under the monogram is set in Liberation Sans Bold — the only part that
+uses a typeface, and only because eight letterforms are not worth hand-drawing.
+Swap it for CREW, JOBS, DISPATCH or CALENDAR by editing the one `<text>` element.
+
 Colours: brown `#3C2612` (also the app's theme and splash colour), gold running
 `#F5DE9E` to `#9C6B18`.

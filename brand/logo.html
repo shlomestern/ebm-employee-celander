@@ -17,7 +17,7 @@
       <stop offset="66%"  stop-color="#C4922F"/>
       <stop offset="100%" stop-color="#9C6B18"/>
     </linearGradient>
-    <linearGradient id="rule" gradientUnits="userSpaceOnUse" x1="176" y1="0" x2="336" y2="0">
+    <linearGradient id="rule" gradientUnits="userSpaceOnUse" x1="150" y1="0" x2="362" y2="0">
       <stop offset="0%"   stop-color="#C4922F" stop-opacity="0"/>
       <stop offset="50%"  stop-color="#E3BC63" stop-opacity=".85"/>
       <stop offset="100%" stop-color="#C4922F" stop-opacity="0"/>
@@ -29,6 +29,8 @@
 
   <rect width="512" height="512" fill="url(#ground)"/>
 
+  <!-- The lockup is EBM plus the word, so it is centred as one block. -->
+  <g transform="translate(0,-28)">
   <!-- EBM, drawn as geometry so it needs no font -->
   <g clip-path="url(#capline)" fill="none" stroke="url(#gold)" stroke-width="30" stroke-linecap="butt" stroke-linejoin="miter">
     <!-- E -->
@@ -47,5 +49,9 @@
     <path d="M329 320 L329 192 L370 264 L411 192 L411 320"/>
   </g>
 
-  <rect x="168" y="350" width="176" height="7" rx="3.5" fill="url(#rule)" opacity=".9"/>
+  <rect x="150" y="344" width="212" height="5" rx="2.5" fill="url(#rule)" opacity=".85"/>
+  <text x="256" y="392" text-anchor="middle"
+        font-family="Liberation Sans, Arial, sans-serif" font-weight="700"
+        font-size="34" letter-spacing="7" fill="#E7C273">SCHEDULE</text>
+  </g>
 </svg>
