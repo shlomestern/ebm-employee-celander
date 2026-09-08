@@ -15,6 +15,9 @@ const logger = require("firebase-functions/logger");
 
 initializeApp();
 
+// Same region as the Firestore database, so a trigger is not a round trip
+// across the continent before the phone hears anything.
+
 const HOURS = (h) => {
   const ap = h < 12 ? "AM" : "PM";
   const hh = h % 12 === 0 ? 12 : h % 12;
@@ -70,7 +73,7 @@ async function push(db, map, tokens, title, body, tag) {
 
 /** The office hears when a crew member starts, stops, or finishes. */
 exports.notifyOfficeOnClock = onDocumentUpdated(
-  {document: "bookings/{jobId}", region: "us-central1"},
+  {document: "bookings/{jobId}", region: "northamerica-northeast1"},
   async (event) => {
     const before = event.data.before.data() || {};
     const after = event.data.after.data() || {};
@@ -98,7 +101,7 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
 );
 
 exports.notifyCrewOnNewJob = onDocumentCreated(
-  {document: "bookings/{jobId}", region: "us-central1"},
+  {document: "bookings/{jobId}", region: "northamerica-northeast1"},
   async (event) => {
     const job = event.data && event.data.data();
     if (!job || job.v !== 2 || !job.crewId) return;
