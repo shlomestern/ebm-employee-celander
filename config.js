@@ -33,5 +33,5 @@ self.EBM_CONFIG = {   /* self, not window: the service worker reads this file to
   /* Phone notifications. Paste the Web Push certificate key pair from
      Firebase console → Project settings → Cloud Messaging → Web Push
      certificates → Generate key pair. Leave "" and notifications stay off. */
-  vapidKey: ""
+  vapidKey: "BJKLqsvXz4E6Lpu7Q5vX8iMKY3hdPOMTTfZTi-1If5bCdd22XrpAJT8Moybx2BH7yzmOMiWgOoWlcUNdwiZt7nQ"
 };
