@@ -1,0 +1,51 @@
+<style>
+  html,body{margin:0;padding:0;background:transparent}
+  svg{display:block;width:100vw;height:100vh}
+</style>
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ground" cx="34%" cy="26%" r="92%">
+      <stop offset="0%"  stop-color="#5A3A1E"/>
+      <stop offset="55%" stop-color="#3C2612"/>
+      <stop offset="100%" stop-color="#241608"/>
+    </radialGradient>
+    <!-- userSpaceOnUse: a straight stroke has a zero-area bounding box, and a
+         bounding-box gradient on one of those renders nothing at all. -->
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="86" y1="180" x2="400" y2="345">
+      <stop offset="0%"   stop-color="#F5DE9E"/>
+      <stop offset="38%"  stop-color="#E3BC63"/>
+      <stop offset="66%"  stop-color="#C4922F"/>
+      <stop offset="100%" stop-color="#9C6B18"/>
+    </linearGradient>
+    <linearGradient id="rule" gradientUnits="userSpaceOnUse" x1="176" y1="0" x2="336" y2="0">
+      <stop offset="0%"   stop-color="#C4922F" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#E3BC63" stop-opacity=".85"/>
+      <stop offset="100%" stop-color="#C4922F" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Mitred joins on the M overshoot the cap height; clipping to the cap
+         line flattens them instead of leaving spikes or notches. -->
+    <clipPath id="capline"><rect x="0" y="192" width="512" height="128"/></clipPath>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#ground)"/>
+
+  <!-- EBM, drawn as geometry so it needs no font -->
+  <g clip-path="url(#capline)" fill="none" stroke="url(#gold)" stroke-width="30" stroke-linecap="butt" stroke-linejoin="miter">
+    <!-- E -->
+    <path d="M101 192 V320"/>
+    <path d="M86 207 H176"/>
+    <path d="M86 256 H162"/>
+    <path d="M86 305 H176"/>
+    <!-- B -->
+    <path d="M212 192 V320"/>
+    <path d="M197 207 H253"/>
+    <path d="M197 256 H253"/>
+    <path d="M197 305 H253"/>
+    <path d="M253 207 a24.5 24.5 0 0 1 0 49"/>
+    <path d="M253 256 a24.5 24.5 0 0 1 0 49"/>
+    <!-- M as one path, so the joins are mitred instead of notched -->
+    <path d="M329 320 L329 192 L370 264 L411 192 L411 320"/>
+  </g>
+
+  <rect x="168" y="350" width="176" height="7" rx="3.5" fill="url(#rule)" opacity=".9"/>
+</svg>

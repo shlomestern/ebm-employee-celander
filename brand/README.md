@@ -1,0 +1,21 @@
+# Brand
+
+`logo.html` is the EBM monogram — gold on brown, letterforms drawn as geometry
+so it depends on no font. `render-icons.py` screenshots it at 512, 192 and 180
+into `../icons/`.
+
+Regenerate after editing the logo:
+
+    python3 brand/render-icons.py
+
+Two things that bite when editing it:
+
+- The gold gradient uses `gradientUnits="userSpaceOnUse"`. A perfectly straight
+  stroke has a zero-area bounding box, and the SVG spec says an element with a
+  bounding-box gradient and no area renders nothing — so the E and the bars of
+  the B silently vanish if you switch it back.
+- The letters are clipped to the cap line, because the mitred joins on the M
+  overshoot it otherwise.
+
+Colours: brown `#3C2612` (also the app's theme and splash colour), gold running
+`#F5DE9E` to `#9C6B18`.
