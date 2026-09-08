@@ -17,9 +17,17 @@
   --ground:#E9EEF1; --surface:#FFFFFF; --surface-2:#F3F7F9; --surface-3:#E6EDF1;
   --line:#D4DCE2; --line-2:#B8C4CC;
   --accent:#0C5A66; --accent-soft:#DDEDEF;
-  --plumb:#1B6B9E; --plumb-soft:#E4F0F8;
-  --elec:#A96406; --elec-soft:#FAEEDA;
+  /* one per person, in roster order, so no two names look alike */
+  --c0:#1B6B9E; --c0-soft:#E4F0F8;
+  --c1:#A96406; --c1-soft:#FAEEDA;
+  --c2:#2C7A58; --c2-soft:#DEF0E7;
+  --c3:#7A3F9E; --c3-soft:#F1E7F8;
+  --c4:#0C7A82; --c4-soft:#DCF0F1;
+  --c5:#B23A48; --c5-soft:#FBE4E7;
+  --c6:#4653A8; --c6-soft:#E8EAF9;
+  --c7:#7A6320; --c7-soft:#F5EEDA;
   --open:#2C7A58; --open-soft:#DEF0E7;
+  --mark:#A96406;
   --danger:#A93226;
   --sel:var(--accent); --sel-soft:var(--accent-soft);
   --shadow:0 1px 2px rgba(19,26,32,.05), 0 10px 30px -16px rgba(19,26,32,.28);
@@ -30,9 +38,16 @@
     --ground:#0D1418; --surface:#161F25; --surface-2:#1C262D; --surface-3:#232F37;
     --line:#2A363E; --line-2:#3C4B55;
     --accent:#43B3C0; --accent-soft:#153236;
-    --plumb:#6DB6E9; --plumb-soft:#152B3C;
-    --elec:#E2A445; --elec-soft:#2F2410;
+    --c0:#6DB6E9; --c0-soft:#152B3C;
+    --c1:#E2A445; --c1-soft:#2F2410;
+    --c2:#5FBF93; --c2-soft:#122E22;
+    --c3:#C093E0; --c3-soft:#2A1A38;
+    --c4:#4FC0C8; --c4-soft:#0F2E30;
+    --c5:#EE8494; --c5-soft:#38161B;
+    --c6:#98A4EE; --c6-soft:#1D2242;
+    --c7:#D0B45E; --c7-soft:#2C2510;
     --open:#5EBE8E; --open-soft:#13291F;
+    --mark:#E2A445;
     --danger:#E4796B;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 34px -18px rgba(0,0,0,.85);
   }
@@ -42,9 +57,16 @@
   --ground:#0D1418; --surface:#161F25; --surface-2:#1C262D; --surface-3:#232F37;
   --line:#2A363E; --line-2:#3C4B55;
   --accent:#43B3C0; --accent-soft:#153236;
-  --plumb:#6DB6E9; --plumb-soft:#152B3C;
-  --elec:#E2A445; --elec-soft:#2F2410;
+  --c0:#6DB6E9; --c0-soft:#152B3C;
+  --c1:#E2A445; --c1-soft:#2F2410;
+  --c2:#5FBF93; --c2-soft:#122E22;
+  --c3:#C093E0; --c3-soft:#2A1A38;
+  --c4:#4FC0C8; --c4-soft:#0F2E30;
+  --c5:#EE8494; --c5-soft:#38161B;
+  --c6:#98A4EE; --c6-soft:#1D2242;
+  --c7:#D0B45E; --c7-soft:#2C2510;
   --open:#5EBE8E; --open-soft:#13291F;
+  --mark:#E2A445;
   --danger:#E4796B;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 34px -18px rgba(0,0,0,.85);
 }
@@ -86,7 +108,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .mesec .btn{margin-top:9px}
 .status .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-3); flex:none}
 .status.live .dot{background:var(--open)}
-.status.local .dot{background:var(--elec)}
+.status.local .dot{background:var(--mark)}
 
 .btn{
   border:1px solid var(--line-2); background:var(--surface); border-radius:8px;
@@ -147,8 +169,14 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .person[aria-pressed="true"]{border-color:var(--pc); background:var(--pc-soft); box-shadow:inset 3px 0 0 var(--pc)}
 .person[aria-pressed="true"] .mt{color:var(--ink-2)}
 .person[aria-pressed="true"] .av{background:var(--pc); color:#fff}
-.p-plumbing{--pc:var(--plumb); --pc-soft:var(--plumb-soft)}
-.p-electrical{--pc:var(--elec); --pc-soft:var(--elec-soft)}
+.c0{--pc:var(--c0); --pc-soft:var(--c0-soft)}
+.c1{--pc:var(--c1); --pc-soft:var(--c1-soft)}
+.c2{--pc:var(--c2); --pc-soft:var(--c2-soft)}
+.c3{--pc:var(--c3); --pc-soft:var(--c3-soft)}
+.c4{--pc:var(--c4); --pc-soft:var(--c4-soft)}
+.c5{--pc:var(--c5); --pc-soft:var(--c5-soft)}
+.c6{--pc:var(--c6); --pc-soft:var(--c6-soft)}
+.c7{--pc:var(--c7); --pc-soft:var(--c7-soft)}
 
 /* ---------- month calendar ---------- */
 .calbar{display:flex; align-items:center; gap:9px; margin-bottom:11px}
@@ -188,9 +216,9 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .cell.out .dnum{opacity:.35}
 .cell.past{background:var(--surface-2)}
 .cell.off{background:var(--surface-2)}
-.cell.yomtov{box-shadow:inset 3px 0 0 var(--elec)}
+.cell.yomtov{box-shadow:inset 3px 0 0 var(--mark)}
 /* beats .cell.off .freehint, which would otherwise grey and italicise it */
-.cell .freehint.yt{color:var(--elec); font-style:normal; font-weight:600; font-size:10.5px;
+.cell .freehint.yt{color:var(--mark); font-style:normal; font-weight:600; font-size:10.5px;
   line-height:1.2; white-space:normal; overflow-wrap:anywhere}
 .cell.off .dnum{color:var(--ink-3)}
 .cell.off .freehint{color:var(--ink-3); font-style:italic}
@@ -200,11 +228,11 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .chips{display:flex; flex-direction:column; gap:3px; min-width:0}
 .chip{
   display:flex; flex-direction:column; gap:1px; min-width:0; text-align:left;
-  background:var(--sel-soft); border-radius:6px; padding:4px 7px;
-  box-shadow:inset 3px 0 0 var(--sel);
+  background:var(--pc-soft, var(--sel-soft)); border-radius:6px; padding:4px 7px;
+  box-shadow:inset 3px 0 0 var(--pc, var(--sel));
 }
 .chip .t{font-family:"Archivo",sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em;
-  line-height:1.15; color:var(--sel); font-variant-numeric:tabular-nums;
+  line-height:1.15; color:var(--pc, var(--sel)); font-variant-numeric:tabular-nums;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .chip .n{font-family:"Archivo",sans-serif; font-size:11px; font-weight:600; letter-spacing:.03em;
   line-height:1.2; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
@@ -212,7 +240,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .more{font-size:11px; color:var(--ink-3); padding-left:6px}
 .freehint{font-size:11.5px; color:var(--ink-3); margin-top:auto}
 .legend{margin-top:13px; display:flex; flex-wrap:wrap; gap:7px 18px; font-size:12.5px; color:var(--ink-3)}
-.legend .box{width:11px; height:11px; border-radius:3px; background:var(--sel); flex:none;
+.legend .box{width:11px; height:11px; border-radius:3px; background:var(--pc, var(--sel)); flex:none;
   display:inline-block; vertical-align:-1px; margin-right:6px}
 .footnote{margin-top:11px; font-size:12.5px; color:var(--ink-3); max-width:64ch}
 .footnote strong{color:var(--ink-2); font-weight:600}
@@ -647,7 +675,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v45";
+  var APP_VERSION = "v46";
 
   var F_MONTH = new Intl.DateTimeFormat(undefined,{month:"long"});
   var F_LONG  = new Intl.DateTimeFormat(undefined,{weekday:"long", month:"long", day:"numeric"});
@@ -917,7 +945,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     opts = opts || {};
     var m = memberOr(j.crewId);
     var card = document.createElement("div");
-    card.className = "job p-" + m.trade + (j.clockOut ? " done" : "");
+    card.className = "job " + colorClass(m.id) + (j.clockOut ? " done" : "");
 
     var top = document.createElement("div"); top.className="job-top";
     var t = document.createElement("span"); t.className="job-time"; t.textContent = rangeShort(j);
@@ -1023,11 +1051,20 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
 
   /* ---------- office view ---------- */
-  function applyAccent(trade){
-    var c = trade==="electrical" ? "--elec" : "--plumb";
-    var s = trade==="electrical" ? "--elec-soft" : "--plumb-soft";
-    document.documentElement.style.setProperty("--sel","var("+c+")");
-    document.documentElement.style.setProperty("--sel-soft","var("+s+")");
+  /* Everyone gets their own colour, taken in roster order, so two plumbers
+     are never the same shade. Adding someone at the end leaves the colours
+     already in use alone; the office can reorder the crew to change them. */
+  var PALETTE = 8;
+  function colorClass(id){
+    var i = 0;
+    for (var k = 0; k < state.people.length; k++)
+      if (state.people[k].id === id) { i = k; break; }
+    return "c" + (i % PALETTE);
+  }
+  function applyAccent(id){
+    var n = colorClass(id).slice(1);
+    document.documentElement.style.setProperty("--pc", "var(--c" + n + ")");
+    document.documentElement.style.setProperty("--pc-soft", "var(--c" + n + "-soft)");
   }
   function monthFirst(){ return new Date(state.anchor.getFullYear(), state.anchor.getMonth(), 1); }
   function weekFirst(){ return addDays(state.anchor, -state.anchor.getDay()); }
@@ -1060,7 +1097,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     }
     crew.forEach(function(m){
       var b=document.createElement("button");
-      b.type="button"; b.className="person p-"+m.trade;
+      b.type="button"; b.className="person "+colorClass(m.id);
       b.setAttribute("aria-pressed", m.id===state.who ? "true":"false");
       var av=document.createElement("span"); av.className="av"; av.textContent=m.name.charAt(0).toUpperCase();
       var tx=document.createElement("span"); tx.className="txt";
@@ -1085,7 +1122,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function renderCalendar(){
     if (isOffice() && (!state.who || !member(state.who))) state.who = firstCrewId();
     var m = memberOr(viewCrewId());
-    applyAccent(m.trade);
+    applyAccent(m.id);
     $("monthLabel").innerHTML = periodLabel();
     $("legendName").textContent = isOffice() ? (m.name + "'s jobs") : "Your jobs";
     $("legendHint").textContent = can("book")
