@@ -190,13 +190,15 @@ button{font:inherit; color:inherit; cursor:pointer}
 .cell.today .dnum .tdot{width:5px; height:5px; border-radius:50%; background:var(--sel); flex:none}
 .chips{display:flex; flex-direction:column; gap:3px; min-width:0}
 .chip{
-  display:flex; gap:5px; align-items:baseline; min-width:0; text-align:left;
-  background:var(--sel-soft); border-radius:5px; padding:2px 6px;
-  box-shadow:inset 2px 0 0 var(--sel);
+  display:flex; flex-direction:column; gap:1px; min-width:0; text-align:left;
+  background:var(--sel-soft); border-radius:6px; padding:4px 7px;
+  box-shadow:inset 3px 0 0 var(--sel);
 }
-.chip .t{font-family:"Archivo",sans-serif; font-size:10px; font-weight:600; letter-spacing:.04em;
-  color:var(--sel); flex:none; font-variant-numeric:tabular-nums}
-.chip .n{font-size:11.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis;
+.chip .t{font-family:"Archivo",sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em;
+  line-height:1.15; color:var(--sel); font-variant-numeric:tabular-nums;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.chip .n{font-family:"Archivo",sans-serif; font-size:11px; font-weight:600; letter-spacing:.03em;
+  line-height:1.2; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; min-width:0}
 .more{font-size:11px; color:var(--ink-3); padding-left:6px}
 .freehint{font-size:11.5px; color:var(--ink-3); margin-top:auto}
@@ -298,6 +300,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .actions .spacer{flex:1}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
 
+@media (max-width:600px){
+  .calbar h2{font-size:17px; white-space:nowrap; flex:1 1 auto}
+  .calbar{row-gap:9px}
+  .seg{flex:1 1 100%}
+  .seg button{flex:1}
+}
 @media (max-width:820px){
   .layout{grid-template-columns:minmax(0,1fr); gap:14px}
   .crew{flex-direction:row; flex-wrap:wrap; gap:6px}
@@ -309,8 +317,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   .topbar h1{font-size:22px}
   .dow{padding:6px 4px; font-size:9.5px; letter-spacing:.05em}
   .cell{min-height:58px; padding:4px}
-  .chip{padding:1px 4px; gap:3px}
-  .chip .n{display:none}
+  .chip{padding:3px 5px}
+  .chip .t{font-size:12px}
   .freehint{display:none}
   .row2{grid-template-columns:1fr}
 }
@@ -517,7 +525,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   ];
   var DAY_START = 8, DAY_END = 17;          // 8:00 AM to 5:00 PM
   var TRADE = {plumbing:"Plumbing", electrical:"Electrical", admin:"Admin"};
-  var MAX_CHIPS = 3;
+  var MAX_CHIPS = 2;
   var LS_PASS = "ebm-crew:pass:v2";
   var LS_JOBS = "ebm-crew:jobs:v2";
   var LS_ROSTER = "ebm-crew:roster:v1";
@@ -534,6 +542,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   function addDays(d,n){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
   function hourLong(h){ var ap=h<12?"AM":"PM", hh=h%12; if(!hh) hh=12; return hh+":00 "+ap; }
   function hourShort(h){ var ap=h<12?"a":"p", hh=h%12; if(!hh) hh=12; return hh+ap; }
+  function hourBare(h){ var hh=h%12; return hh===0 ? 12 : hh; }
   function rangeLabel(j){
     if (j.allDay) return "All day";
     return hourLong(j.from) + " – " + hourLong(j.to);
@@ -593,6 +602,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (state.me === "office") return true;
     if (!j.createdById) return true;
     return j.createdById === state.me;
+  }
+  /* Who may write a note on a job: the crew member doing it, whoever booked
+     it, and the master office code. Not a bystander with a calendar. */
+  function canNote(j){
+    if (state.me === "office") return true;
+    if (j.crewId === state.me) return true;
+    if (j.createdById) return j.createdById === state.me;
+    return can("book");                       // jobs booked before authors existed
   }
   function can(what){
     if (state.me === "office") return true;          // the master office code
@@ -853,6 +870,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       wsp.textContent = n.at ? F_TIME.format(new Date(n.at)) : "";
       el.appendChild(wsp); notes.appendChild(el);
     });
+    if (!canNote(j)){
+      // Everyone who can see the job can read its notes; only the people above
+      // may add one.
+      if ((j.notes||[]).length) card.appendChild(notes);
+      return card;
+    }
     var add=document.createElement("div"); add.className="noteadd";
     var inp=document.createElement("input"); inp.placeholder="Add a note…"; inp.maxLength=200;
     var go=document.createElement("button"); go.type="button"; go.className="btn"; go.textContent="Add";
@@ -983,9 +1006,10 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         var cap = showAll ? list.length : MAX_CHIPS;
         list.slice(0,cap).forEach(function(j){
           var c=document.createElement("span"); c.className="chip";
-          var t=document.createElement("span"); t.className="t"; t.textContent=j.allDay?"all":hourShort(j.from);
+          var t=document.createElement("span"); t.className="t";
+          t.textContent = j.allDay ? "All day" : (hourBare(j.from) + "–" + hourBare(j.to));
           var n=document.createElement("span"); n.className="n";
-          n.textContent = j.projectId + (j.unit ? " · " + j.unit : "");
+          n.textContent = j.projectId;
           c.appendChild(t); c.appendChild(n); chips.appendChild(c);
         });
         cell.appendChild(chips);

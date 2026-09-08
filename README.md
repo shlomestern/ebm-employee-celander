@@ -21,7 +21,7 @@ A clean booking calendar for the Empire Building Management field crew.
 | Plumbing / Electrical | Their own jobs only. Clock in, clock out, notes. No calendar. |
 | Admin (office) | The whole calendar — plus two tickboxes for what they may do: **book and cancel jobs**, and **add people and change codes**. |
 
-**A booking belongs to whoever made it.** Only that person can cancel it, and every job card says who booked it. The office code from `config.js` is the exception — it can cancel anything, because somebody has to be able to.
+**A booking belongs to whoever made it.** Only that person can cancel it or add notes to it — along with the crew member the job is for, who needs to write on their own work. Everyone who can see the job can still read its notes. Every card says who booked it. The office code from `config.js` is the exception throughout: it can do anything, because somebody has to be able to.
 
 Everyone sees their own name at the top of the app, the office included — set yours under **Your name** in the same editor.
 
