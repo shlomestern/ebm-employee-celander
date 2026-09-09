@@ -97,6 +97,88 @@ function minutesNow() {
 const GRACE_MINUTES = 20;
 const STALE_MINUTES = 180;
 
+/* The days the crew are not expected in, so the office is not told at seven
+ * in the morning that everybody is free on Yom Kippur. The same table the app
+ * marks the calendar with; Node carries the Hebrew calendar itself. */
+const YOM_TOV = {
+  Tishri: {1: 1, 2: 1, 10: 1, 15: 1, 16: 1, 22: 1, 23: 1},
+  Nisan: {15: 1, 16: 1, 21: 1, 22: 1},
+  Sivan: {6: 1, 7: 1},
+};
+let HEB = null;
+try {
+  HEB = new Intl.DateTimeFormat("en-u-ca-hebrew",
+    {day: "numeric", month: "long", timeZone: ZONE});
+} catch (e) { HEB = null; }
+function isYomTov(when) {
+  if (!HEB) return false;
+  let mo = "";
+  let dy = 0;
+  try {
+    HEB.formatToParts(when).forEach((part) => {
+      if (part.type === "month") mo = part.value;
+      if (part.type === "day") dy = parseInt(part.value, 10);
+    });
+  } catch (e) { return false; }
+  return !!(YOM_TOV[mo] && YOM_TOV[mo][dy]);
+}
+
+/** Who has nothing on at all, as it reads on a lock screen. Pure, so it can
+ *  be checked without a database. */
+function freeText(free, booked, jobCount) {
+  const names = free.length === 1 ? free[0]
+    : free.slice(0, -1).join(", ") + " and " + free[free.length - 1];
+  return {
+    title: `Free today: ${names}`,
+    body: booked
+      ? `Nothing booked for them today. The rest of the crew have ` +
+        `${jobCount} job${jobCount === 1 ? "" : "s"} on.`
+      : "Nothing is booked for anybody today.",
+  };
+}
+
+/** Seven in the morning, weekdays: anybody with no bookings at all today is
+ *  named to the whole office, while there is still a day to fill.
+ */
+exports.freeToday = onSchedule(
+  {schedule: "0 7 * * 1-5", timeZone: ZONE, region: "northamerica-northeast1"},
+  async () => {
+    const db = getFirestore();
+    const now = new Date();
+    const date = DATE_IN_ZONE.format(now);
+    if (isYomTov(now)) {
+      logger.info(`${date} is Yom Tov — nobody is expected in`);
+      return;
+    }
+
+    const [snap, aud] = await Promise.all([
+      db.collection("bookings").where("date", "==", date).get(),
+      audience(db),
+    ]);
+    const jobs = snap.docs.map((d) => d.data()).filter((j) => j.v === 2);
+    const busy = new Set(jobs.map((j) => j.crewId));
+
+    // The men on the tools. An admin is not booked onto jobs, so an admin is
+    // not free in any sense worth telling anybody about.
+    const crew = aud.people.filter((p) => p.trade !== "admin");
+    const free = crew.filter((p) => !busy.has(p.id));
+    if (!crew.length || !free.length) {
+      logger.info(`${date}: all ${crew.length} of the crew are booked`);
+      return;
+    }
+
+    const tokens = aud.forOffice();
+    if (!tokens.length) {
+      logger.info(`${free.length} free on ${date} — no office phone registered`);
+      return;
+    }
+    const {title, body} = freeText(free.map((p) => p.name), jobs.length > 0, jobs.length);
+    const sent = await push(db, aud.map, tokens, title, body, `free-${date}`);
+    logger.info(`free on ${date}: ${free.map((p) => p.name).join(", ")} ` +
+      `— told ${sent} phone(s)`);
+  }
+);
+
 /** Nobody has clocked in and the job was due: the office and whoever booked
  *  it hear about it once, while a phone call still helps.
  */

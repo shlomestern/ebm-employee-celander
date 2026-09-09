@@ -1370,7 +1370,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v67";
+  var APP_VERSION = "v68";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2103,6 +2103,9 @@ body.hasupd .wrap{padding-top:52px}
      announcements into. Oldest first, so the newest ends up at the bottom
      where a conversation puts it. Add an entry when a release is worth
      mentioning to the people using it — not for every fix. */
+  /* who: left out means anybody using the app; "office" for something only
+     an admin ever does; "manage" for the things behind the office's own code,
+     which nobody else needs to know exists. */
   var RELEASES = [
     {at:"2026-09-08T14:00:00Z",
      en:"The app is now in French as well. Change it under Language in your account.",
@@ -2119,22 +2122,22 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T18:00:00Z",
      en:"When a bar appears at the top saying a newer version is ready, tap Load it. Most of the time the app does it for you.",
      fr:"Quand une barre appara\u00eet en haut disant qu\u2019une nouvelle version est pr\u00eate, touchez La charger. La plupart du temps l\u2019application le fait pour vous."},
-    {at:"2026-09-09T18:30:00Z",
+    {at:"2026-09-09T18:30:00Z", who:"office",
      en:"At seven each morning, whoever booked a job gets the day's list on their phone.",
      fr:"\u00c0 sept heures chaque matin, celui qui a r\u00e9serv\u00e9 un travail re\u00e7oit la liste de la journ\u00e9e sur son t\u00e9l\u00e9phone."},
     {at:"2026-09-09T19:00:00Z",
      en:"When the office gives you extra hours, your later jobs that day move along by themselves.",
      fr:"Quand le bureau vous accorde des heures de plus, vos travaux suivants de la journ\u00e9e se d\u00e9calent d\u2019eux-m\u00eames."},
-    {at:"2026-09-09T19:30:00Z",
+    {at:"2026-09-09T19:30:00Z", who:"office",
      en:"Nobody clocked in twenty minutes after a job was due? You and whoever booked it get told, once.",
      fr:"Personne n\u2019a point\u00e9 vingt minutes apr\u00e8s l\u2019heure pr\u00e9vue\u00a0? Vous et la personne qui a r\u00e9serv\u00e9 \u00eates avertis, une fois."},
-    {at:"2026-09-09T19:45:00Z",
+    {at:"2026-09-09T19:45:00Z", who:"manage",
      en:"Hours worked, in your account panel: what each person clocked and where, over any dates, with a file for the spreadsheet.",
      fr:"Heures travaill\u00e9es, dans votre compte\u00a0: ce que chacun a point\u00e9 et o\u00f9, sur les dates de votre choix, avec un fichier pour le tableur."},
     {at:"2026-09-09T20:00:00Z",
      en:"Messages take a photo, a voice note or an emoji now. The buttons are beside the box.",
      fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
-    {at:"2026-09-09T21:00:00Z",
+    {at:"2026-09-09T21:00:00Z", who:"manage",
      en:"Hours worked now downloads as a real Excel file: one page of totals per project, one page with every job behind them.",
      fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."},
     {at:"2026-09-09T22:00:00Z",
@@ -2143,23 +2146,32 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T22:15:00Z",
      en:"You can scroll up in a conversation to read older messages now, and it no longer reloads the page.",
      fr:"Vous pouvez maintenant remonter dans une conversation pour lire les anciens messages, et \u00e7a ne recharge plus la page."},
-    {at:"2026-09-09T23:30:00Z",
+    {at:"2026-09-09T23:30:00Z", who:"manage",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
-     fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."}
+     fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T01:00:00Z", who:"office",
+     en:"At seven each weekday morning, the office is told who has no bookings at all that day, while there is still a day to fill.",
+     fr:"\u00c0 sept heures chaque matin de semaine, le bureau apprend qui n\u2019a aucune r\u00e9servation ce jour-l\u00e0, quand il reste encore une journ\u00e9e \u00e0 remplir."}
   ];
   /* One thread for everything the app has to say, in the order it said it:
      what changed in the release, and every notification this phone was sent.
      Two channels was one too many — nobody wants to guess which of them a
      message went to.
 
-     The release notes stay the office's business, the way they were: a
-     plumber hears what changed from the office in their own words, and sees
-     only what was actually sent to him. */
+     A note is only shown to somebody it is any use to. A plumber hears about
+     photos on a job; the hours report, the spreadsheet and the crew's codes
+     are behind the office's own code and there is no reason for anybody else
+     to know they are there. */
+  function releaseFor(r){
+    if (r.who === "manage") return can("manage");
+    if (r.who === "office") return isOffice();
+    return true;
+  }
   function systemMsgs(){
-    var out = isOffice() ? RELEASES.map(function(r){
+    var out = RELEASES.filter(releaseFor).map(function(r){
       return {by: SYSTEM, name: tr("System"),
               text: state.lang === "fr" ? r.fr : r.en, at: r.at};
-    }) : [];
+    });
     return out.concat(alertMsgs()).sort(function(a, b){
       return (a.at || "") < (b.at || "") ? -1 : 1;
     });
@@ -2464,9 +2476,9 @@ body.hasupd .wrap{padding-top:52px}
     chatOpen = id;
     var mayWrite = id !== SYSTEM;
     $("chatTitle").textContent = personName(id);
-    $("chatSub").textContent = id !== SYSTEM ? tr("Just the two of you.")
-      : isOffice() ? tr("What changed in the app, and what this phone was told.")
-      : tr("Every notification this phone was sent.");
+    $("chatSub").textContent = id === SYSTEM
+      ? tr("What changed in the app, and what this phone was told.")
+      : tr("Just the two of you.");
     $("chatThreads").hidden = true;
     $("chatPane").hidden = false;
     $("chatBack").hidden = false;
