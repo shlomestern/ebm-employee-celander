@@ -976,8 +976,13 @@ body.hasupd .wrap{padding-top:52px}
     "{name} is running late": "{name} est en retard",
     "booked to {h}": "r\u00e9serv\u00e9 jusqu\u2019\u00e0 {h}",
     "Open the day": "Ouvrir la journ\u00e9e",
-    "The next job is in the way. Move or cancel it first.":
-      "Le travail suivant bloque. D\u00e9placez-le ou annulez-le d\u2019abord.",
+    "Also move the next job later?": "D\u00e9placer aussi le travail suivant\u00a0?",
+    "Also move {n} later jobs?": "D\u00e9placer aussi {n} travaux suivants\u00a0?",
+    "There is no room left in the day. {where} at {h} would run past {end}.":
+      "Il ne reste plus de place dans la journ\u00e9e. {where} \u00e0 {h} d\u00e9passerait {end}.",
+    "His next job was booked by {name}. Ask them to move it, or change it yourself if it is yours.":
+      "Son prochain travail a \u00e9t\u00e9 r\u00e9serv\u00e9 par {name}. Demandez-lui de le d\u00e9placer, ou modifiez-le vous-m\u00eame s\u2019il est \u00e0 vous.",
+    "somebody else": "quelqu\u2019un d\u2019autre",
     "From": "De", "To": "\u00c0",
     "Work to do": "Travail \u00e0 faire",
     "e.g. Kitchen sink leaking under the cabinet":
@@ -1268,7 +1273,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v59";
+  var APP_VERSION = "v60";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1634,6 +1639,9 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T18:00:00Z",
      en:"When a bar appears at the top saying a newer version is ready, tap Load it. Most of the time the app does it for you.",
      fr:"Quand une barre appara\u00eet en haut disant qu\u2019une nouvelle version est pr\u00eate, touchez La charger. La plupart du temps l\u2019application le fait pour vous."},
+    {at:"2026-09-09T19:00:00Z",
+     en:"When the office gives you extra hours, your later jobs that day move along by themselves.",
+     fr:"Quand le bureau vous accorde des heures de plus, vos travaux suivants de la journ\u00e9e se d\u00e9calent d\u2019eux-m\u00eames."},
     {at:"2026-09-09T20:00:00Z",
      en:"Messages take a photo, a voice note or an emoji now. The buttons are beside the box.",
      fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."}
@@ -2190,18 +2198,72 @@ body.hasupd .wrap{padding-top:52px}
   function grantable(j){
     return can("book") && !!j.late && !j.clockOut && j.late.until > j.to;
   }
+  /* What granting the extra hours actually takes. The job's own new end is
+     the easy part; the later jobs that day have to slide along to make room,
+     each keeping the travel hour if it is at a different address. It only
+     fails when the day runs out of hours, which is a real answer rather than
+     "something is in the way". */
+  function extendPlan(j){
+    var later = jobsOn(j.date, j.crewId).filter(function(x){
+      return x.id !== j.id && x.from >= j.to;
+    }).sort(function(a, b){ return a.from - b.from; });
+
+    var moves = [], prev = {projectId: j.projectId, buildingId: j.buildingId, to: j.late.until};
+    for (var i = 0; i < later.length; i++){
+      var x = later[i];
+      var gap = samePlace(prev.projectId, prev.buildingId, x.projectId, x.buildingId) ? 0 : 1;
+      var earliest = prev.to + gap;
+      if (x.from >= earliest){ prev = {projectId:x.projectId, buildingId:x.buildingId, to:x.to}; continue; }
+      var shifted = {job: x, from: x.from + (earliest - x.from), to: x.to + (earliest - x.from)};
+      if (shifted.to > DAY_END) return {ok: false, stuck: x};
+      moves.push(shifted);
+      prev = {projectId: x.projectId, buildingId: x.buildingId, to: shifted.to};
+    }
+    // Moving somebody else's booking is still their business, unless the
+    // person granting the hours runs the app.
+    for (i = 0; i < moves.length; i++){
+      if (!ownsJob(moves[i].job) && !can("manage")) return {ok: false, theirs: moves[i].job};
+    }
+    return {ok: true, moves: moves};
+  }
+
   function grantButton(j){
-    var gr=document.createElement("button"); gr.type="button"; gr.className="btn btn-go";
-    gr.textContent = tr("Give him until {h}", {h: hourLong(j.late.until)});
+    var gr = document.createElement("button");
+    gr.type = "button"; gr.className = "btn btn-go";
+    var base = tr("Give him until {h}", {h: hourLong(j.late.until)});
+    gr.textContent = base;
     gr.addEventListener("click", function(){
-      gr.disabled=true;
-      if (overlaps(j.date, j.crewId, j.from, j.late.until, j.id)){
-        gr.disabled=false;
-        alert(tr("The next job is in the way. Move or cancel it first."));
+      var plan = extendPlan(j);
+      if (!plan.ok){
+        if (plan.stuck){
+          alert(tr("There is no room left in the day. {where} at {h} would run past {end}.",
+            {where: plan.stuck.buildingName, h: hourLong(plan.stuck.from),
+             end: hourLong(DAY_END)}));
+        } else {
+          alert(tr("His next job was booked by {name}. Ask them to move it, or change it yourself if it is yours.",
+            {name: plan.theirs.createdBy || tr("somebody else")}));
+        }
         return;
       }
-      patchJob(j.id, {to:j.late.until, allDay:false})
-        .catch(function(e){ gr.disabled=false; alert(errText(e,tr("The changes did not save."))); });
+      // A second tap when other people's afternoons are about to move.
+      if (plan.moves.length && gr.dataset.armed !== "1"){
+        gr.dataset.armed = "1";
+        gr.textContent = tr(plan.moves.length === 1
+          ? "Also move the next job later?" : "Also move {n} later jobs?",
+          {n: plan.moves.length});
+        return;
+      }
+      gr.disabled = true;
+      patchJob(j.id, {to: j.late.until, allDay: false}).then(function(){
+        return plan.moves.reduce(function(chain, mv){
+          return chain.then(function(){
+            return patchJob(mv.job.id, {from: mv.from, to: mv.to, allDay: false});
+          });
+        }, Promise.resolve());
+      }).catch(function(e){
+        gr.disabled = false; gr.dataset.armed = "0"; gr.textContent = base;
+        alert(errText(e, tr("The changes did not save.")));
+      });
     });
     return gr;
   }
