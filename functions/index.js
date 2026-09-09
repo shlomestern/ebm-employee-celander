@@ -82,6 +82,62 @@ const ZONE = "America/Toronto";
 const DATE_IN_ZONE = new Intl.DateTimeFormat("en-CA", {
   timeZone: ZONE, year: "numeric", month: "2-digit", day: "2-digit",
 });
+const TIME_IN_ZONE = new Intl.DateTimeFormat("en-GB", {
+  timeZone: ZONE, hour: "2-digit", minute: "2-digit", hour12: false,
+});
+/** Minutes since midnight, where the crew are. */
+function minutesNow() {
+  const [h, m] = TIME_IN_ZONE.format(new Date()).split(":").map(Number);
+  return (h * 60) + m;
+}
+
+/** Twenty minutes of grace for traffic and parking. Past three hours a job
+ *  is history rather than something the office can still rescue, and
+ *  chasing it would only mean a pile of stale alerts. */
+const GRACE_MINUTES = 20;
+const STALE_MINUTES = 180;
+
+/** Nobody has clocked in and the job was due: the office and whoever booked
+ *  it hear about it once, while a phone call still helps.
+ */
+exports.chaseLateStarts = onSchedule(
+  {schedule: "*/15 8-17 * * *", timeZone: ZONE, region: "northamerica-northeast1"},
+  async () => {
+    const db = getFirestore();
+    const date = DATE_IN_ZONE.format(new Date());
+    const now = minutesNow();
+
+    const snap = await db.collection("bookings").where("date", "==", date).get();
+    const overdue = snap.docs.filter((d) => {
+      const j = d.data();
+      if (j.v !== 2 || j.clockIn || j.clockOut || j.lateAlert) return false;
+      const behind = now - (j.from * 60);
+      return behind >= GRACE_MINUTES && behind <= STALE_MINUTES;
+    });
+    if (!overdue.length) return;
+
+    const aud = await audience(db);
+    for (const doc of overdue) {
+      const j = doc.data();
+      const person = aud.people.find((p) => p.id === j.crewId);
+      const who = person ? person.name : j.crewId;
+      const where = j.buildingName + (j.unit ? ` · Unit ${j.unit}` : "");
+      const behind = now - (j.from * 60);
+
+      // The office and whoever booked it — not every admin on the roster.
+      const ids = new Set(["office"]);
+      if (j.createdById) ids.add(j.createdById);
+      const tokens = Object.keys(aud.map).filter((t) => ids.has(aud.map[t]));
+
+      const sent = await push(db, aud.map, tokens, `${who} has not started`,
+        `${where} · due ${HOURS(j.from)} · ${behind} min late`,
+        `latestart-${doc.id}`);
+      // Marked either way, so a job with nobody to tell is not chased forever.
+      await doc.ref.update({lateAlert: new Date().toISOString()});
+      logger.info(`${who} ${behind} min late at ${where} — notified ${sent} phone(s)`);
+    }
+  }
+);
 
 /** The morning list as it reads on a lock screen: a few lines and a count,
  *  not a report. Pure, so it can be checked without a database.
