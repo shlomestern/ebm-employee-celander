@@ -7,7 +7,8 @@
  * That collection is used because the Firestore rules already allow config/*,
  * so no rule change is needed to turn notifications on.
  */
-const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/firestore");
+const {onDocumentCreated, onDocumentUpdated, onDocumentWritten} =
+  require("firebase-functions/v2/firestore");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
@@ -147,46 +148,45 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
   }
 );
 
-/** A message reaches the other side of its thread.
+/** A message reaches the one person it was written to.
  *
- *  Threads live in one document keyed by crew member, with the whole office
- *  on the other side, so the direction is decided by who sent it: the crew
- *  member's own messages go to the office, anybody else's go to him.
+ *  Each conversation is its own document, named chat-<a>__<b> after the two
+ *  people in it, so who to tell is simply the other half of that name. The
+ *  trigger covers all of config because the document appears the first time
+ *  somebody writes; anything that is not a conversation is dropped at once.
  */
-exports.notifyOnMessage = onDocumentUpdated(
-  {document: "config/chats", region: "northamerica-northeast1"},
+exports.notifyOnMessage = onDocumentWritten(
+  {document: "config/{docId}", region: "northamerica-northeast1"},
   async (event) => {
-    const before = (event.data.before.data() || {}).threads || {};
-    const after = (event.data.after.data() || {}).threads || {};
+    const id = event.params.docId;
+    if (!id.startsWith("chat-")) return;
+
+    const before = (event.data.before.exists && event.data.before.data()) || {};
+    const after = (event.data.after.exists && event.data.after.data()) || {};
+    const was = Array.isArray(before.msgs) ? before.msgs : [];
+    const now = Array.isArray(after.msgs) ? after.msgs : [];
+    // arrayUnion appends, so anything past the old length is new.
+    const fresh = now.slice(was.length);
+    if (!fresh.length) return;
+
+    const pair = id.slice(5).split("__");
+    const last = fresh[fresh.length - 1];
+    const to = pair.find((p) => p !== last.by);
+    if (!to) return;
 
     const db = getFirestore();
     const aud = await audience(db);
-    const officeTokens = new Set(aud.forOffice());
-
-    for (const crewId of Object.keys(after)) {
-      const now = Array.isArray(after[crewId]) ? after[crewId] : [];
-      const was = Array.isArray(before[crewId]) ? before[crewId] : [];
-      // arrayUnion appends, so anything past the old length is new.
-      const fresh = now.slice(was.length);
-      if (!fresh.length) continue;
-
-      const last = fresh[fresh.length - 1];
-      const person = aud.people.find((p) => p.id === crewId);
-      const crewName = person ? person.name : crewId;
-
-      const fromCrew = last.by === crewId;
-      const tokens = fromCrew
-        ? aud.forOffice()
-        : aud.forPerson(crewId).filter((t) => !officeTokens.has(t));
-
-      const title = fromCrew ? `${crewName}: message` : `${last.name || "Office"}: message`;
-      const body = fresh.length > 1
-        ? `${last.text} (+${fresh.length - 1} more)`
-        : last.text;
-
-      const sent = await push(db, aud.map, tokens, title, body, `chat-${crewId}`);
-      logger.info(`message in ${crewId} thread from ${last.by} — notified ${sent} phone(s)`);
+    const tokens = aud.forPerson(to);
+    if (!tokens.length) {
+      logger.info(`message for ${to} — no registered phone`);
+      return;
     }
+
+    const body = fresh.length > 1
+      ? `${last.text} (+${fresh.length - 1} more)`
+      : last.text;
+    const sent = await push(db, aud.map, tokens, last.name || "Message", body, id);
+    logger.info(`message from ${last.by} to ${to} — notified ${sent} phone(s)`);
   }
 );
 

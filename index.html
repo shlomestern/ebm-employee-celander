@@ -149,7 +149,12 @@ button{font:inherit; color:inherit; cursor:pointer}
 .layout{display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; align-items:start}
 /* A crew member has no crew column. Without this the hidden aside leaves the
    calendar to fall into the 230px track meant for it. */
-body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
+@media (min-width:1101px){
+  /* A crew member has no crew list, but the messages bar still lives in that
+     column. Below this width the dock is pinned to the bottom instead and the
+     calendar gets the whole width. */
+  body.nocrewbar .layout{grid-template-columns:200px minmax(0,1fr)}
+}
 .crew{display:flex; flex-direction:column; gap:7px}
 .person{
   display:flex; align-items:center; gap:11px; text-align:left; width:100%;
@@ -357,14 +362,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .usedlist{font-size:13px; color:var(--ink-2); margin-top:6px}
 .usedlist b{color:var(--ink); font-weight:600}
 
-.iconbtn{position:relative; width:38px; height:38px; flex:none; border-radius:50%;
-  display:grid; place-items:center; border:1px solid var(--line); background:var(--surface);
-  cursor:pointer; padding:0; color:var(--ink-2)}
-.iconbtn:hover{border-color:var(--ink-3); color:var(--ink)}
-.iconbtn svg{width:19px; height:19px; display:block}
-.iconbtn .badge{position:absolute; top:-3px; right:-3px; min-width:18px; height:18px;
-  border-radius:9px; background:var(--danger); color:#fff; font-size:11px; font-weight:700;
-  font-family:"Archivo",sans-serif; display:grid; place-items:center; padding:0 4px}
+.dock{display:flex; flex-direction:column; gap:9px; min-width:0}
+.msgbar{display:flex; align-items:center; gap:10px; width:100%; font:inherit; cursor:pointer;
+  padding:12px 14px; border-radius:11px; border:1px solid var(--line);
+  background:var(--surface); color:var(--ink); text-align:left; box-shadow:var(--shadow)}
+.msgbar:hover{border-color:var(--ink-3)}
+.msgbar svg{width:19px; height:19px; flex:none; color:var(--ink-3)}
+.msgbar .lbl{font-family:"Archivo",sans-serif; font-weight:600; font-size:14px;
+  letter-spacing:-.01em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap}
+.msgbar .cnt{min-width:20px; height:20px; border-radius:10px; background:var(--danger);
+  color:#fff; font-size:11.5px; font-weight:700; font-family:"Archivo",sans-serif;
+  display:grid; place-items:center; padding:0 5px; flex:none}
+.msgbar .chev{width:16px; height:16px; opacity:.55}
+.msgbar.lit{border-color:var(--danger)}
+.msgbar.lit svg, .msgbar.lit .lbl{color:var(--danger)}
 .threads{display:flex; flex-direction:column; gap:7px; margin:4px 0 2px}
 .thread{display:flex; gap:11px; align-items:center; text-align:left; width:100%;
   padding:11px 12px; border:1px solid var(--line); border-radius:10px;
@@ -377,6 +389,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .thread .who{font-family:"Archivo",sans-serif; font-weight:600; font-size:14.5px; display:block}
 .thread .last{font-size:12.5px; color:var(--ink-3); display:block; overflow:hidden;
   text-overflow:ellipsis; white-space:nowrap}
+.thread .ago{font-size:11.5px; color:var(--ink-3); flex:none; font-variant-numeric:tabular-nums}
 .thread .dot{width:9px; height:9px; border-radius:50%; background:var(--danger); flex:none}
 .chatlog{max-height:min(52vh,420px); overflow-y:auto; display:flex; flex-direction:column;
   gap:7px; padding:4px 2px; margin:6px 0}
@@ -402,12 +415,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 @media (max-width:1100px){
   /* On anything held in the hands — phone or tablet — whose calendar you are
      looking at becomes a bottom bar, where the thumb already is. */
-  .crew{
-    position:fixed; left:0; right:0; bottom:0; z-index:40;
-    flex-direction:row; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  .dock{
+    position:fixed; left:0; right:0; bottom:0; z-index:40; gap:0;
     background:var(--surface); border-top:1px solid var(--line);
     box-shadow:0 -2px 16px rgba(19,26,32,.07);
     padding-bottom:env(safe-area-inset-bottom);
+  }
+  /* Above the crew names, where he asked for it, and full width so it is a
+     bar rather than a button hiding in a corner. */
+  .msgbar{
+    border:none; border-radius:0; box-shadow:none; background:transparent;
+    padding:11px 14px; border-bottom:1px solid var(--line);
+  }
+  .msgbar:hover{border-color:transparent; border-bottom-color:var(--line)}
+  .crew{
+    flex-direction:row; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
   .crew .eyebrow{display:none}
   .crew .empty{border:none; padding:16px 12px; font-size:12.5px}
@@ -424,16 +446,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   .person .txt{min-width:0}
   .person .nm{font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .person .mt{font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .wrap{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
-  body.nocrewbar .wrap{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+  .wrap{padding-bottom:calc(134px + env(safe-area-inset-bottom))}
+  body.nocrewbar .wrap{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
   .calbar h2{font-size:17px; white-space:nowrap; flex:1 1 auto}
   .seg{flex:1 1 100%}
   .seg button{flex:1; padding:9px 8px}
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .crew{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
+  :root:not([data-theme="light"]) .dock{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
 }
-:root[data-theme="dark"] .crew{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
+:root[data-theme="dark"] .dock{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
 @media (max-width:1100px){
 }
 @media (max-width:1100px){
@@ -446,7 +468,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   .crew .person .mt{display:none}
   .crew .person{padding:11px 8px; gap:8px}
   .crew .person .nm{font-size:13px}
-  .wrap{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+  .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 }
 @media (max-width:520px){
   .wrap{padding-left:10px; padding-right:10px; padding-top:14px}
@@ -486,13 +508,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="topbar-right">
       <span class="status" id="status" hidden><span class="dot"></span><span id="statusText"></span></span>
       <button class="btn" id="installBtn" data-t>Install app</button>
-      <button class="iconbtn" id="chatBtn" data-ta="Messages" aria-label="Messages">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.9 8.9 0 0 1-3.9-.9L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 7.9 7.9z"/>
-        </svg>
-        <span class="badge" id="chatBadge" hidden>0</span>
-      </button>
       <button class="me" id="meBtn" data-ta="Your account" aria-label="Your account"><span id="meInitial">?</span></button>
     </div>
   </header>
@@ -500,7 +515,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   <!-- OFFICE / ADMIN -->
   <div id="calView" hidden>
     <div class="layout">
-      <aside class="crew" id="crew"><div class="eyebrow" data-t>Crew</div></aside>
+      <div class="dock">
+        <button type="button" class="msgbar" id="msgBar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.9 8.9 0 0 1-3.9-.9L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 7.9 7.9z"/>
+          </svg>
+          <span class="lbl" id="msgBarLabel">Messages</span>
+          <span class="cnt" id="msgCount" hidden>0</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+        <aside class="crew" id="crew"><div class="eyebrow" data-t>Crew</div></aside>
+      </div>
       <main>
         <div class="alerts" id="alerts" hidden></div>
         <div class="calbar">
@@ -958,12 +987,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     "Nothing used": "Rien utilis\u00e9", "Save and finish": "Enregistrer et terminer",
     "Used: ": "Utilis\u00e9\u00a0: ",
     "Messages": "Messages", "Send": "Envoyer",
+    "{n} new message": "{n} nouveau message", "{n} new messages": "{n} nouveaux messages",
+    "Just the two of you.": "Entre vous deux seulement.",
     "Write a message": "\u00c9crire un message",
     "No messages yet": "Aucun message pour l\u2019instant",
     "Pick who to write to.": "Choisissez \u00e0 qui \u00e9crire.",
-    "Everyone in the office sees this thread.":
-      "Tout le bureau voit cette conversation.",
-    "The office sees this thread.": "Le bureau voit cette conversation.",
     "All messages": "Toutes les conversations",
     "The message did not send.": "Le message n\u2019a pas \u00e9t\u00e9 envoy\u00e9.",
     "Up to four. Taken with the phone's camera or picked from it.":
@@ -1160,7 +1188,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v52";
+  var APP_VERSION = "v53";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1185,7 +1213,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
     officeCode: "", officeName: "Office",
     rosterReady: false, rosterUnsub: null, opened: false,
-    chats: null, chatUnsub: null,
+    chats: null, chatUnsubs: [],
     lang: "en"
   };
 
@@ -1482,83 +1510,125 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
      job and whoever booked the next one, and either of them has to be able to
      answer it. The crew member asked for the hours himself. */
   /* ---------- messages ----------
-     One thread per crew member, with the whole office on the other side —
-     the way a yard actually works, rather than a grid of private chats
-     nobody would keep up with. All of them live in a single config document
-     so one listener covers the badge and every thread, and because the rules
-     already allow config: nothing for the office to change in Firebase.
+     One conversation between two people, and nobody else's is fetched: each
+     pair has its own document and the app only listens to the ones the person
+     signed in belongs to. Worth being plain about the limit, though — the app
+     has no login, only shared codes, and the database rules let anyone with
+     the link read it. Hiding other people's threads keeps them out of the way
+     and off the device; it is not a lock. Real privacy needs Firebase
+     Authentication, which is a bigger change.
+
      What has been read is kept on the device, so opening a thread costs no
      write and two people reading at once cannot tread on each other. */
   var LS_SEEN = "ebm-crew:chatseen:v1";
-  var CHAT_KEEP = 150;
-  var chatOpen = null;                     // crew id of the thread on screen
+  var chatOpen = null;                    // the other person's id, or null
 
-  function chatThreads(){ return (state.chats && state.chats.threads) || {}; }
-  function chatMsgs(id){
-    var t = chatThreads()[id];
-    return Array.isArray(t) ? t : [];
+  function threadKey(a, b){ return [a, b].sort().join("__"); }
+  function chatDoc(key){ return "chat-" + key; }
+  function personName(id){
+    if (id === "office") return state.officeName || tr("Office");
+    return memberOr(id).name;
+  }
+  function chatMsgs(otherId){
+    var t = (state.chats && state.chats.threads) || {};
+    var v = t[threadKey(state.me, otherId)];
+    return Array.isArray(v) ? v : [];
+  }
+  /* Everyone but yourself. A plumber can write to the office or to the other
+     plumber; the office can write to any of them. */
+  function contacts(){
+    var out = [];
+    if (state.me !== "office") out.push("office");
+    state.people.forEach(function(pp){ if (pp.id !== state.me) out.push(pp.id); });
+    return out;
   }
   function chatSeen(){ return lsRead(LS_SEEN, {}) || {}; }
-  function markSeen(id){
-    var msgs = chatMsgs(id);
+  function markSeen(otherId){
+    var msgs = chatMsgs(otherId);
     if (!msgs.length) return;
     var seen = chatSeen();
-    seen[id] = msgs[msgs.length - 1].at;
+    seen[threadKey(state.me, otherId)] = msgs[msgs.length - 1].at;
     lsWrite(LS_SEEN, seen);
   }
-  function unreadIn(id){
-    var seen = chatSeen()[id] || "";
-    return chatMsgs(id).filter(function(m){
+  function unreadIn(otherId){
+    var seen = chatSeen()[threadKey(state.me, otherId)] || "";
+    return chatMsgs(otherId).filter(function(m){
       return m.at > seen && m.by !== state.me;
     }).length;
   }
-  /* A crew member has one thread — their own. The office has all of them. */
-  function myThreads(){
-    if (!isOffice() && member(state.me) && !isAdmin(member(state.me))) return [state.me];
-    return crewPeople().map(function(p){ return p.id; });
-  }
   function unreadTotal(){
-    return myThreads().reduce(function(n, id){ return n + unreadIn(id); }, 0);
+    if (!state.me) return 0;
+    return contacts().reduce(function(n, id){ return n + unreadIn(id); }, 0);
   }
-  function renderChatBadge(){
+  function renderMsgBar(){
     var n = unreadTotal();
-    $("chatBadge").hidden = !n;
-    $("chatBadge").textContent = n > 9 ? "9+" : String(n);
+    $("msgCount").hidden = !n;
+    $("msgCount").textContent = n > 9 ? "9+" : String(n);
+    $("msgBarLabel").textContent = n
+      ? tr(n === 1 ? "{n} new message" : "{n} new messages", {n:n})
+      : tr("Messages");
+    $("msgBar").classList.toggle("lit", !!n);
   }
 
-  function sendMessage(id, text){
-    var msg = {by: state.me, name: meName(), text: text, at: new Date().toISOString()};
-    if (state.fb){
-      // arrayUnion appends on the server, so two people writing at the same
-      // moment cannot overwrite each other's message.
-      var upd = {};
-      upd["threads." + id] = firebase.firestore.FieldValue.arrayUnion(msg);
-      return state.fb.collection("config").doc("chats").set(upd, {merge: true});
-    }
-    // No connection: keep it on the device so the thread still reads back.
+  function subscribeChats(){
+    (state.chatUnsubs || []).forEach(function(u){ try{ u(); }catch(e){} });
+    state.chatUnsubs = [];
+    if (!state.fb || !state.me) return;
     state.chats = state.chats || {threads: {}};
-    state.chats.threads[id] = chatMsgs(id).concat([msg]);
+    contacts().forEach(function(id){
+      var key = threadKey(state.me, id);
+      state.chatUnsubs.push(
+        state.fb.collection("config").doc(chatDoc(key)).onSnapshot(function(snap){
+          var d = (snap.exists && snap.data()) || {};
+          state.chats.threads[key] = Array.isArray(d.msgs) ? d.msgs : [];
+          lsWrite(LS_CHATS, state.chats);
+          renderMsgBar();
+          if (chatOpen === id) drawChat();
+          else if ($("chatDlg").open && !chatOpen) drawContacts();
+        }, function(){})
+      );
+    });
+  }
+
+  function sendMessage(otherId, text){
+    var msg = {by: state.me, name: meName(), text: text, at: new Date().toISOString()};
+    var key = threadKey(state.me, otherId);
+    if (state.fb){
+      // Appended on the server, so two people writing in the same moment
+      // cannot overwrite each other.
+      return state.fb.collection("config").doc(chatDoc(key))
+        .set({msgs: firebase.firestore.FieldValue.arrayUnion(msg),
+              between: key.split("__")}, {merge: true});
+    }
+    state.chats = state.chats || {threads: {}};
+    state.chats.threads[key] = chatMsgs(otherId).concat([msg]);
     lsWrite(LS_CHATS, state.chats);
     drawChat();
+    renderMsgBar();
     return Promise.resolve();
   }
 
-  function drawThreadList(){
+  function drawContacts(){
     var host = $("chatThreads"); host.innerHTML = "";
-    myThreads().forEach(function(id){
-      var m = memberOr(id), msgs = chatMsgs(id), n = unreadIn(id);
+    contacts().forEach(function(id){
+      var msgs = chatMsgs(id), n = unreadIn(id);
       var b = document.createElement("button");
-      b.type = "button"; b.className = "thread " + colorClass(id);
+      b.type = "button";
+      b.className = "thread " + (id === "office" ? "c7" : colorClass(id));
       var av = document.createElement("span"); av.className = "av";
-      av.textContent = m.name.charAt(0).toUpperCase();
+      av.textContent = personName(id).charAt(0).toUpperCase();
       var tx = document.createElement("span"); tx.className = "txt";
-      var who = document.createElement("span"); who.className = "who"; who.textContent = m.name;
-      var last = document.createElement("span"); last.className = "last";
-      last.textContent = msgs.length
-        ? (msgs[msgs.length-1].name || "") + ": " + msgs[msgs.length-1].text
-        : tr("No messages yet");
-      tx.appendChild(who); tx.appendChild(last);
+      var who = document.createElement("span"); who.className = "who";
+      who.textContent = personName(id);
+      var sub = document.createElement("span"); sub.className = "last";
+      sub.textContent = msgs.length ? msgs[msgs.length-1].text : tr("No messages yet");
+      tx.appendChild(who); tx.appendChild(sub);
       b.appendChild(av); b.appendChild(tx);
+      if (msgs.length){
+        var tm = document.createElement("span"); tm.className = "ago";
+        try { tm.textContent = F_TIME.format(new Date(msgs[msgs.length-1].at)); } catch(e){}
+        b.appendChild(tm);
+      }
       if (n){ var d = document.createElement("span"); d.className = "dot"; b.appendChild(d); }
       b.addEventListener("click", function(){ openThread(id); });
       host.appendChild(b);
@@ -1576,11 +1646,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     msgs.forEach(function(m){
       var mine = m.by === state.me;
       var b = document.createElement("div"); b.className = "bub " + (mine ? "mine" : "theirs");
-      if (!mine){
-        var nm = document.createElement("span"); nm.className = "nm";
-        nm.textContent = m.name || "";
-        b.appendChild(nm);
-      }
       b.appendChild(document.createTextNode(m.text));
       var tm = document.createElement("span"); tm.className = "tm";
       try { tm.textContent = F_TIME.format(new Date(m.at)); } catch(e2){}
@@ -1589,37 +1654,27 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     });
     log.scrollTop = log.scrollHeight;
     markSeen(chatOpen);
-    renderChatBadge();
+    renderMsgBar();
   }
   function openThread(id){
     chatOpen = id;
-    var m = memberOr(id);
-    // A crew member has only the office on the other side, so name that
-    // rather than repeating the word above it.
-    $("chatTitle").textContent = myThreads().length > 1
-      ? m.name : (state.officeName || tr("Office"));
-    $("chatSub").textContent = isOffice() || myThreads().length > 1
-      ? tr("Everyone in the office sees this thread.")
-      : tr("The office sees this thread.");
+    $("chatTitle").textContent = personName(id);
+    $("chatSub").textContent = tr("Just the two of you.");
     $("chatThreads").hidden = true;
     $("chatPane").hidden = false;
-    $("chatBack").hidden = myThreads().length < 2;
+    $("chatBack").hidden = false;
     $("chatErr").textContent = "";
     drawChat();
     setTimeout(function(){ $("chatInput").focus(); }, 30);
   }
   function openChat(){
-    var list = myThreads();
-    if (list.length === 1){ openThread(list[0]); }
-    else {
-      chatOpen = null;
-      $("chatTitle").textContent = tr("Messages");
-      $("chatSub").textContent = tr("Pick who to write to.");
-      $("chatThreads").hidden = false;
-      $("chatPane").hidden = true;
-      $("chatBack").hidden = true;
-      drawThreadList();
-    }
+    chatOpen = null;
+    $("chatTitle").textContent = tr("Messages");
+    $("chatSub").textContent = tr("Pick who to write to.");
+    $("chatThreads").hidden = false;
+    $("chatPane").hidden = true;
+    $("chatBack").hidden = true;
+    drawContacts();
     if (!$("chatDlg").open) $("chatDlg").showModal();
   }
   function submitMessage(){
@@ -1634,9 +1689,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       $("chatErr").textContent = errText(e, tr("The message did not send."));
     });
   }
-  $("chatBtn").addEventListener("click", openChat);
+  $("msgBar").addEventListener("click", openChat);
   $("chatClose").addEventListener("click", function(){ $("chatDlg").close(); chatOpen = null; });
-  $("chatBack").addEventListener("click", function(){ chatOpen = null; openChat(); });
+  $("chatBack").addEventListener("click", openChat);
   $("chatSend").addEventListener("click", submitMessage);
   $("chatInput").addEventListener("keydown", function(e){
     if (e.key === "Enter"){ e.preventDefault(); submitMessage(); }
@@ -2221,7 +2276,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("appTitle").textContent = isOffice() ? tr("Crew Calendar") : tr("My Schedule");
     if (isOffice()) renderCrew();
     renderAlerts();
-    renderChatBadge();
+    renderMsgBar();
     renderCalendar();
     if ($("dayDlg").open && !$("paneDay").hidden) showDayPane();
   }
@@ -2612,7 +2667,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         settled=true; clearTimeout(giveUp);
         firebase.initializeApp(cfg);
         state.fb=firebase.firestore();
-        state.mode="cloud"; subscribeRoster(); subscribeChats(); resubscribe(); render(); setupPush();
+        state.mode="cloud"; subscribeRoster(); resubscribe(); render(); setupPush();
       })
       .catch(function(e){
         if (settled) return;
@@ -2689,20 +2744,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (d && d.officeName) state.officeName = String(d.officeName).trim();
     cacheRoster();
   }
-  function subscribeChats(){
-    if (!state.fb) return;
-    if (state.chatUnsub){ state.chatUnsub(); state.chatUnsub = null; }
-    state.chatUnsub = state.fb.collection("config").doc("chats")
-      .onSnapshot(function(snap){
-        var d = (snap.exists && snap.data()) || {};
-        state.chats = {threads: d.threads || {}};
-        lsWrite(LS_CHATS, state.chats);
-        renderChatBadge();
-        drawChat();
-        if ($("chatDlg").open && !chatOpen) drawThreadList();
-      }, function(){});
-  }
-
   function subscribeRoster(){
     var ref = rosterRef();
     if (!ref){ rosterSettled(); return; }
@@ -2714,6 +2755,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         ref.set({people: DEFAULT_PEOPLE, officeCode: masterOfficeCode(), officeName: state.officeName}).catch(function(){});
       }
       rosterSettled();
+      subscribeChats();
       render();
     }, function(){ rosterSettled(); });
   }
@@ -2937,6 +2979,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("gate").hidden = true;
     $("app").hidden = false;
     if (!state.started){ state.started = true; start(); } else { resubscribe(); render(); }
+    // Which conversations exist depends on who this is, so they can only be
+    // listened to once somebody has signed in.
+    subscribeChats();
     setupPush();
   }
   function tryAutoOpen(){
