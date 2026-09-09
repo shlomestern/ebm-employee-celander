@@ -78,6 +78,11 @@ body{
   font-family:"Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
 }
+/* No pull to refresh: dragging downwards inside a conversation was reloading
+   the page instead of scrolling it, and the app keeps itself up to date
+   anyway. It has to sit on the root element — the viewport takes its
+   overscroll from there, not from the body. */
+html{overscroll-behavior-y:contain}
 h1,h2,h3{font-family:"Archivo", ui-sans-serif, system-ui, sans-serif}
 button{font:inherit; color:inherit; cursor:pointer}
 :focus-visible{outline:2px solid var(--sel); outline-offset:2px; border-radius:4px}
@@ -382,9 +387,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   text-overflow:ellipsis; white-space:nowrap}
 .thread .ago{font-size:11.5px; color:var(--ink-3); flex:none; font-variant-numeric:tabular-nums}
 .thread .dot{width:9px; height:9px; border-radius:50%; background:var(--danger); flex:none}
-.chatlog{height:min(56vh,440px); overflow-y:auto; display:flex; flex-direction:column;
-  justify-content:flex-end; gap:7px; padding:8px 2px; margin:8px 0}
+/* Held at the bottom by a margin on the first bubble, not by
+   justify-content: that pushes everything older off the top of the box and
+   no amount of scrolling brings it back. */
+.chatlog{height:min(56vh,440px); overflow-y:auto; overscroll-behavior:contain;
+  display:flex; flex-direction:column; gap:7px; padding:8px 2px; margin:8px 0}
+.chatlog > :first-child{margin-top:auto}
 .chatlog .empty{margin:auto 0}
+.bub .cap{display:block; white-space:pre-line}
+.bub .hd{display:block; font-family:"Archivo",sans-serif; font-weight:700;
+  font-size:13.5px; letter-spacing:-.01em; margin-bottom:1px}
 .bub{max-width:78%; padding:8px 11px; border-radius:12px; font-size:13.5px; line-height:1.35}
 .bub .nm{display:block; font-size:11px; font-weight:700; letter-spacing:.02em;
   font-family:"Archivo",sans-serif; opacity:.75; margin-bottom:2px}
@@ -1112,6 +1124,9 @@ body.hasupd .wrap{padding-top:52px}
     "Hours worked": "Heures travaill\u00e9es", "Hours booked": "Heures r\u00e9serv\u00e9es",
     "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
       "Ce que chacun a r\u00e9ellement point\u00e9, et o\u00f9. Les heures r\u00e9serv\u00e9es sont \u00e0 c\u00f4t\u00e9 pour voir l\u2019\u00e9cart.",
+    "Alerts": "Alertes",
+    "Every notification this phone was sent.":
+      "Toutes les notifications envoy\u00e9es \u00e0 ce t\u00e9l\u00e9phone.",
     "Person": "Personne", "Everyone": "Tout le monde", "Show": "Afficher",
     "Download Excel": "T\u00e9l\u00e9charger Excel",
     "Hours": "Heures", "Every job": "Chaque travail",
@@ -1342,7 +1357,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v65";
+  var APP_VERSION = "v66";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2108,7 +2123,13 @@ body.hasupd .wrap{padding-top:52px}
      fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
     {at:"2026-09-09T21:00:00Z",
      en:"Hours worked now downloads as a real Excel file: one page of totals per project, one page with every job behind them.",
-     fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."}
+     fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."},
+    {at:"2026-09-09T22:00:00Z",
+     en:"Every notification is kept in Messages under Alerts, so a message you swiped away is still there. Tapping a notification now opens what it was about.",
+     fr:"Chaque notification est gard\u00e9e dans Messages sous Alertes, donc un avis balay\u00e9 est toujours l\u00e0. Toucher une notification ouvre maintenant ce qu\u2019elle annon\u00e7ait."},
+    {at:"2026-09-09T22:15:00Z",
+     en:"You can scroll up in a conversation to read older messages now, and it no longer reloads the page.",
+     fr:"Vous pouvez maintenant remonter dans une conversation pour lire les anciens messages, et \u00e7a ne recharge plus la page."}
   ];
   function systemMsgs(){
     return RELEASES.map(function(r){
@@ -2116,14 +2137,72 @@ body.hasupd .wrap{padding-top:52px}
               text: state.lang === "fr" ? r.fr : r.en, at: r.at};
     });
   }
+  /* ---------- what this phone was told ----------
+     A notification is gone the moment it is swiped away, and whoever was
+     holding the phone is left with nothing to look at: the man who was told
+     someone is running late could not find the message anywhere. The service
+     worker writes every push it shows into the browser's own database, and it
+     is read back here as a conversation of its own.
+
+     Per device on purpose. A notification went to that phone, not to a name,
+     and this is a record of what arrived rather than a mailbox. */
+  var ALERTS = "alerts";
+  var alertLog = [];
+
+  function alertStore(){
+    return new Promise(function(ok, no){
+      if (!window.indexedDB) return no();
+      var req;
+      try { req = indexedDB.open("ebm-crew", 1); } catch(e){ return no(); }
+      req.onupgradeneeded = function(){
+        var db = req.result;
+        if (!db.objectStoreNames.contains("pushes"))
+          db.createObjectStore("pushes", {keyPath: "n", autoIncrement: true});
+      };
+      req.onsuccess = function(){ ok(req.result); };
+      req.onerror = function(){ no(); };
+      req.onblocked = function(){ no(); };
+    });
+  }
+  function loadAlerts(){
+    return alertStore().then(function(db){
+      return new Promise(function(ok){
+        var all;
+        try { all = db.transaction("pushes", "readonly").objectStore("pushes").getAll(); }
+        catch(e){ db.close(); return ok([]); }
+        all.onsuccess = function(){ db.close(); ok(all.result || []); };
+        all.onerror = function(){ db.close(); ok([]); };
+      });
+    }).then(function(list){
+      alertLog = list;
+      afterAlerts();
+    }).catch(function(){});
+  }
+  function afterAlerts(){
+    renderMsgBar();
+    if (chatOpen === ALERTS) drawChat();
+    else if ($("chatDlg").open && !chatOpen) drawContacts();
+  }
+  function alertMsgs(){
+    return alertLog.slice().sort(function(a, b){
+      return (a.at || "") < (b.at || "") ? -1 : 1;
+    }).map(function(r){
+      var head = r.title || "", body = r.body || "";
+      return body ? {by: ALERTS, name: tr("Alerts"), at: r.at, head: head, text: body}
+                  : {by: ALERTS, name: tr("Alerts"), at: r.at, text: head};
+    });
+  }
+
   function chatDoc(key){ return "chat-" + key; }
   function personName(id){
     if (id === SYSTEM) return tr("System");
+    if (id === ALERTS) return tr("Alerts");
     if (id === "office") return state.officeName || tr("Office");
     return memberOr(id).name;
   }
   function chatMsgs(otherId){
     if (otherId === SYSTEM) return systemMsgs();
+    if (otherId === ALERTS) return alertMsgs();
     var t = (state.chats && state.chats.threads) || {};
     var v = t[keyFor(otherId)];
     return Array.isArray(v) ? v : [];
@@ -2139,6 +2218,7 @@ body.hasupd .wrap{padding-top:52px}
     }
     var me = member(state.me);
     var office = state.me === "office" || (me && isAdmin(me));
+    add(ALERTS);                    // everyone keeps their own notifications
     // What changed in the app is the office's business; the crew are told
     // whatever matters to them by the office, in their own words.
     if (office) add(SYSTEM);
@@ -2194,7 +2274,7 @@ body.hasupd .wrap{padding-top:52px}
     if (!state.fb || !state.me) return;
     state.chats = state.chats || {threads: {}};
     contacts().forEach(function(id){
-      if (id === SYSTEM) return;              // ships with the app, not stored
+      if (id === SYSTEM || id === ALERTS) return;   // not stored in the cloud
       var key = keyFor(id);
       state.chatUnsubs.push(
         state.fb.collection("config").doc(chatDoc(key)).onSnapshot(function(snap){
@@ -2285,14 +2365,21 @@ body.hasupd .wrap{padding-top:52px}
       var msgs = chatMsgs(id), n = unreadIn(id);
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "thread " + (id === SYSTEM ? "sys" : (id === "office" ? "c7" : colorClass(id)));
+      b.className = "thread " + (id === SYSTEM || id === ALERTS ? "sys"
+        : (id === "office" ? "c7" : colorClass(id)));
       var av = document.createElement("span"); av.className = "av";
       av.textContent = personName(id).charAt(0).toUpperCase();
       var tx = document.createElement("span"); tx.className = "txt";
       var who = document.createElement("span"); who.className = "who";
       who.textContent = personName(id);
       var sub = document.createElement("span"); sub.className = "last";
-      sub.textContent = msgs.length ? msgs[msgs.length-1].text : tr("No messages yet");
+      var last = msgs.length ? msgs[msgs.length - 1] : null;
+      var tip = tr("No messages yet");
+      if (last){
+        tip = last.text || (last.img ? tr("Photo") : (last.aud ? tr("Voice note") : ""));
+        if (last.head) tip = last.text ? last.head + " \u00b7 " + last.text : last.head;
+      }
+      sub.textContent = tip;
       tx.appendChild(who); tx.appendChild(sub);
       b.appendChild(av); b.appendChild(tx);
       if (msgs.length){
@@ -2307,7 +2394,13 @@ body.hasupd .wrap{padding-top:52px}
   }
   function drawChat(){
     if (!chatOpen) return;
-    var log = $("chatLog"); log.innerHTML = "";
+    var log = $("chatLog");
+    /* Where the reader was. Somebody who has scrolled up to read something
+       from this morning must not be yanked back down every time the thread
+       is redrawn. */
+    var back = log.scrollHeight - log.scrollTop - log.clientHeight;
+    var hold = log.childNodes.length && back > 40 ? log.scrollTop : -1;
+    log.innerHTML = "";
     var msgs = chatMsgs(chatOpen);
     if (!msgs.length){
       var e = document.createElement("div"); e.className = "empty";
@@ -2329,6 +2422,10 @@ body.hasupd .wrap{padding-top:52px}
         au.controls = true; au.preload = "metadata"; au.src = m.aud;
         b.appendChild(au);
       }
+      if (m.head){
+        var hd = document.createElement("span"); hd.className = "hd";
+        hd.textContent = m.head; b.appendChild(hd);
+      }
       if (m.text){
         var cap = document.createElement("span"); cap.className = "cap";
         cap.textContent = m.text; b.appendChild(cap);
@@ -2338,17 +2435,16 @@ body.hasupd .wrap{padding-top:52px}
       b.appendChild(tm);
       log.appendChild(b);
     });
-    log.scrollTop = log.scrollHeight;
+    log.scrollTop = hold < 0 ? log.scrollHeight : hold;
     markSeen(chatOpen);
     renderMsgBar();
   }
   function openThread(id){
     chatOpen = id;
-    var sys = id === SYSTEM;
-    var mayWrite = !sys;
+    var mayWrite = id !== SYSTEM && id !== ALERTS;
     $("chatTitle").textContent = personName(id);
-    $("chatSub").textContent = sys
-      ? tr("What has changed in the app.")
+    $("chatSub").textContent = id === SYSTEM ? tr("What has changed in the app.")
+      : id === ALERTS ? tr("Every notification this phone was sent.")
       : tr("Just the two of you.");
     $("chatThreads").hidden = true;
     $("chatPane").hidden = false;
@@ -2360,9 +2456,42 @@ body.hasupd .wrap{padding-top:52px}
     $("emojiRow").hidden = true;
     if (rec) stopRec();
     pending = null; drawPending();
+    $("chatLog").innerHTML = "";          // a thread opens at its newest
     drawChat();
     if (mayWrite) setTimeout(function(){ $("chatInput").focus(); }, 30);
   }
+  /* Tapping a notification opens what it was about: the conversation it came
+     from, or the list of what this phone has been told. */
+  function openFromTag(tag){
+    if (!state.me) { pendingTag = tag; return; }
+    pendingTag = null;
+    tag = String(tag || "");
+    if (tag.indexOf("chat-") === 0){
+      var pair = tag.slice(5).split("__");
+      if (pair.indexOf(state.me) >= 0){
+        openChat();
+        openThread(pair[0] === state.me ? pair[1] : pair[0]);
+        return;
+      }
+    }
+    openChat(); openThread(ALERTS);
+  }
+  var pendingTag = null;
+  try {
+    var qs = new URLSearchParams(location.search);
+    if (qs.get("n") !== null){
+      pendingTag = qs.get("n");
+      history.replaceState(null, "", location.pathname);
+    }
+  } catch(e){}
+  if ("serviceWorker" in navigator){
+    navigator.serviceWorker.addEventListener("message", function(e){
+      var d = e.data || {};
+      if (d.kind === "push" && d.push){ alertLog.push(d.push); afterAlerts(); }
+      else if (d.kind === "open") openFromTag(d.tag);
+    });
+  }
+
   function openChat(){
     chatOpen = null;
     $("chatTitle").textContent = tr("Messages");
@@ -3862,6 +3991,9 @@ body.hasupd .wrap{padding-top:52px}
     // listened to once somebody has signed in.
     subscribeChats();
     setupPush();
+    loadAlerts();
+    // A notification was tapped before anyone had signed in.
+    if (pendingTag !== null) setTimeout(function(){ openFromTag(pendingTag); }, 400);
   }
   function tryAutoOpen(){
     var saved = null;
