@@ -705,8 +705,7 @@ body.hasupd .wrap{padding-top:52px}
     <div class="actions" style="margin-top:2px">
       <button type="button" class="btn btn-primary" id="repRun" data-t>Show</button>
       <span class="spacer"></span>
-      <button type="button" class="btn" id="repCsvSum" hidden data-t>Download totals</button>
-      <button type="button" class="btn" id="repCsvAll" hidden data-t>Download every job</button>
+      <button type="button" class="btn" id="repXlsx" hidden data-t>Download Excel</button>
     </div>
 
     <p class="err" id="repErr"></p>
@@ -1114,8 +1113,10 @@ body.hasupd .wrap{padding-top:52px}
     "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
       "Ce que chacun a r\u00e9ellement point\u00e9, et o\u00f9. Les heures r\u00e9serv\u00e9es sont \u00e0 c\u00f4t\u00e9 pour voir l\u2019\u00e9cart.",
     "Person": "Personne", "Everyone": "Tout le monde", "Show": "Afficher",
-    "Download totals": "T\u00e9l\u00e9charger les totaux",
-    "Download every job": "T\u00e9l\u00e9charger chaque travail",
+    "Download Excel": "T\u00e9l\u00e9charger Excel",
+    "Hours": "Heures", "Every job": "Chaque travail",
+    "All projects": "Tous les projets",
+    "Could not build the file.": "Impossible de cr\u00e9er le fichier.",
     "Place": "Endroit", "Jobs": "Travaux", "Booked": "R\u00e9serv\u00e9", "Worked": "Travaill\u00e9",
     "Total": "Total", "State": "\u00c9tat", "Materials": "Mat\u00e9riel",
     "Clocked in": "Arriv\u00e9e", "Clocked out": "D\u00e9part", "Booked by": "R\u00e9serv\u00e9 par",
@@ -1341,7 +1342,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v64";
+  var APP_VERSION = "v65";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1676,8 +1677,10 @@ body.hasupd .wrap{padding-top:52px}
     return (t1 - t0) / 3600000;
   }
   function round2(n){ return Math.round(n * 100) / 100; }
+  /* The project number on its own. It is what the office files by, and the
+     street name only made the column too wide to read. */
   function placeOf(j){
-    return (j.projectId ? j.projectId + " — " : "") + (j.buildingName || j.projectName || "");
+    return String(j.projectId || j.projectName || "");
   }
 
   function reportRows(from, to, whoId){
@@ -1742,20 +1745,165 @@ body.hasupd .wrap{padding-top:52px}
     return people;
   }
 
-  /* A spreadsheet reads this: quotes where a field could contain a comma, and
-     a byte order mark so Excel opens the accents in a building's name right
-     rather than as mojibake. */
-  function csv(rows){
-    var out = rows.map(function(row){
-      return row.map(function(cell){
-        var v = cell === null || cell === undefined ? "" : String(cell);
-        return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-      }).join(",");
-    }).join("\r\n");
-    return "\ufeff" + out;
+  /* ---------- the workbook ----------
+     A real Excel file rather than a comma file, because a comma file arrives
+     as grey text with the hours as words and every column the same width.
+     Here the hours are numbers Excel can add, the headings stay put while you
+     scroll, and the columns come out already wide enough to read.
+
+     Written by hand: the app carries no libraries, and an .xlsx is only a zip
+     holding a few XML parts. The parts go in uncompressed, so the whole of
+     the zip side is a checksum and two headers. */
+  function xmlText(v){
+    return String(v === null || v === undefined ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
   }
-  function saveFile(name, text){
-    var blob = new Blob([text], {type: "text/csv;charset=utf-8"});
+  var CRC_TABLE = (function(){
+    var t = new Uint32Array(256), c, i, k;
+    for (i = 0; i < 256; i++){
+      c = i;
+      for (k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes){
+    var c = 0xffffffff;
+    for (var i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  }
+  /* Stored, not deflated: a few hundred kilobytes of XML at worst, and it
+     saves carrying a compressor around. */
+  function zipStore(files){
+    var enc = new TextEncoder();
+    var u16 = function(n){ return [n & 255, (n >>> 8) & 255]; };
+    var u32 = function(n){ return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; };
+    var now = new Date();
+    var stamp = u16((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1))
+      .concat(u16(((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()));
+    var body = [], dir = [], offset = 0;
+    var put = function(list, arr){ for (var i = 0; i < arr.length; i++) list.push(arr[i]); };
+    files.forEach(function(f){
+      var name = enc.encode(f.name), data = enc.encode(f.body), sum = crc32(data);
+      var head = [80, 75, 3, 4].concat(u16(20), u16(0x0800), u16(0), stamp,
+        u32(sum), u32(data.length), u32(data.length), u16(name.length), u16(0));
+      put(body, head); put(body, name); put(body, data);
+      put(dir, [80, 75, 1, 2].concat(u16(20), u16(20), u16(0x0800), u16(0), stamp,
+        u32(sum), u32(data.length), u32(data.length), u16(name.length),
+        u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset)));
+      put(dir, name);
+      offset += head.length + name.length + data.length;
+    });
+    var end = [80, 75, 5, 6].concat(u16(0), u16(0), u16(files.length), u16(files.length),
+      u32(dir.length), u32(offset), u16(0));
+    var out = new Uint8Array(body.length + dir.length + end.length);
+    out.set(body, 0); out.set(dir, body.length); out.set(end, body.length + dir.length);
+    return out;
+  }
+
+  var XL_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  var XL_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  var XL_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  var XL_PKG = "http://schemas.openxmlformats.org/package/2006/relationships";
+  /* Styles by number, the way the format wants them: 0 plain, 1 heading,
+     2 hours, 3 bold, 4 bold hours, 5 a person's row, 6 that row's hours. */
+  var XL_STYLES = XL_HEAD + '<styleSheet xmlns="' + XL_NS + '">'
+    + '<numFmts count="1"><numFmt numFmtId="164" formatCode="0.00"/></numFmts>'
+    + '<fonts count="3">'
+    + '<font><sz val="11"/><name val="Calibri"/></font>'
+    + '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+    + '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+    + '</fonts>'
+    + '<fills count="4">'
+    + '<fill><patternFill patternType="none"/></fill>'
+    + '<fill><patternFill patternType="gray125"/></fill>'
+    + '<fill><patternFill patternType="solid"><fgColor rgb="FF16324F"/><bgColor indexed="64"/></patternFill></fill>'
+    + '<fill><patternFill patternType="solid"><fgColor rgb="FFEDF1F6"/><bgColor indexed="64"/></patternFill></fill>'
+    + '</fills>'
+    + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+    + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+    + '<cellXfs count="7">'
+    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+    + '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>'
+    + '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+    + '<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>'
+    + '<xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+    + '<xf numFmtId="164" fontId="1" fillId="3" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1"/>'
+    + '</cellXfs>'
+    + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+    + '</styleSheet>';
+
+  function colName(i){
+    var s = "", r;
+    i += 1;
+    while (i > 0){ r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = (i - r - 1) / 26; }
+    return s;
+  }
+  /* Text goes in the cell itself. A shared string table would be smaller, and
+     nobody would ever look at these files long enough to notice. */
+  function xlCell(ref, cell){
+    var s = cell.s ? ' s="' + cell.s + '"' : "";
+    if (cell.n) return '<c r="' + ref + '"' + s + '><v>' + cell.v + '</v></c>';
+    if (cell.v === "" || cell.v === null || cell.v === undefined) return '<c r="' + ref + '"' + s + '/>';
+    return '<c r="' + ref + '"' + s + ' t="inlineStr"><is><t xml:space="preserve">'
+      + xmlText(cell.v) + '</t></is></c>';
+  }
+  function xlSheet(rows, widths){
+    var cols = !widths || !widths.length ? "" : '<cols>' + widths.map(function(w, i){
+      return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
+    }).join("") + '</cols>';
+    var body = rows.map(function(row, r){
+      return '<row r="' + (r + 1) + '">' + row.map(function(c, i){
+        return c ? xlCell(colName(i) + (r + 1), c) : "";
+      }).join("") + '</row>';
+    }).join("");
+    return XL_HEAD + '<worksheet xmlns="' + XL_NS + '" xmlns:r="' + XL_REL + '">'
+      + '<sheetViews><sheetView workbookViewId="0">'
+      + '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
+      + '</sheetView></sheetViews>'
+      + '<sheetFormatPr defaultRowHeight="15"/>' + cols
+      + '<sheetData>' + body + '</sheetData></worksheet>';
+  }
+  function xlsxBlob(sheets){
+    var over = sheets.map(function(s, i){
+      return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="applicat'
+        + 'ion/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    }).join("");
+    var files = [
+      {name: "[Content_Types].xml", body: XL_HEAD
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="xml" ContentType="application/xml"/>'
+        + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-'
+        + 'officedocument.spreadsheetml.sheet.main+xml"/>'
+        + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-'
+        + 'officedocument.spreadsheetml.styles+xml"/>' + over + '</Types>'},
+      {name: "_rels/.rels", body: XL_HEAD + '<Relationships xmlns="' + XL_PKG + '">'
+        + '<Relationship Id="rId1" Type="' + XL_REL + '/officeDocument" Target="xl/workbook.xml"/>'
+        + '</Relationships>'},
+      {name: "xl/workbook.xml", body: XL_HEAD + '<workbook xmlns="' + XL_NS + '" xmlns:r="' + XL_REL + '">'
+        + '<sheets>' + sheets.map(function(s, i){
+            return '<sheet name="' + xmlText(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>';
+          }).join("") + '</sheets></workbook>'},
+      {name: "xl/_rels/workbook.xml.rels", body: XL_HEAD + '<Relationships xmlns="' + XL_PKG + '">'
+        + sheets.map(function(s, i){
+            return '<Relationship Id="rId' + (i + 1) + '" Type="' + XL_REL + '/worksheet" Target="worksheets/sheet'
+              + (i + 1) + '.xml"/>';
+          }).join("")
+        + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + XL_REL + '/styles" Target="styles.xml"/>'
+        + '</Relationships>'},
+      {name: "xl/styles.xml", body: XL_STYLES}
+    ];
+    sheets.forEach(function(s, i){
+      files.push({name: "xl/worksheets/sheet" + (i + 1) + ".xml", body: xlSheet(s.rows, s.widths)});
+    });
+    return new Blob([zipStore(files)],
+      {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  }
+  function saveBlob(name, blob){
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url; a.download = name;
@@ -1771,7 +1919,7 @@ body.hasupd .wrap{padding-top:52px}
       var e = document.createElement("div"); e.className = "empty";
       e.textContent = tr("Nothing was booked in those dates.");
       host.appendChild(e);
-      $("repCsvSum").hidden = true; $("repCsvAll").hidden = true;
+      $("repXlsx").hidden = true;
       return;
     }
     var worked = 0, booked = 0;
@@ -1790,7 +1938,7 @@ body.hasupd .wrap{padding-top:52px}
     var wrap = document.createElement("div"); wrap.className = "repscroll";
     var t = document.createElement("table"); t.className = "reptable";
     var head = document.createElement("tr");
-    [tr("Place"), tr("Jobs"), tr("Booked"), tr("Worked")].forEach(function(h, i){
+    [tr("Project"), tr("Booked"), tr("Worked")].forEach(function(h, i){
       var th = document.createElement("th"); th.textContent = h;
       if (i) th.className = "n";
       head.appendChild(th);
@@ -1801,23 +1949,21 @@ body.hasupd .wrap{padding-top:52px}
       var hr = document.createElement("tr");
       hr.className = "who " + colorClass(p.id);
       var td = document.createElement("td"); td.textContent = p.who;
-      var j = document.createElement("td"); j.className = "n"; j.textContent = p.jobs;
       var bk = document.createElement("td"); bk.className = "n"; bk.textContent = p.booked;
       var wk = document.createElement("td"); wk.className = "n"; wk.textContent = p.worked;
-      hr.appendChild(td); hr.appendChild(j); hr.appendChild(bk); hr.appendChild(wk);
+      hr.appendChild(td); hr.appendChild(bk); hr.appendChild(wk);
       t.appendChild(hr);
       p.places.forEach(function(pl){
         var r = document.createElement("tr");
         var a = document.createElement("td"); a.className = "thin"; a.textContent = pl.place;
-        var b = document.createElement("td"); b.className = "n thin"; b.textContent = pl.jobs;
         var c = document.createElement("td"); c.className = "n thin"; c.textContent = pl.booked;
         var d = document.createElement("td"); d.className = "n"; d.textContent = pl.worked;
-        r.appendChild(a); r.appendChild(b); r.appendChild(c); r.appendChild(d);
+        r.appendChild(a); r.appendChild(c); r.appendChild(d);
         t.appendChild(r);
       });
     });
     wrap.appendChild(t); host.appendChild(wrap);
-    $("repCsvSum").hidden = false; $("repCsvAll").hidden = false;
+    $("repXlsx").hidden = false;
   }
 
   function runReport(){
@@ -1852,7 +1998,7 @@ body.hasupd .wrap{padding-top:52px}
     $("repTo").value = todayIso;
     $("repErr").textContent = "";
     $("repOut").innerHTML = "";
-    $("repCsvSum").hidden = true; $("repCsvAll").hidden = true;
+    $("repXlsx").hidden = true;
     $("repDlg").showModal();
     runReport();
   }
@@ -1861,27 +2007,43 @@ body.hasupd .wrap{padding-top:52px}
   $("repClose").addEventListener("click", function(){ $("repDlg").close(); });
   $("repRun").addEventListener("click", runReport);
   $("repWho").addEventListener("change", runReport);
-  $("repCsvSum").addEventListener("click", function(){
-    var rows = [[tr("Person"), tr("Place"), tr("Jobs"), tr("Hours booked"), tr("Hours worked")]];
+  /* Two sheets: the totals somebody actually reads, and every job behind
+     them in case a number is questioned. */
+  function repSheets(){
+    var S = function(v, s){ return {v: v, s: s || 0}; };
+    var N = function(v, s){ return {v: round2(v), n: true, s: s || 2}; };
+    var H = function(v){ return {v: v, s: 1}; };
+
+    var hours = [[H(tr("Person")), H(tr("Project")), H(tr("Hours booked")), H(tr("Hours worked"))]];
     repPeople.forEach(function(p){
+      hours.push([S(p.who, 5), S(tr("All projects"), 5), N(p.booked, 6), N(p.worked, 6)]);
       p.places.forEach(function(pl){
-        rows.push([p.who, pl.place, pl.jobs, pl.booked, pl.worked]);
+        hours.push([S(""), S(pl.place), N(pl.booked), N(pl.worked)]);
       });
-      rows.push([p.who, tr("Total"), p.jobs, p.booked, p.worked]);
+      hours.push([]);
     });
-    saveFile("EBM " + tr("hours") + " " + repSpan[0] + " " + repSpan[1] + ".csv", csv(rows));
-  });
-  $("repCsvAll").addEventListener("click", function(){
-    var rows = [[tr("Date"), tr("Person"), tr("Role"), tr("Place"), tr("Unit"),
-                 tr("From"), tr("To"), tr("Hours booked"), tr("Clocked in"),
-                 tr("Clocked out"), tr("Hours worked"), tr("State"),
-                 tr("Materials"), tr("Booked by")]];
+
+    var jobs = [[H(tr("Date")), H(tr("Person")), H(tr("Role")), H(tr("Project")), H(tr("Unit")),
+                 H(tr("From")), H(tr("To")), H(tr("Hours booked")), H(tr("Clocked in")),
+                 H(tr("Clocked out")), H(tr("Hours worked")), H(tr("State")),
+                 H(tr("Materials")), H(tr("Booked by"))]];
     repLines.forEach(function(r){
-      rows.push([r.date, r.who, r.trade, r.place, r.unit,
-                 hourLong(r.job.from), hourLong(r.job.to), r.booked,
-                 r.started, r.ended, r.worked, r.state, r.used, r.by]);
+      jobs.push([S(r.date), S(r.who), S(r.trade), S(r.place), S(r.unit),
+                 S(hourLong(r.job.from)), S(hourLong(r.job.to)), N(r.booked),
+                 S(r.started), S(r.ended), N(r.worked), S(r.state), S(r.used), S(r.by)]);
     });
-    saveFile("EBM " + tr("jobs") + " " + repSpan[0] + " " + repSpan[1] + ".csv", csv(rows));
+
+    return [{name: tr("Hours"), rows: hours, widths: [22, 26, 14, 14]},
+            {name: tr("Every job"), rows: jobs,
+             widths: [11, 20, 14, 12, 9, 9, 9, 14, 11, 11, 14, 14, 34, 18]}];
+  }
+  $("repXlsx").addEventListener("click", function(){
+    try {
+      saveBlob("EBM " + tr("hours") + " " + repSpan[0] + " " + repSpan[1] + ".xlsx",
+               xlsxBlob(repSheets()));
+    } catch (e){
+      $("repErr").textContent = errText(e, tr("Could not build the file."));
+    }
   });
 
   /* ---------- messages ----------
@@ -1943,7 +2105,10 @@ body.hasupd .wrap{padding-top:52px}
      fr:"Heures travaill\u00e9es, dans votre compte\u00a0: ce que chacun a point\u00e9 et o\u00f9, sur les dates de votre choix, avec un fichier pour le tableur."},
     {at:"2026-09-09T20:00:00Z",
      en:"Messages take a photo, a voice note or an emoji now. The buttons are beside the box.",
-     fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."}
+     fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
+    {at:"2026-09-09T21:00:00Z",
+     en:"Hours worked now downloads as a real Excel file: one page of totals per project, one page with every job behind them.",
+     fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."}
   ];
   function systemMsgs(){
     return RELEASES.map(function(r){
