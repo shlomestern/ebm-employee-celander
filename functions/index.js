@@ -286,6 +286,42 @@ exports.morningReminder = onSchedule(
   }
 );
 
+/** When the break that just ended ended, straight from the document rather
+ *  than from the clock this trigger happens to run on. */
+function closedEnd(job) {
+  const done = ((job && job.breaks) || []).filter((b) => b.to);
+  return done.length ? done[done.length - 1].to : "";
+}
+/** The break still running on a job, if there is one: the last with no end. */
+function openBreak(job) {
+  const list = (job && job.breaks) || [];
+  const last = list[list.length - 1];
+  return last && !last.to ? last : null;
+}
+/** The English of a stored reason. The app keeps the reason as a key and the
+ *  worker's own words separately, so it reads in the reader's language there;
+ *  a notification has one language and this is it. */
+const WHY_EN = {
+  "Getting materials": "getting materials",
+  "On another job": "on another job",
+  "Break": "on a break",
+};
+function whyOf(br) {
+  const head = WHY_EN[(br && br.why) || ""] || "on a break";
+  const note = (br && br.note) || "";
+  return note ? `${head} — ${note}` : head;
+}
+function awayFor(br, endIso) {
+  const t0 = Date.parse((br && br.from) || "");
+  if (!t0) return "a while";
+  const t1 = Date.parse(endIso || "") || Date.now();
+  const mins = Math.max(0, Math.round((t1 - t0) / 60000));
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+
 /** The next job that day for the same person, so a hold-up can name what it
  *  is about to delay. Two equality filters need no composite index; the sort
  *  is done here rather than asking Firestore for one. */
@@ -312,7 +348,13 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     const endedNow = !before.clockOut && !!after.clockOut;
     const lateBefore = (before.late && before.late.at) || "";
     const lateNow = !!after.late && after.late.at !== lateBefore;
-    if (!startedNow && !endedNow && !lateNow) return;
+    // A break opening or closing. Clocking out closes one at the same moment,
+    // and that is a finish, not a return — so it is left to the finish below.
+    const heldBefore = openBreak(before);
+    const heldNow = openBreak(after);
+    const pausedNow = !!heldNow && !heldBefore;
+    const backNow = !heldNow && !!heldBefore && !endedNow;
+    if (!startedNow && !endedNow && !lateNow && !pausedNow && !backNow) return;
 
     const db = getFirestore();
     const aud = await audience(db);
@@ -342,6 +384,21 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
         `${event.params.jobId}-late`);
       logger.info(`${who} running late until ${after.late.until} — ` +
         `notified ${sent} phone(s)${next ? ", next job affected" : ", nothing after it"}`);
+      return;
+    }
+
+    // Where he has gone, and for how long he was away. Straight to the whole
+    // office: somebody who is off buying a part is somebody whose afternoon
+    // may need moving.
+    if (pausedNow || backNow) {
+      const title = pausedNow ? `${who} paused` : `${who} is back on it`;
+      const body = pausedNow
+        ? `${where} · ${whyOf(heldNow)}`
+        : `${where} · away ${awayFor(heldBefore, closedEnd(after))} · ` +
+          `${whyOf(heldBefore)}`;
+      const sent = await push(db, aud.map, aud.forOffice(), title, body,
+        `${event.params.jobId}-${pausedNow ? "pause" : "back"}`);
+      logger.info(`${title} — notified ${sent} office phone(s)`);
       return;
     }
 

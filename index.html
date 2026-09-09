@@ -267,6 +267,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 }
 .pill.on{background:var(--open-soft); color:var(--open)}
 .pill.off{background:var(--surface-3); color:var(--ink-3)}
+.pill.hold{background:var(--mark); color:#fff}
 .job-actions{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
 .job-actions .spacer{flex:1}
 .notes{display:flex; flex-direction:column; gap:6px; border-top:1px solid var(--line); padding-top:8px}
@@ -488,6 +489,14 @@ body.hasupd .wrap{padding-top:52px}
 .alert .dt{font-size:12.5px; color:var(--ink-2)}
 .job-late{font-family:"Archivo",sans-serif; font-size:13px; font-weight:600;
   color:var(--mark); margin-top:2px}
+.job-hold{font-family:"Archivo",sans-serif; font-size:13px; font-weight:600;
+  color:var(--mark); margin-top:2px}
+/* The reason for stopping, as a row of taps rather than something to type. */
+.whyrow{display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 2px}
+.whyrow button{font:inherit; font-family:"Archivo",sans-serif; font-size:13px;
+  font-weight:600; padding:8px 12px; border-radius:9px; cursor:pointer;
+  border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink-2)}
+.whyrow button[aria-pressed="true"]{background:var(--sel); border-color:var(--sel); color:#fff}
 
 @media (max-width:1100px){
   /* On anything held in the hands — phone or tablet — whose calendar you are
@@ -810,6 +819,25 @@ body.hasupd .wrap{padding-top:52px}
       <span class="spacer"></span>
       <button type="button" class="btn" id="usedNone" data-t>Nothing used</button>
       <button type="submit" class="btn btn-primary" id="usedSave" data-t>Save and finish</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="pauseDlg">
+  <form method="dialog" class="dlg" id="pauseForm">
+    <div class="eyebrow" id="pauseWho"></div>
+    <h3 data-t>Pausing this job</h3>
+    <p class="sub" data-t>The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.</p>
+    <div class="whyrow" id="pauseWhy"></div>
+    <div class="field">
+      <label for="pauseNote" data-t>Anything to add</label>
+      <input id="pauseNote" maxlength="60" autocomplete="off" data-tp="Optional" placeholder="Optional">
+    </div>
+    <p class="err" id="pauseErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="pauseCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="pauseGo" data-t>Pause the job</button>
     </div>
   </form>
 </dialog>
@@ -1169,6 +1197,21 @@ body.hasupd .wrap{padding-top:52px}
     "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
+    "Pause": "Pause", "Paused": "En pause", "Break": "Pause",
+    "Getting materials": "Chercher du mat\u00e9riel",
+    "On another job": "Sur un autre travail",
+    "Pausing this job": "Mettre ce travail en pause",
+    "The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.":
+      "Le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 votre retour, donc le temps d\u2019absence n\u2019est pas compt\u00e9 comme travaill\u00e9. Le bureau est avis\u00e9 de l\u2019endroit o\u00f9 vous allez.",
+    "Anything to add": "Quelque chose \u00e0 ajouter", "Optional": "Facultatif",
+    "Pause the job": "Mettre en pause",
+    "Could not pause the job.": "Impossible de mettre en pause.",
+    "Back on the job": "De retour au travail",
+    "Could not start again.": "Impossible de reprendre.",
+    "Paused since {t} \u00b7 {why}": "En pause depuis {t}\u00a0\u00b7 {why}",
+    "paused {d}": "pause {d}", "{n} min": "{n} min",
+    "{h} h {m} min": "{h} h {m} min", "{h} h": "{h} h",
+    "Hours paused": "Heures en pause",
     "Voice note, {n}s": "Note vocale, {n}\u00a0s",
     "{n}s \u2014 tap to stop": "{n}\u00a0s \u2014 touchez pour arr\u00eater",
     "That picture could not be read.": "Cette image n\u2019a pas pu \u00eatre lue.",
@@ -1370,7 +1413,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v69";
+  var APP_VERSION = "v70";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1737,15 +1780,18 @@ body.hasupd .wrap{padding-top:52px}
       return a.date === b.date ? a.from - b.from : (a.date < b.date ? -1 : 1);
     }).map(function(j){
       var m = memberOr(j.crewId);
-      var worked = hoursBetween(j.clockIn, j.clockOut);
+      var paused = pausedHours(j);
+      var worked = Math.max(0, hoursBetween(j.clockIn, j.clockOut) - paused);
       return {
         job: j, date: j.date, who: m.name, trade: tradeName(m.trade),
         place: placeOf(j), unit: j.unit || "",
         booked: Math.max(0, (j.to || 0) - (j.from || 0)),
-        worked: round2(worked),
+        worked: round2(worked), paused: round2(paused),
         started: j.clockIn ? F_TIME.format(new Date(j.clockIn)) : "",
         ended: j.clockOut ? F_TIME.format(new Date(j.clockOut)) : "",
-        state: j.clockOut ? tr("Finished") : (j.clockIn ? tr("On site") : tr("Not clocked in")),
+        state: j.clockOut ? tr("Finished")
+             : onBreak(j) ? tr("Paused")
+             : (j.clockIn ? tr("On site") : tr("Not clocked in")),
         used: (j.used || []).map(function(u){
           return u.qty ? u.qty + " \u00d7 " + u.item : u.item;
         }).join("; "),
@@ -2053,17 +2099,18 @@ body.hasupd .wrap{padding-top:52px}
 
     var jobs = [[H(tr("Date")), H(tr("Person")), H(tr("Role")), H(tr("Project")), H(tr("Unit")),
                  H(tr("From")), H(tr("To")), H(tr("Hours booked")), H(tr("Clocked in")),
-                 H(tr("Clocked out")), H(tr("Hours worked")), H(tr("State")),
-                 H(tr("Materials")), H(tr("Booked by"))]];
+                 H(tr("Clocked out")), H(tr("Hours paused")), H(tr("Hours worked")),
+                 H(tr("State")), H(tr("Materials")), H(tr("Booked by"))]];
     repLines.forEach(function(r){
       jobs.push([S(r.date), S(r.who), S(r.trade), S(r.place), S(r.unit),
                  S(hourLong(r.job.from)), S(hourLong(r.job.to)), N(r.booked),
-                 S(r.started), S(r.ended), N(r.worked), S(r.state), S(r.used), S(r.by)]);
+                 S(r.started), S(r.ended), N(r.paused), N(r.worked),
+                 S(r.state), S(r.used), S(r.by)]);
     });
 
     return [{name: tr("Hours"), rows: hours, widths: [22, 26, 14, 14]},
             {name: tr("Every job"), rows: jobs,
-             widths: [11, 20, 14, 12, 9, 9, 9, 14, 11, 11, 14, 14, 34, 18]}];
+             widths: [11, 20, 14, 12, 9, 9, 9, 14, 11, 11, 13, 14, 14, 34, 18]}];
   }
   $("repXlsx").addEventListener("click", function(){
     try {
@@ -2156,6 +2203,9 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T02:00:00Z",
+     en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job. The time you were away is not counted as worked.",
+     fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail. Le temps d\u2019absence n\u2019est pas compt\u00e9 comme travaill\u00e9."},
     {at:"2026-09-10T01:00:00Z", who:"office",
      en:"At seven each weekday morning, the office is told who has no bookings at all that day, while there is still a day to fill.",
      fr:"\u00c0 sept heures chaque matin de semaine, le bureau apprend qui n\u2019a aucune r\u00e9servation ce jour-l\u00e0, quand il reste encore une journ\u00e9e \u00e0 remplir."}
@@ -2790,6 +2840,88 @@ body.hasupd .wrap{padding-top:52px}
     row.appendChild(it); row.appendChild(qt); row.appendChild(rm);
     return row;
   }
+  /* ---------- stopping the clock ----------
+     A job is not always one unbroken stretch. A part is missing and he drives
+     for it; something urgent comes up at another address and he goes, meaning
+     to come back. Neither is time on the job, and neither should end it.
+
+     A job carries a list of breaks — {from, to, why} — and the open one, if
+     there is one, is the last with no "to". The hours worked are the stretch
+     from clocking in to clocking out with those subtracted, so the office
+     pays for the time on the tools and can still see the day it came out of. */
+  var PAUSE_WHY = ["Getting materials", "On another job", "Break"];
+  function onBreak(j){
+    var list = j.breaks || [];
+    var last = list[list.length - 1];
+    return last && !last.to ? last : null;
+  }
+  function closedBreaks(j, when){
+    return (j.breaks || []).map(function(br, i, all){
+      if (i !== all.length - 1 || br.to) return br;
+      return {from: br.from, to: when, why: br.why || "", note: br.note || ""};
+    });
+  }
+  function pausedMs(j, until){
+    var end = until || Date.now();
+    return (j.breaks || []).reduce(function(a, br){
+      var t0 = Date.parse(br.from);
+      if (!t0) return a;
+      var t1 = br.to ? Date.parse(br.to) : end;
+      return a + Math.max(0, Math.min(t1, end) - t0);
+    }, 0);
+  }
+  function pausedHours(j){
+    return pausedMs(j, Date.parse(j.clockOut) || Date.now()) / 3600000;
+  }
+  function awayFor(ms){
+    var mins = Math.max(0, Math.round(ms / 60000));
+    if (mins < 60) return tr("{n} min", {n: mins});
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return m ? tr("{h} h {m} min", {h: h, m: m}) : tr("{h} h", {h: h});
+  }
+  function whyLine(br){
+    if (!br) return tr("Break");
+    var head = br.why ? tr(br.why) : tr("Break");
+    return br.note ? head + " \u00b7 " + br.note : head;
+  }
+
+  var pauseJob = null, pauseWhy = PAUSE_WHY[0];
+  function drawPauseWhy(){
+    var host = $("pauseWhy"); host.innerHTML = "";
+    PAUSE_WHY.forEach(function(w){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = tr(w);
+      b.setAttribute("aria-pressed", w === pauseWhy ? "true" : "false");
+      b.addEventListener("click", function(){ pauseWhy = w; drawPauseWhy(); });
+      host.appendChild(b);
+    });
+  }
+  function openPause(j){
+    pauseJob = j; pauseWhy = PAUSE_WHY[0];
+    var m = memberOr(j.crewId);
+    $("pauseWho").textContent = m.name + " \u00b7 " + j.buildingName +
+      (j.unit ? " \u00b7 " + tr("Unit {u}", {u:j.unit}) : "");
+    $("pauseNote").value = "";
+    $("pauseErr").textContent = "";
+    $("pauseGo").disabled = false;
+    drawPauseWhy();
+    $("pauseDlg").showModal();
+  }
+  function startBreak(){
+    var j = pauseJob; if (!j) return;
+    var note = $("pauseNote").value.trim();
+    $("pauseGo").disabled = true;
+    patchJob(j.id, {breaks: (j.breaks || []).concat([
+      {from: new Date().toISOString(), to: null, why: pauseWhy, note: note}
+    ])}).then(function(){ $("pauseDlg").close(); pauseJob = null; })
+      .catch(function(e){
+        $("pauseGo").disabled = false;
+        $("pauseErr").textContent = errText(e, tr("Could not pause the job."));
+      });
+  }
+  $("pauseCancel").addEventListener("click", function(){ $("pauseDlg").close(); pauseJob = null; });
+  $("pauseForm").addEventListener("submit", function(ev){ ev.preventDefault(); startBreak(); });
+
   function openUsed(j){
     usedJob = j;
     var m = memberOr(j.crewId);
@@ -2815,7 +2947,12 @@ body.hasupd .wrap{padding-top:52px}
   function finishJob(list){
     var j = usedJob; if (!j) return;
     $("usedSave").disabled = true;
-    patchJob(j.id, {used: list, clockOut: new Date().toISOString()})
+    var now = new Date().toISOString();
+    var patch = {used: list, clockOut: now};
+    // Finishing while still away closes the break at the same moment, so no
+    // job is left with the clock stopped for ever.
+    if (onBreak(j)) patch.breaks = closedBreaks(j, now);
+    patchJob(j.id, patch)
       .then(function(){ $("usedDlg").close(); usedJob = null; })
       .catch(function(e){
         $("usedSave").disabled = false;
@@ -2956,6 +3093,8 @@ body.hasupd .wrap{padding-top:52px}
     top.appendChild(t); top.appendChild(w);
     if (j.clockOut){
       var p1=document.createElement("span"); p1.className="pill off"; p1.textContent=tr("Finished"); top.appendChild(p1);
+    } else if (onBreak(j)){
+      var p3=document.createElement("span"); p3.className="pill hold"; p3.textContent=tr("Paused"); top.appendChild(p3);
     } else if (j.clockIn){
       var p2=document.createElement("span"); p2.className="pill on"; p2.textContent=tr("On site"); top.appendChild(p2);
     }
@@ -3002,7 +3141,16 @@ body.hasupd .wrap{padding-top:52px}
         ? tr("In {t} \u00b7 Out {u}", {t: F_TIME.format(new Date(j.clockIn)),
                                       u: F_TIME.format(new Date(j.clockOut))})
         : tr("In {t}", {t: F_TIME.format(new Date(j.clockIn))});
+      var away = pausedMs(j, Date.parse(j.clockOut) || Date.now());
+      if (away >= 60000) cs.textContent += " \u00b7 " + tr("paused {d}", {d: awayFor(away)});
       card.appendChild(cs);
+    }
+    var held = onBreak(j);
+    if (held && !j.clockOut){
+      var hd=document.createElement("div"); hd.className="job-hold";
+      hd.textContent = tr("Paused since {t} \u00b7 {why}",
+        {t: F_TIME.format(new Date(held.from)), why: whyLine(held)});
+      card.appendChild(hd);
     }
 
     var acts = document.createElement("div"); acts.className="job-actions";
@@ -3015,6 +3163,22 @@ body.hasupd .wrap{padding-top:52px}
         });
         acts.appendChild(bi);
       } else if (!j.clockOut){
+        // Back on it first: it is the one thing he came to the app to press.
+        if (held){
+          var br=document.createElement("button"); br.type="button"; br.className="btn btn-go";
+          br.textContent = tr("Back on the job");
+          br.addEventListener("click", function(){
+            br.disabled=true;
+            patchJob(j.id, {breaks: closedBreaks(j, new Date().toISOString())})
+              .catch(function(e){ br.disabled=false; alert(errText(e,tr("Could not start again."))); });
+          });
+          acts.appendChild(br);
+        } else {
+          var pb=document.createElement("button"); pb.type="button"; pb.className="btn";
+          pb.textContent = tr("Pause");
+          pb.addEventListener("click", function(){ openPause(j); });
+          acts.appendChild(pb);
+        }
         var bo=document.createElement("button"); bo.type="button"; bo.className="btn"; bo.textContent=tr("Clock out");
         bo.addEventListener("click", function(){ openUsed(j); });
         acts.appendChild(bo);
@@ -3023,6 +3187,7 @@ body.hasupd .wrap{padding-top:52px}
         // next job hear about it. The hours are not added here — that is the
         // office's call, and it may mean moving somebody else.
         var la=document.createElement("button"); la.type="button"; la.className="btn";
+        la.hidden = !!held;
         la.textContent = tr("Running late");
         la.addEventListener("click", function(){
           if (la.dataset.armed==="1") return;
@@ -3542,7 +3707,7 @@ body.hasupd .wrap{padding-top:52px}
       tight: !!(clash && travelOff()),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
       createdAt:new Date().toISOString(), createdBy:meName(), createdById:state.me,
-      clockIn:null, clockOut:null, notes:[]
+      clockIn:null, clockOut:null, breaks:[], notes:[]
     };
     $("formSave").disabled=true;
     saveJob(job).then(function(){ showDayPane(); })
