@@ -530,6 +530,11 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   font-weight:600; padding:8px 12px; border-radius:9px; cursor:pointer;
   border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink-2)}
 .whyrow button[aria-pressed="true"]{background:var(--sel); border-color:var(--sel); color:#fff}
+/* Not a choice: you opened somebody's day, and this is that somebody. */
+.whoshow{font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:7px; padding:11px 11px;
+  font-family:"Archivo",sans-serif; font-weight:600}
+.whoshow.none{font-weight:400; color:var(--ink-3); font-family:inherit; font-size:13.5px}
 .reqbox{padding:10px 12px; border:1px solid var(--line); border-radius:10px;
   background:var(--surface-2); font-size:13.5px}
 .reqbox b{font-family:"Archivo",sans-serif; font-weight:700; display:block; font-size:14px}
@@ -880,8 +885,9 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
 
     <div class="row2">
       <div class="field">
-        <label for="rqWho" data-t>Who you need</label>
-        <select id="rqWho"></select>
+        <label data-t>Who you need</label>
+        <input type="hidden" id="rqWho">
+        <div class="whoshow" id="rqWhoName"></div>
       </div>
       <div class="field">
         <label for="rqDate" data-t>Day</label>
@@ -1632,7 +1638,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v74";
+  var APP_VERSION = "v75";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2466,21 +2472,13 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
       return jobsOn(ds, pp.id).some(function(j){ return !bookedByMe(j); });
     });
   }
-  function fillReqWho(ds, keep){
-    var host = $("rqWho"); host.innerHTML = "";
+  function setReqWho(ds, want){
     var list = askable(ds);
-    if (!list.length){
-      var none = document.createElement("option");
-      none.value = ""; none.textContent = tr("Nobody is booked by anyone else that day");
-      host.appendChild(none); host.disabled = true;
-      return;
-    }
-    host.disabled = false;
-    list.forEach(function(pp){
-      var o = document.createElement("option"); o.value = pp.id; o.textContent = pp.name;
-      host.appendChild(o);
-    });
-    host.value = list.some(function(pp){ return pp.id === keep; }) ? keep : list[0].id;
+    var pick = list.filter(function(pp){ return pp.id === want; })[0] || list[0] || null;
+    var show = $("rqWhoName");
+    $("rqWho").value = pick ? pick.id : "";
+    show.className = "whoshow" + (pick ? "" : " none");
+    show.textContent = pick ? pick.name : tr("Nobody is booked by anyone else that day");
   }
 
   function openRequest(pre){
@@ -2488,7 +2486,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     fillReqHours();
     fillProjects($("rqProject"));
     $("rqDate").value = pre.date || openDate || todayIso;
-    fillReqWho($("rqDate").value, pre.crewId);
+    setReqWho($("rqDate").value, pre.crewId || viewCrewId());
     $("rqFrom").value = pre.from || Math.max(DAY_START, nextHourToday($("rqDate").value));
     $("rqHours").value = pre.hours || 2;
     $("rqProject").value = pre.projectId || "";
@@ -2556,12 +2554,12 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   $("rqProject").addEventListener("change", function(){
     fillBuildings($("rqProject").value, $("rqBuilding"), null);
   });
-  ["rqWho", "rqFrom", "rqHours"].forEach(function(id){
+  ["rqFrom", "rqHours"].forEach(function(id){
     $(id).addEventListener("change", drawReqClash);
   });
-  // A different day is a different set of people worth asking about.
+  // A different day may not be a day this person is booked at all.
   $("rqDate").addEventListener("change", function(){
-    fillReqWho($("rqDate").value, $("rqWho").value);
+    setReqWho($("rqDate").value, $("rqWho").value);
     drawReqClash();
   });
 
