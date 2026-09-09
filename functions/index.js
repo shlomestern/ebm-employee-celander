@@ -169,23 +169,14 @@ exports.notifyOnMessage = onDocumentWritten(
     const fresh = now.slice(was.length);
     if (!fresh.length) return;
 
+    const pair = id.slice(5).split("__");
     const last = fresh[fresh.length - 1];
+    const to = pair.find((p) => p !== last.by);
+    if (!to) return;
+
     const db = getFirestore();
     const aud = await audience(db);
-
-    // chat-system is the announcements channel: one message, every phone.
-    // Everything else is named after its two people, so who to tell is simply
-    // the other half of the name.
-    let tokens; let to;
-    if (id === "chat-system") {
-      to = "everyone";
-      tokens = Object.keys(aud.map).filter((t) => aud.map[t]);
-    } else {
-      const pair = id.slice(5).split("__");
-      to = pair.find((p) => p !== last.by);
-      if (!to) return;
-      tokens = aud.forPerson(to);
-    }
+    const tokens = aud.forPerson(to);
     if (!tokens.length) {
       logger.info(`message for ${to} — no registered phone`);
       return;
