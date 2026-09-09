@@ -338,6 +338,24 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
 .warn{color:var(--mark); font-size:13px; margin:10px 0 0}
 .alerts{margin:0 0 16px; display:flex; flex-direction:column; gap:8px}
+.shots{display:flex; gap:7px; flex-wrap:wrap; margin-top:9px}
+.shots img{width:66px; height:66px; object-fit:cover; border-radius:8px;
+  border:1px solid var(--line); cursor:zoom-in; display:block; background:var(--surface-2)}
+.shot{position:relative}
+.shot .x{position:absolute; top:-6px; right:-6px; width:21px; height:21px; border-radius:50%;
+  border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2);
+  font-size:13px; line-height:1; cursor:pointer; padding:0}
+.shotfull{max-width:min(92vw,900px); max-height:82vh; display:block; border-radius:10px}
+#shotDlg::backdrop{background:rgba(8,12,15,.82)}
+#shotDlg{border:none; background:transparent; padding:0; max-width:none}
+.filebtn{position:relative; overflow:hidden; align-self:flex-start}
+.filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer; font-size:0}
+.usedrow{display:grid; grid-template-columns:minmax(0,1fr) 78px 34px; gap:7px; margin-bottom:7px}
+.usedrow input{margin:0}
+.usedrow .rm{border:1px solid var(--line); background:var(--surface-2); border-radius:8px;
+  color:var(--ink-3); cursor:pointer; font-size:15px; line-height:1; padding:0}
+.usedlist{font-size:13px; color:var(--ink-2); margin-top:6px}
+.usedlist b{color:var(--ink); font-weight:600}
 .alert{display:flex; gap:11px; align-items:center; flex-wrap:wrap;
   padding:11px 13px; border-radius:10px; background:var(--surface);
   border:1px solid var(--mark); box-shadow:inset 4px 0 0 var(--mark)}
@@ -542,6 +560,27 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   </form>
 </dialog>
 
+<dialog id="usedDlg">
+  <form method="dialog" class="dlg" id="usedForm">
+    <div class="eyebrow" id="usedWho"></div>
+    <h3 data-t>Finishing up</h3>
+    <p class="sub" data-t>What did you use on this job? Leave it empty if nothing.</p>
+    <div id="usedRows"></div>
+    <button type="button" class="btn" id="usedAdd" data-t>Another line</button>
+    <p class="err" id="usedErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="usedCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="usedNone" data-t>Nothing used</button>
+      <button type="submit" class="btn btn-primary" id="usedSave" data-t>Save and finish</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="shotDlg">
+  <img class="shotfull" id="shotFull" alt="">
+</dialog>
+
 <dialog id="installDlg">
   <div class="dlg">
     <div class="eyebrow" data-t>Put it on your phone</div>
@@ -607,6 +646,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="field">
       <label for="fJob" data-t>Work to do</label>
       <textarea id="fJob" maxlength="400" data-tp="e.g. Kitchen sink leaking under the cabinet" placeholder="e.g. Kitchen sink leaking under the cabinet"></textarea>
+    </div>
+
+    <div class="field">
+      <label data-t>Photos</label>
+      <button type="button" class="btn filebtn" id="formShotBtn">
+        <span data-t>Add photos</span>
+        <input type="file" id="formShotInput" accept="image/*" multiple>
+      </button>
+      <span class="hint" data-t>Up to four. Taken with the phone's camera or picked from it.</span>
+      <div class="shots" id="formShots"></div>
     </div>
 
     <label class="check" id="travelRow" hidden>
@@ -834,6 +883,17 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       "Donnez \u00e0 chaque personne son propre code et communiquez-le-lui. Un plombier ou un \u00e9lectricien se connecte et ne voit que ses propres travaux. Choisissez <b>Bureau (administration)</b> pour donner acc\u00e8s \u00e0 tout le calendrier \u2014 puis cochez exactement ce que la personne peut faire.",
     "Add someone": "Ajouter une personne",
     "Name": "Nom", "Role": "R\u00f4le", "Code": "Code", "Remove": "Retirer",
+    "Photos": "Photos", "Photo": "Photo", "Add photos": "Ajouter des photos",
+    "Finishing up": "Fin du travail",
+    "What did you use on this job? Leave it empty if nothing.":
+      "Qu\u2019avez-vous utilis\u00e9 pour ce travail\u00a0? Laissez vide s\u2019il n\u2019y a rien.",
+    "e.g. 1/2 copper elbow": "ex.\u00a0: coude de cuivre 1/2",
+    "Qty": "Qt\u00e9", "Another line": "Une autre ligne",
+    "Nothing used": "Rien utilis\u00e9", "Save and finish": "Enregistrer et terminer",
+    "Used: ": "Utilis\u00e9\u00a0: ",
+    "Up to four. Taken with the phone's camera or picked from it.":
+      "Jusqu\u2019\u00e0 quatre. Prises avec l\u2019appareil photo ou choisies dessus.",
+    "The photo did not save.": "La photo n\u2019a pas \u00e9t\u00e9 enregistr\u00e9e.",
     "Can book and cancel jobs": "Peut r\u00e9server et annuler des travaux",
     "Can add people and change codes": "Peut ajouter des personnes et changer les codes",
     "Phones signed up for notifications": "Appareils inscrits aux notifications",
@@ -1025,7 +1085,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v50";
+  var APP_VERSION = "v51";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1345,6 +1405,147 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   /* Not gated on owning the booking: the alert goes to whoever booked this
      job and whoever booked the next one, and either of them has to be able to
      answer it. The crew member asked for the hours himself. */
+  /* ---------- photos ----------
+     A phone camera gives 4 MB a shot and a Firestore document holds one, so
+     every picture is redrawn onto a canvas at a size that is still useful on
+     site and stored inside the job itself. That keeps the whole app on the
+     two collections the rules already allow — no bucket to set up, nothing
+     else for the office to configure. */
+  var MAX_SHOTS = 4, SHOT_EDGE = 1000, SHOT_BUDGET = 520000;
+
+  function shrinkImage(file){
+    return new Promise(function(done, fail){
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height, k = Math.min(1, SHOT_EDGE / Math.max(w, h));
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(w * k));
+        c.height = Math.max(1, Math.round(h * k));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        // Down the quality until it fits; a photo of a leak survives it.
+        var q = 0.62, out = c.toDataURL("image/jpeg", q);
+        while (out.length > 190000 && q > 0.3){ q -= 0.1; out = c.toDataURL("image/jpeg", q); }
+        done(out);
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); fail(new Error("image")); };
+      img.src = url;
+    });
+  }
+  function shotsBytes(list){
+    var n = 0;
+    (list||[]).forEach(function(s2){ n += (s2.d||"").length; });
+    return n;
+  }
+  /* Thumbnails, each opening full size. `onRemove` marks them editable. */
+  function shotStrip(list, onRemove){
+    var box = document.createElement("div"); box.className = "shots";
+    (list||[]).forEach(function(sh, i){
+      var wrap = document.createElement("div"); wrap.className = "shot";
+      var im = document.createElement("img"); im.src = sh.d; im.alt = tr("Photo");
+      im.addEventListener("click", function(){
+        $("shotFull").src = sh.d; $("shotDlg").showModal();
+      });
+      wrap.appendChild(im);
+      if (onRemove){
+        var x = document.createElement("button");
+        x.type="button"; x.className="x"; x.textContent="\u00d7";
+        x.title = tr("Remove");
+        x.addEventListener("click", function(){ onRemove(i); });
+        wrap.appendChild(x);
+      }
+      box.appendChild(wrap);
+    });
+    return box;
+  }
+  /* Reads what the file picker handed over, refusing politely once the job
+     has as many pictures as a document can carry. */
+  function takeShots(files, existing){
+    var list = (existing || []).slice();
+    var jobs = [], i;
+    for (i = 0; i < files.length; i++){
+      if (list.length + jobs.length >= MAX_SHOTS) break;
+      jobs.push(files[i]);
+    }
+    return jobs.reduce(function(chain, f){
+      return chain.then(function(){
+        return shrinkImage(f).then(function(d){
+          if (shotsBytes(list) + d.length > SHOT_BUDGET) return;
+          list.push({d: d, by: meName(), at: new Date().toISOString()});
+        }).catch(function(){});
+      });
+    }, Promise.resolve()).then(function(){ return list; });
+  }
+
+  /* ---------- what was used ----------
+     Asked once, at the moment the crew member finishes, because that is the
+     only time he still remembers. Free text rather than a catalogue: nobody
+     is going to maintain a parts list, and "2 × 1/2 elbow" is what the office
+     needs to bill it. */
+  var usedJob = null;
+
+  function usedRow(item, qty){
+    var row = document.createElement("div"); row.className = "usedrow";
+    var it = document.createElement("input");
+    it.className = "it"; it.maxLength = 80;
+    it.placeholder = tr("e.g. 1/2 copper elbow");
+    it.value = item || "";
+    var qt = document.createElement("input");
+    qt.className = "qt"; qt.maxLength = 12;
+    qt.placeholder = tr("Qty"); qt.value = qty || "";
+    var rm = document.createElement("button");
+    rm.type = "button"; rm.className = "rm"; rm.title = tr("Remove");
+    rm.textContent = "\u00d7";
+    rm.addEventListener("click", function(){
+      row.remove();
+      if (!$("usedRows").children.length) $("usedRows").appendChild(usedRow("", ""));
+    });
+    row.appendChild(it); row.appendChild(qt); row.appendChild(rm);
+    return row;
+  }
+  function openUsed(j){
+    usedJob = j;
+    var m = memberOr(j.crewId);
+    $("usedWho").textContent = m.name + " \u00b7 " + j.buildingName +
+      (j.unit ? " \u00b7 " + tr("Unit {u}", {u:j.unit}) : "");
+    $("usedErr").textContent = "";
+    var host = $("usedRows"); host.innerHTML = "";
+    var have = (j.used || []);
+    if (have.length) have.forEach(function(u){ host.appendChild(usedRow(u.item, u.qty)); });
+    else host.appendChild(usedRow("", ""));
+    $("usedSave").disabled = false;
+    $("usedDlg").showModal();
+  }
+  function readUsed(){
+    var out = [];
+    Array.prototype.forEach.call($("usedRows").children, function(row){
+      var item = row.querySelector(".it").value.trim();
+      var qty  = row.querySelector(".qt").value.trim();
+      if (item) out.push({item: item, qty: qty});
+    });
+    return out;
+  }
+  function finishJob(list){
+    var j = usedJob; if (!j) return;
+    $("usedSave").disabled = true;
+    patchJob(j.id, {used: list, clockOut: new Date().toISOString()})
+      .then(function(){ $("usedDlg").close(); usedJob = null; })
+      .catch(function(e){
+        $("usedSave").disabled = false;
+        $("usedErr").textContent = errText(e, tr("Could not clock out."));
+      });
+  }
+  $("usedAdd").addEventListener("click", function(){
+    $("usedRows").appendChild(usedRow("", ""));
+    $("usedRows").lastChild.querySelector(".it").focus();
+  });
+  $("usedCancel").addEventListener("click", function(){ $("usedDlg").close(); usedJob = null; });
+  $("usedNone").addEventListener("click", function(){ finishJob([]); });
+  $("usedForm").addEventListener("submit", function(ev){
+    ev.preventDefault(); finishJob(readUsed());
+  });
+
   function grantable(j){
     return can("book") && !!j.late && !j.clockOut && j.late.until > j.to;
   }
@@ -1433,6 +1634,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (j.job){
       var d=document.createElement("div"); d.className="job-desc"; d.textContent=j.job; card.appendChild(d);
     }
+    if ((j.photos||[]).length) card.appendChild(shotStrip(j.photos, null));
+    if ((j.used||[]).length){
+      var uw = document.createElement("div"); uw.className = "usedlist";
+      var ub = document.createElement("b"); ub.textContent = tr("Used: ");
+      uw.appendChild(ub);
+      uw.appendChild(document.createTextNode((j.used||[]).map(function(u){
+        return u.qty ? u.qty + " \u00d7 " + u.item : u.item;
+      }).join(", ")));
+      card.appendChild(uw);
+    }
     if (j.tight){
       var tg=document.createElement("div"); tg.className="job-sub";
       tg.textContent = tr("Back to back \u2014 no travel time");
@@ -1465,10 +1676,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         acts.appendChild(bi);
       } else if (!j.clockOut){
         var bo=document.createElement("button"); bo.type="button"; bo.className="btn"; bo.textContent=tr("Clock out");
-        bo.addEventListener("click", function(){
-          bo.disabled=true;
-          patchJob(j.id, {clockOut:new Date().toISOString()}).catch(function(e){ bo.disabled=false; alert(errText(e,tr("Could not clock out."))); });
-        });
+        bo.addEventListener("click", function(){ openUsed(j); });
         acts.appendChild(bo);
 
         // Two taps: how much longer, then the office and whoever booked the
@@ -1532,7 +1740,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       return card;
     }
     var add=document.createElement("div"); add.className="noteadd";
-    var inp=document.createElement("input"); inp.placeholder="Add a note…"; inp.maxLength=200;
+    var inp=document.createElement("input"); inp.placeholder=tr("Add a note\u2026"); inp.maxLength=200;
     var go=document.createElement("button"); go.type="button"; go.className="btn"; go.textContent=tr("Add");
     function submitNote(){
       var text=inp.value.trim(); if(!text) return;
@@ -1543,7 +1751,29 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     }
     go.addEventListener("click", submitNote);
     inp.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitNote(); } });
-    add.appendChild(inp); add.appendChild(go); notes.appendChild(add);
+    add.appendChild(inp); add.appendChild(go);
+
+    // Whoever may write a note may also add a picture, which is how a plumber
+    // shows the office what he is looking at without describing it.
+    if ((j.photos||[]).length < MAX_SHOTS){
+      var pb=document.createElement("button");
+      pb.type="button"; pb.className="btn filebtn";
+      pb.appendChild(document.createTextNode(tr("Photo")));
+      var pf=document.createElement("input");
+      pf.type="file"; pf.accept="image/*"; pf.multiple=true;
+      pf.addEventListener("change", function(){
+        if (!pf.files || !pf.files.length) return;
+        pb.disabled=true;
+        takeShots(pf.files, j.photos||[]).then(function(list){
+          return patchJob(j.id, {photos:list});
+        }).catch(function(e){
+          pb.disabled=false; alert(errText(e, tr("The photo did not save.")));
+        });
+      });
+      pb.appendChild(pf);
+      add.appendChild(pb);
+    }
+    notes.appendChild(add);
     card.appendChild(notes);
     return card;
   }
@@ -1813,6 +2043,26 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     showFormPane(j);
   }
 
+  var formShots = [];
+  function drawFormShots(){
+    var host = $("formShots"); host.innerHTML = "";
+    host.appendChild(shotStrip(formShots, function(i){
+      formShots.splice(i, 1); drawFormShots();
+    }));
+    $("formShotBtn").hidden = formShots.length >= MAX_SHOTS;
+  }
+  $("formShotInput").addEventListener("change", function(){
+    var files = this.files;
+    if (!files || !files.length) return;
+    $("formShotBtn").disabled = true;
+    takeShots(files, formShots).then(function(list){
+      formShots = list;
+      $("formShotBtn").disabled = false;
+      this.value = "";
+      drawFormShots();
+    }.bind(this));
+  });
+
   function showFormPane(job){
     editing = job || null;
     var ds = openDate;
@@ -1825,6 +2075,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("paneForm").reset();
     fillProjects();
     $("travelWarn").hidden = true;
+    formShots = editing ? (editing.photos || []).slice() : [];
+    drawFormShots();
 
     if (editing){
       $("fProject").value = editing.projectId;
@@ -1930,6 +2182,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         projectId:p.id, projectName:p.name,
         buildingId:b.id, buildingName:b.name,
         unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
+        photos: formShots,
         tight: !!(clash && travelOff()),
         manager:p.manager||"", managerPhone:p.managerPhone||""
       }).then(function(){ editing=null; showDayPane(); })
@@ -1944,6 +2197,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       buildingId:b.id, buildingName:b.name,
       unit:$("fUnit").value.trim(),
       job:$("fJob").value.trim(),
+      photos: formShots,
       tight: !!(clash && travelOff()),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
       createdAt:new Date().toISOString(), createdBy:meName(), createdById:state.me,
