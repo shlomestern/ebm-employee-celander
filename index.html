@@ -85,7 +85,15 @@ button{font:inherit; color:inherit; cursor:pointer}
   font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600;
   letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
 }
-.wrap{max-width:1180px; margin:0 auto; padding:18px 16px calc(56px + env(safe-area-inset-bottom))}
+/* The page is drawn to the edges of the screen (viewport-fit=cover), so the
+   top has to be held clear of an iPhone's clock and notch by hand — otherwise
+   the company name sits underneath them. The sides matter in landscape. */
+.wrap{max-width:1180px; margin:0 auto;
+  padding-top:calc(18px + env(safe-area-inset-top));
+  padding-right:max(16px, env(safe-area-inset-right));
+  padding-bottom:calc(56px + env(safe-area-inset-bottom));
+  padding-left:max(16px, env(safe-area-inset-left));
+}
 
 .topbar{
   display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; justify-content:space-between;
@@ -364,7 +372,22 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .shot .x{position:absolute; top:-6px; right:-6px; width:21px; height:21px; border-radius:50%;
   border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2);
   font-size:13px; line-height:1; cursor:pointer; padding:0}
-.shotfull{max-width:min(92vw,900px); max-height:82vh; display:block; border-radius:10px}
+.shotwrap{display:flex; flex-direction:column; gap:10px; align-items:center}
+.shotfull{max-width:min(92vw,900px); max-height:74vh; display:block; border-radius:10px}
+.shotbar{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+.shotbar .btn{background:var(--surface); border-color:var(--line-2)}
+/* What is being answered, kept short and pinned above the message itself. */
+.quote{display:block; border-left:3px solid currentColor; padding:2px 0 2px 8px;
+  margin-bottom:5px; opacity:.72; font-size:12.5px; line-height:1.3}
+.quote b{display:block; font-family:"Archivo",sans-serif; font-weight:700; font-size:11.5px}
+.bub .fwd{display:block; font-size:11px; opacity:.7; font-style:italic; margin-bottom:3px}
+.replybar{display:flex; gap:8px; align-items:center; margin-bottom:7px; font-size:12.5px;
+  padding:7px 9px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
+.replybar .who{font-family:"Archivo",sans-serif; font-weight:700; flex:none}
+.replybar .tx{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  color:var(--ink-2)}
+.replybar .x{border:1px solid var(--line-2); background:var(--surface); border-radius:7px;
+  padding:3px 8px; font:inherit; font-size:12px; cursor:pointer; color:var(--ink-2)}
 #shotDlg::backdrop{background:rgba(8,12,15,.82)}
 #shotDlg{border:none; background:transparent; padding:0; max-width:none}
 .filebtn{position:relative; overflow:hidden; align-self:flex-start}
@@ -450,14 +473,15 @@ dialog.repwide{width:min(calc(100vw - 24px), 860px)}
 .bub audio{display:block; width:min(240px,60vw); margin:2px 0 3px; height:34px}
 .bub .cap{display:block}
 .updbar{position:fixed; left:0; right:0; top:0; z-index:60; display:flex; gap:10px;
-  align-items:center; justify-content:center; padding:11px 14px;
+  align-items:center; justify-content:center;
+  padding:calc(11px + env(safe-area-inset-top)) 14px 11px;
   background:var(--sel); color:#fff; font-family:"Archivo",sans-serif; font-weight:600;
   font-size:13.5px; box-shadow:0 2px 14px rgba(19,26,32,.22)}
 .updbar button{font:inherit; font-size:13px; padding:7px 14px; border-radius:8px;
   border:1px solid rgba(255,255,255,.6); background:rgba(255,255,255,.16); color:#fff;
   cursor:pointer}
 .updbar button:hover{background:rgba(255,255,255,.28)}
-body.hasupd .wrap{padding-top:52px}
+body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
 .chattools{display:flex; gap:5px; align-items:center; flex:none}
 .tool{width:38px; height:38px; flex:none; border-radius:10px; border:1px solid var(--line);
   background:var(--surface-2); color:var(--ink-2); cursor:pointer; padding:0;
@@ -570,7 +594,10 @@ body.hasupd .wrap{padding-top:52px}
   .wrap{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 }
 @media (max-width:520px){
-  .wrap{padding-left:10px; padding-right:10px; padding-top:14px}
+  /* Still clear of the clock and the notch on a narrow screen. */
+  .wrap{padding-left:max(10px, env(safe-area-inset-left));
+        padding-right:max(10px, env(safe-area-inset-right));
+        padding-top:calc(14px + env(safe-area-inset-top))}
   .topbar h1{font-size:22px}
   .dow{padding:6px 4px; font-size:9.5px; letter-spacing:.05em}
   .cell{min-height:58px; padding:4px}
@@ -775,6 +802,7 @@ body.hasupd .wrap{padding-top:52px}
     <div id="chatPane" hidden>
       <div class="chatlog" id="chatLog"></div>
       <div class="emojis" id="emojiRow" hidden></div>
+      <div class="replybar" id="chatReply" hidden></div>
       <div class="pending" id="chatPending" hidden></div>
       <p class="recnote" id="recNote" hidden></p>
       <div class="chatsend" id="chatSendRow">
@@ -928,7 +956,39 @@ body.hasupd .wrap{padding-top:52px}
 </dialog>
 
 <dialog id="shotDlg">
-  <img class="shotfull" id="shotFull" alt="">
+  <div class="shotwrap">
+    <img class="shotfull" id="shotFull" alt="">
+    <div class="shotbar">
+      <button type="button" class="btn" id="shotSave" data-t>Save the photo</button>
+      <button type="button" class="btn" id="shotClose" data-t>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="msgDlg">
+  <div class="dlg">
+    <div class="eyebrow" id="msgFrom"></div>
+    <p class="sub" id="msgPeek"></p>
+    <div class="actions" style="flex-direction:column; align-items:stretch; gap:7px">
+      <button type="button" class="btn btn-primary btn-block" id="msgReply" data-t>Reply to this</button>
+      <button type="button" class="btn btn-block" id="msgFwd" data-t>Forward it</button>
+      <button type="button" class="btn btn-block" id="msgSave" hidden data-t>Save the photo</button>
+      <button type="button" class="btn btn-block" id="msgShut" data-t>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="fwdDlg">
+  <div class="dlg">
+    <div class="eyebrow" data-t>Forward</div>
+    <h3 data-t>Send it on to</h3>
+    <div class="threads" id="fwdList"></div>
+    <p class="err" id="fwdErr"></p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="fwdClose" data-t>Back</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="installDlg">
@@ -1291,6 +1351,12 @@ body.hasupd .wrap{padding-top:52px}
     "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
+    "Save the photo": "Enregistrer la photo",
+    "Reply to this": "R\u00e9pondre", "Forward it": "Transf\u00e9rer",
+    "Forward": "Transfert", "Send it on to": "Transf\u00e9rer \u00e0",
+    "Replying to {name}": "R\u00e9ponse \u00e0 {name}",
+    "Forwarded from {name}": "Transf\u00e9r\u00e9 de {name}",
+    "You": "Vous",
     "Booked by": "R\u00e9serv\u00e9 par",
     "Put it in somebody else\u2019s name and it becomes theirs to edit or cancel. Leave it as you and it stays yours.":
       "Mettez-le au nom de quelqu\u2019un d\u2019autre et il pourra le modifier ou l\u2019annuler. Laissez votre nom et il reste \u00e0 vous.",
@@ -1556,7 +1622,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v71";
+  var APP_VERSION = "v72";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2680,6 +2746,9 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T05:00:00Z",
+     en:"Tap any message to reply to it with a quote, forward it to somebody else, or save a photo out of it. On iPhone the top of the app no longer hides behind the clock.",
+     fr:"Touchez un message pour y r\u00e9pondre en citation, le transf\u00e9rer \u00e0 quelqu\u2019un ou en enregistrer la photo. Sur iPhone, le haut de l\u2019application ne se cache plus derri\u00e8re l\u2019heure."},
     {at:"2026-09-10T04:00:00Z", who:"office",
      en:"Booking for somebody else in the office? Set Booked by to their name and it becomes theirs to edit or cancel, with your name kept beside it.",
      fr:"Vous r\u00e9servez pour quelqu\u2019un d\u2019autre au bureau\u00a0? Mettez R\u00e9serv\u00e9 par \u00e0 son nom et il pourra le modifier ou l\u2019annuler, votre nom rest\u00e9 \u00e0 c\u00f4t\u00e9."},
@@ -2906,11 +2975,131 @@ body.hasupd .wrap{padding-top:52px}
       .set({msgs: msgs, between: key.split("__")});
   }
 
+  /* ---------- one message at a time ----------
+     No buttons on the bubbles: they were tried and they made the thread look
+     like a form. Tapping a message opens what can be done with it instead, so
+     the conversation stays a conversation.
+
+     What is quoted travels with the reply as a copy — a line of the original
+     and who wrote it. The original can be trimmed away later without the
+     answer stopping making sense. */
+  var actOn = null, replyTo = null;
+  function peekOf(m){
+    if (!m) return "";
+    if (m.text && m.text !== "\ud83d\udcf7" && m.text !== "\ud83c\udfa4") return m.text;
+    return m.img ? tr("Photo") : (m.aud ? tr("Voice note") : "");
+  }
+  function quoteOf(m){
+    var t = peekOf(m);
+    return {name: m.name || personName(m.by), by: m.by, at: m.at,
+            text: t.length > 90 ? t.slice(0, 90) + "\u2026" : t};
+  }
+  function openMsgActions(m){
+    actOn = m;
+    $("msgFrom").textContent = (m.by === state.me ? tr("You") : (m.name || personName(m.by))) +
+      " \u00b7 " + (function(){ try { return F_TIME.format(new Date(m.at)); } catch(e){ return ""; } })();
+    $("msgPeek").textContent = peekOf(m);
+    $("msgSave").hidden = !m.img;
+    $("msgDlg").showModal();
+  }
+  function drawReplyBar(){
+    var host = $("chatReply");
+    host.innerHTML = ""; host.hidden = !replyTo;
+    if (!replyTo) return;
+    var who = document.createElement("span"); who.className = "who";
+    who.textContent = tr("Replying to {name}", {name: replyTo.name});
+    var tx = document.createElement("span"); tx.className = "tx"; tx.textContent = replyTo.text;
+    var x = document.createElement("button");
+    x.type = "button"; x.className = "x"; x.textContent = tr("Remove");
+    x.addEventListener("click", function(){ replyTo = null; drawReplyBar(); });
+    host.appendChild(who); host.appendChild(tx); host.appendChild(x);
+  }
+  /* A photo is held in the message as a data URL, so there is nothing to
+     fetch. Sharing is tried first because that is the only route that reaches
+     an iPhone's camera roll; a download is what a computer wants. */
+  function saveShot(dataUrl, name){
+    try {
+      var parts = String(dataUrl).split(",");
+      var mime = (parts[0].match(/:(.*?);/) || [])[1] || "image/jpeg";
+      var bin = atob(parts[1]), n = bin.length, arr = new Uint8Array(n);
+      while (n--) arr[n] = bin.charCodeAt(n);
+      var blob = new Blob([arr], {type: mime});
+      var file = null;
+      try { file = new File([blob], name, {type: mime}); } catch (e){ file = null; }
+      if (file && navigator.canShare && navigator.canShare({files: [file]})){
+        navigator.share({files: [file]}).catch(function(){ saveBlob(name, blob); });
+        return;
+      }
+      saveBlob(name, blob);
+    } catch (e){
+      var a = document.createElement("a");
+      a.href = dataUrl; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+  }
+  function shotName(){
+    return "EBM " + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".jpg";
+  }
+  $("shotSave").addEventListener("click", function(){ saveShot($("shotFull").src, shotName()); });
+  $("shotClose").addEventListener("click", function(){ $("shotDlg").close(); });
+  $("msgShut").addEventListener("click", function(){ $("msgDlg").close(); actOn = null; });
+  $("msgSave").addEventListener("click", function(){
+    if (actOn && actOn.img) saveShot(actOn.img, shotName());
+  });
+  $("msgReply").addEventListener("click", function(){
+    if (!actOn) return;
+    replyTo = quoteOf(actOn);
+    $("msgDlg").close(); actOn = null;
+    drawReplyBar();
+    setTimeout(function(){ $("chatInput").focus(); }, 30);
+  });
+  $("msgFwd").addEventListener("click", function(){
+    if (!actOn) return;
+    $("msgDlg").close();
+    openForward(actOn);
+  });
+
+  /* ---------- passing one on ---------- */
+  var fwdMsg = null;
+  function openForward(m){
+    fwdMsg = m;
+    var host = $("fwdList"); host.innerHTML = "";
+    $("fwdErr").textContent = "";
+    contacts().filter(function(id){ return id !== SYSTEM; }).forEach(function(id){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "thread " + (id === "office" ? "c7" : colorClass(id));
+      var av = document.createElement("span"); av.className = "av";
+      av.textContent = personName(id).charAt(0).toUpperCase();
+      var tx = document.createElement("span"); tx.className = "txt";
+      var who = document.createElement("span"); who.className = "who";
+      who.textContent = personName(id);
+      tx.appendChild(who);
+      b.appendChild(av); b.appendChild(tx);
+      b.addEventListener("click", function(){
+        b.disabled = true;
+        sendMessage(id, fwdMsg.text || "", {
+          img: fwdMsg.img, aud: fwdMsg.aud, secs: fwdMsg.secs,
+          fwd: fwdMsg.name || personName(fwdMsg.by)
+        }).then(function(){ $("fwdDlg").close(); fwdMsg = null; })
+          .catch(function(e){
+            b.disabled = false;
+            $("fwdErr").textContent = errText(e, tr("The message did not send."));
+          });
+      });
+      host.appendChild(b);
+    });
+    if (!$("fwdDlg").open) $("fwdDlg").showModal();
+  }
+  $("fwdClose").addEventListener("click", function(){ $("fwdDlg").close(); fwdMsg = null; });
+
   function sendMessage(otherId, text, extra){
     if (otherId === SYSTEM) return Promise.resolve();   // read-only, for everyone
     var msg = {by: state.me, name: meName(), text: text, at: new Date().toISOString()};
     if (extra && extra.img) msg.img = extra.img;
     if (extra && extra.aud){ msg.aud = extra.aud; msg.secs = extra.secs || 0; }
+    if (extra && extra.re) msg.re = extra.re;
+    if (extra && extra.fwd) msg.fwd = extra.fwd;
     // The notification shows the text, so a picture sent without a caption
     // would arrive as a name and nothing else. One glyph says what it is, and
     // reads as well under the picture as it does on the lock screen.
@@ -2984,6 +3173,18 @@ body.hasupd .wrap{padding-top:52px}
     msgs.forEach(function(m){
       var mine = m.by === state.me;
       var b = document.createElement("div"); b.className = "bub " + (mine ? "mine" : "theirs");
+      if (m.fwd){
+        var fw = document.createElement("span"); fw.className = "fwd";
+        fw.textContent = tr("Forwarded from {name}", {name: m.fwd});
+        b.appendChild(fw);
+      }
+      if (m.re){
+        var q = document.createElement("span"); q.className = "quote";
+        var qn = document.createElement("b"); qn.textContent = m.re.name || "";
+        q.appendChild(qn);
+        q.appendChild(document.createTextNode(m.re.text || ""));
+        b.appendChild(q);
+      }
       if (m.img){
         var im = document.createElement("img"); im.src = m.img; im.alt = tr("Photo");
         im.addEventListener("click", function(){
@@ -3007,6 +3208,14 @@ body.hasupd .wrap{padding-top:52px}
       var tm = document.createElement("span"); tm.className = "tm";
       try { tm.textContent = F_TIME.format(new Date(m.at)); } catch(e2){}
       b.appendChild(tm);
+      // Anywhere but the picture itself, which opens on its own.
+      if (chatOpen !== SYSTEM){
+        b.style.cursor = "pointer";
+        b.addEventListener("click", function(ev){
+          if (ev.target.tagName === "IMG" || ev.target.tagName === "AUDIO") return;
+          openMsgActions(m);
+        });
+      }
       log.appendChild(b);
     });
     log.scrollTop = hold < 0 ? log.scrollHeight : hold;
@@ -3030,6 +3239,7 @@ body.hasupd .wrap{padding-top:52px}
     $("emojiRow").hidden = true;
     if (rec) stopRec();
     pending = null; drawPending();
+    replyTo = null; drawReplyBar();
     $("chatLog").innerHTML = "";          // a thread opens at its newest
     drawChat();
     if (mayWrite) setTimeout(function(){ $("chatInput").focus(); }, 30);
@@ -3079,12 +3289,14 @@ body.hasupd .wrap{padding-top:52px}
   function submitMessage(){
     var text = $("chatInput").value.trim();
     if ((!text && !pending) || !chatOpen) return;
-    var extra = pending;
+    var extra = pending || {};
+    if (replyTo) extra.re = replyTo;
     $("chatSend").disabled = true;
     $("chatErr").textContent = "";
     sendMessage(chatOpen, text, extra).then(function(){
       $("chatInput").value = "";
       pending = null; drawPending();
+      replyTo = null; drawReplyBar();
       $("emojiRow").hidden = true;
       $("chatSend").disabled = false;
     }).catch(function(e){
