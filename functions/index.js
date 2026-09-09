@@ -9,6 +9,7 @@
  */
 const {onDocumentCreated, onDocumentUpdated, onDocumentWritten} =
   require("firebase-functions/v2/firestore");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
@@ -74,6 +75,78 @@ async function push(db, map, tokens, title, body, tag) {
   }
   return res.successCount;
 }
+
+/* Montreal. The date on a booking is the local one the office saw when it
+ * was made, so "today" has to be worked out in the same place. */
+const ZONE = "America/Toronto";
+const DATE_IN_ZONE = new Intl.DateTimeFormat("en-CA", {
+  timeZone: ZONE, year: "numeric", month: "2-digit", day: "2-digit",
+});
+
+/** The morning list as it reads on a lock screen: a few lines and a count,
+ *  not a report. Pure, so it can be checked without a database.
+ */
+function morningText(list, nameOf) {
+  const sorted = list.slice().sort((a, b) => a.from - b.from);
+  const lines = sorted.slice(0, 4).map((j) => {
+    const when = j.allDay ? "All day" : `${HOURS(j.from)}–${HOURS(j.to)}`;
+    const where = j.buildingName + (j.unit ? ` · Unit ${j.unit}` : "");
+    return `${nameOf(j.crewId)} · ${when} · ${where}`;
+  });
+  if (sorted.length > lines.length) {
+    lines.push(`+${sorted.length - lines.length} more`);
+  }
+  return {
+    title: sorted.length === 1
+      ? "Today: 1 job you booked"
+      : `Today: ${sorted.length} jobs you booked`,
+    body: lines.join("\n"),
+  };
+}
+
+/** Seven in the morning: whoever booked somebody today hears about it while
+ *  there is still time to move things. One message each, not one per job.
+ */
+exports.morningReminder = onSchedule(
+  {schedule: "0 7 * * *", timeZone: ZONE, region: "northamerica-northeast1"},
+  async () => {
+    const db = getFirestore();
+    const date = DATE_IN_ZONE.format(new Date());
+
+    const snap = await db.collection("bookings").where("date", "==", date).get();
+    const jobs = snap.docs.map((d) => d.data()).filter((j) => j.v === 2);
+    if (!jobs.length) {
+      logger.info(`nothing booked for ${date}`);
+      return;
+    }
+
+    const aud = await audience(db);
+    const name = (id) => {
+      const p = aud.people.find((x) => x.id === id);
+      return p ? p.name : id;
+    };
+
+    // Grouped by whoever booked it. Bookings from before authors were
+    // recorded fall to the office, which is where they came from.
+    const byBooker = new Map();
+    for (const j of jobs) {
+      const who = j.createdById || "office";
+      if (!byBooker.has(who)) byBooker.set(who, []);
+      byBooker.get(who).push(j);
+    }
+
+    for (const [booker, list] of byBooker) {
+      const tokens = aud.forPerson(booker);
+      if (!tokens.length) {
+        logger.info(`${booker} booked ${list.length} today — no registered phone`);
+        continue;
+      }
+      const {title, body} = morningText(list, name);
+      const sent = await push(db, aud.map, tokens, title, body, `morning-${date}`);
+      logger.info(`morning list to ${booker}: ${list.length} job(s), ${sent} phone(s)`);
+    }
+  }
+);
 
 /** The next job that day for the same person, so a hold-up can name what it
  *  is about to delay. Two equality filters need no composite index; the sort
