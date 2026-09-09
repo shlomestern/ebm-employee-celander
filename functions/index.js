@@ -416,6 +416,64 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
   }
 );
 
+/** An ask for somebody else's worker, and the answer to it.
+ *
+ *  The whole list lives in one document, so what changed is whatever is in
+ *  the new list and was not in the old one — by id, and by state, since a
+ *  request is answered in place rather than replaced.
+ */
+exports.notifyOnRequest = onDocumentWritten(
+  {document: "config/requests", region: "northamerica-northeast1"},
+  async (event) => {
+    const was = new Map(((event.data.before.data() || {}).list || [])
+      .map((r) => [r.id, r]));
+    const now = ((event.data.after.data() || {}).list || []);
+    const fresh = now.filter((r) => !was.has(r.id) && r.state === "open");
+    const answered = now.filter((r) => {
+      const b = was.get(r.id);
+      return b && b.state === "open" && r.state !== "open";
+    });
+    if (!fresh.length && !answered.length) return;
+
+    const db = getFirestore();
+    const aud = await audience(db);
+    const hours = (r) => {
+      const n = r.to - r.from;
+      return `${n} hour${n === 1 ? "" : "s"}`;
+    };
+    const where = (r) => r.buildingName + (r.unit ? ` · Unit ${r.unit}` : "");
+
+    // The ask goes to whoever has to answer it, nobody else.
+    for (const r of fresh) {
+      const ids = new Set(r.askIds || []);
+      const tokens = Object.keys(aud.map).filter((t) => ids.has(aud.map[t]));
+      const sent = await push(db, aud.map, tokens,
+        `${r.by} is asking for ${r.crewName}`,
+        `${hours(r)} · ${HOURS(r.from)}–${HOURS(r.to)} · ${where(r)} · ${r.job}`,
+        `req-${r.id}`);
+      logger.info(`request ${r.id} from ${r.byId} — asked ${sent} phone(s)`);
+    }
+    // The answer goes back to the one who asked.
+    for (const r of answered) {
+      const tokens = aud.forPerson(r.byId);
+      const yes = r.state === "approved";
+      const what = r.how === "cancel"
+        ? "the other work was dropped"
+        : "the other work moved later";
+      const sent = await push(db, aud.map, tokens,
+        yes
+          ? `${r.decidedBy} agreed — ${r.crewName} is yours`
+          : `${r.decidedBy} said no to ${r.crewName}`,
+        yes
+          ? `${HOURS(r.from)}–${HOURS(r.to)} · ${where(r)} · ${what}`
+          : `${HOURS(r.from)}–${HOURS(r.to)} · ${where(r)}`,
+        `reqans-${r.id}`);
+      logger.info(`request ${r.id} ${r.state} by ${r.decidedById} — ` +
+        `told ${sent} phone(s)`);
+    }
+  }
+);
+
 /** A message reaches the one person it was written to.
  *
  *  Each conversation is its own document, named chat-<a>__<b> after the two

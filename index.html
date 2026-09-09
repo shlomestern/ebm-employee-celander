@@ -497,6 +497,18 @@ body.hasupd .wrap{padding-top:52px}
   font-weight:600; padding:8px 12px; border-radius:9px; cursor:pointer;
   border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink-2)}
 .whyrow button[aria-pressed="true"]{background:var(--sel); border-color:var(--sel); color:#fff}
+.reqbox{padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+  background:var(--surface-2); font-size:13.5px}
+.reqbox b{font-family:"Archivo",sans-serif; font-weight:700; display:block; font-size:14px}
+.reqbox .dt{color:var(--ink-2); font-size:13px}
+.blockrow{display:flex; gap:10px; align-items:baseline; padding:8px 0;
+  border-bottom:1px solid var(--line); font-size:13.5px}
+.blockrow:last-child{border-bottom:0}
+.blockrow .hh{font-family:"Archivo",sans-serif; font-weight:700; flex:none;
+  font-variant-numeric:tabular-nums}
+.blockrow .ww{flex:1; min-width:0}
+.blockrow .oo{color:var(--ink-3); font-size:12.5px; flex:none}
+.alert.ask .hd{color:var(--sel)}
 
 @media (max-width:1100px){
   /* On anything held in the hands — phone or tablet — whose calendar you are
@@ -823,6 +835,79 @@ body.hasupd .wrap{padding-top:52px}
   </form>
 </dialog>
 
+<dialog id="reqDlg">
+  <form method="dialog" class="dlg" id="reqForm">
+    <div class="eyebrow" data-t>Emergency</div>
+    <h3 data-t>Ask to use somebody</h3>
+    <p class="sub" data-t>They are booked. Say what you need them for and for how long, and whoever booked them decides — they can push the other work later or drop it.</p>
+
+    <div class="row2">
+      <div class="field">
+        <label for="rqWho" data-t>Who you need</label>
+        <select id="rqWho"></select>
+      </div>
+      <div class="field">
+        <label for="rqDate" data-t>Day</label>
+        <input type="date" id="rqDate">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="rqFrom" data-t>From</label>
+        <select id="rqFrom"></select>
+      </div>
+      <div class="field">
+        <label for="rqHours" data-t>For how long</label>
+        <select id="rqHours"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="rqProject" data-t>Project</label>
+      <select id="rqProject" required></select>
+    </div>
+    <div class="field">
+      <label for="rqBuilding" data-t>Building (optional)</label>
+      <select id="rqBuilding"></select>
+    </div>
+    <div class="field">
+      <label for="rqUnit" data-t>Unit</label>
+      <input id="rqUnit" maxlength="20" data-tp="e.g. 3, or Basement" placeholder="e.g. 3, or Basement">
+    </div>
+    <div class="field">
+      <label for="rqJob" data-t>What the emergency is</label>
+      <textarea id="rqJob" maxlength="400" data-tp="e.g. Water coming through the ceiling in 4" placeholder="e.g. Water coming through the ceiling in 4"></textarea>
+    </div>
+    <div id="rqClash"></div>
+    <p class="err" id="rqErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="rqCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="rqSend" data-t>Send the request</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="decDlg">
+  <div class="dlg">
+    <div class="eyebrow" id="decWho"></div>
+    <h3 data-t>A request for one of your bookings</h3>
+    <p class="sub" id="decAsk"></p>
+    <div id="decJob" class="reqbox"></div>
+    <div class="eyebrow" style="margin-top:14px" data-t>What is in the way</div>
+    <div id="decBlock"></div>
+    <div class="eyebrow" style="margin-top:14px" data-t>If you agree</div>
+    <div class="whyrow" id="decHow"></div>
+    <p class="sub" id="decWhat"></p>
+    <p class="err" id="decErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="decClose" data-t>Close</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-danger" id="decNo" data-t>Refuse</button>
+      <button type="button" class="btn btn-primary" id="decYes" data-t>Agree</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="pauseDlg">
   <form method="dialog" class="dlg" id="pauseForm">
     <div class="eyebrow" id="pauseWho"></div>
@@ -868,6 +953,7 @@ body.hasupd .wrap{padding-top:52px}
     <p class="err" id="dayErr"></p>
     <div class="actions">
       <button type="button" class="btn btn-primary" id="addJobBtn" data-t>Add a job</button>
+      <button type="button" class="btn" id="askJobBtn" hidden data-t>Ask to use them</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="dayClose" data-t>Close</button>
     </div>
@@ -908,6 +994,12 @@ body.hasupd .wrap{padding-top:52px}
       </div>
     </div>
 
+    <div class="field" id="ownerRow" hidden>
+      <label for="fOwner" data-t>Booked by</label>
+      <select id="fOwner"></select>
+      <span class="hint" data-t>Put it in somebody else's name and it becomes theirs to edit or cancel. Leave it as you and it stays yours.</span>
+    </div>
+
     <div class="field">
       <label for="fJob" data-t>Work to do</label>
       <textarea id="fJob" maxlength="400" data-tp="e.g. Kitchen sink leaking under the cabinet" placeholder="e.g. Kitchen sink leaking under the cabinet"></textarea>
@@ -928,6 +1020,8 @@ body.hasupd .wrap{padding-top:52px}
       <span data-th><b>Book back to back anyway</b>There is no hour left to travel between the two addresses.</span>
     </label>
     <p class="warn" id="travelWarn" hidden></p>
+    <p class="warn" id="busyWarn" hidden></p>
+    <button type="button" class="btn" id="formAskBtn" hidden data-t>Ask whoever booked them</button>
 
     <p class="err" id="formErr"></p>
     <div class="actions">
@@ -1197,6 +1291,55 @@ body.hasupd .wrap{padding-top:52px}
     "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
+    "Booked by": "R\u00e9serv\u00e9 par",
+    "Put it in somebody else\u2019s name and it becomes theirs to edit or cancel. Leave it as you and it stays yours.":
+      "Mettez-le au nom de quelqu\u2019un d\u2019autre et il pourra le modifier ou l\u2019annuler. Laissez votre nom et il reste \u00e0 vous.",
+    "{name} (you)": "{name} (vous)", "put in by {name}": "saisi par {name}",
+    "Emergency": "Urgence", "Ask to use somebody": "Demander quelqu\u2019un",
+    "They are booked. Say what you need them for and for how long, and whoever booked them decides \u2014 they can push the other work later or drop it.":
+      "Cette personne est r\u00e9serv\u00e9e. Dites pourquoi vous en avez besoin et pour combien de temps\u00a0; celui qui l\u2019a r\u00e9serv\u00e9e d\u00e9cide et peut d\u00e9caler l\u2019autre travail ou l\u2019annuler.",
+    "Who you need": "Qui vous faut-il", "Day": "Jour",
+    "For how long": "Pour combien de temps",
+    "What the emergency is": "Quelle est l\u2019urgence",
+    "e.g. Water coming through the ceiling in 4": "ex.\u00a0: De l\u2019eau coule du plafond au 4",
+    "Send the request": "Envoyer la demande",
+    "The request did not send.": "La demande n\u2019a pas \u00e9t\u00e9 envoy\u00e9e.",
+    "1 hour": "1 heure", "{n} hours": "{n} heures",
+    "Pick a day.": "Choisissez un jour.",
+    "Say what the emergency is.": "Dites quelle est l\u2019urgence.",
+    "Nothing is in the way \u2014 book it yourself.": "Rien ne bloque \u2014 r\u00e9servez-le vous-m\u00eame.",
+    "{name} has nothing booked in those hours \u2014 book it yourself instead of asking.":
+      "{name} n\u2019a rien de r\u00e9serv\u00e9 \u00e0 ces heures \u2014 r\u00e9servez-le vous-m\u00eame.",
+    "In the way": "Ce qui bloque",
+    "Ask to use them": "Demander cette personne",
+    "Ask whoever booked them": "Demander \u00e0 qui l\u2019a r\u00e9serv\u00e9",
+    "{name} is booked {a}\u2013{b} at {where}, by {who}.":
+      "{name} est r\u00e9serv\u00e9 {a}\u2013{b} \u00e0 {where}, par {who}.",
+    "{n} more that day.": "{n} de plus ce jour-l\u00e0.",
+    "someone else": "quelqu\u2019un d\u2019autre",
+    "A request for one of your bookings": "Une demande pour une de vos r\u00e9servations",
+    "{name} is asking": "{name} demande",
+    "{name} for {n}, {when}.": "{name} pour {n}, {when}.",
+    "What is in the way": "Ce qui bloque",
+    "If you agree": "Si vous acceptez",
+    "Push the other work later": "D\u00e9caler l\u2019autre travail",
+    "Drop the other work": "Annuler l\u2019autre travail",
+    "{where} moves to {a}\u2013{b}": "{where} passe \u00e0 {a}\u2013{b}",
+    "{where} {a}\u2013{b} is cancelled": "{where} {a}\u2013{b} est annul\u00e9",
+    "Nothing has to move.": "Rien n\u2019a \u00e0 bouger.",
+    "It will not fit \u2014 {where} would run past the end of the day.":
+      "\u00c7a n\u2019entre pas \u2014 {where} d\u00e9passerait la fin de la journ\u00e9e.",
+    "It will not fit in the day.": "\u00c7a n\u2019entre pas dans la journ\u00e9e.",
+    "Nothing any more \u2014 those hours are free now.":
+      "Plus rien \u2014 ces heures sont libres maintenant.",
+    "Agree": "Accepter", "Refuse": "Refuser", "Look at it": "Voir la demande",
+    "That did not go through.": "\u00c7a n\u2019a pas fonctionn\u00e9.",
+    "{who} is asking for {name}": "{who} demande {name}",
+    "{who} agreed \u2014 {name} is yours": "{who} a accept\u00e9 \u2014 {name} est \u00e0 vous",
+    "{who} said no to {name}": "{who} a refus\u00e9 pour {name}",
+    "the other work was dropped": "l\u2019autre travail a \u00e9t\u00e9 annul\u00e9",
+    "the other work moved later": "l\u2019autre travail a \u00e9t\u00e9 d\u00e9cal\u00e9",
+    "Got it": "Compris", "agreed by {name}": "accept\u00e9 par {name}",
     "Pause": "Pause", "Paused": "En pause", "Break": "Pause",
     "Getting materials": "Chercher du mat\u00e9riel",
     "On another job": "Sur un autre travail",
@@ -1413,7 +1556,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v70";
+  var APP_VERSION = "v71";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1433,6 +1576,7 @@ body.hasupd .wrap{padding-top:52px}
     anchor: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
     view: "month",
     jobs: {},                 // jobId -> job
+    reqs: [],                 // asks for somebody else's worker
     mode: "loading",          // shared | cloud | device
     db: null, fb: null, unsubs: [], seen: {},
     people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
@@ -1510,6 +1654,7 @@ body.hasupd .wrap{padding-top:52px}
     if (state.mode === "shared" && state.db) return state.db.doc("bookings/" + id);
     return null;
   }
+  function FV(){ return firebase.firestore.FieldValue; }
   function saveJob(job){
     var ref = jobRef(job.id);
     if (ref) return ref.set(job);
@@ -1570,8 +1715,8 @@ body.hasupd .wrap{padding-top:52px}
     for (var i=0;i<PROJECTS.length;i++) if (PROJECTS[i].id===id) return PROJECTS[i];
     return null;
   }
-  function fillProjects(){
-    var sel = $("fProject");
+  function fillProjects(sel){
+    sel = sel || $("fProject");
     sel.innerHTML = "";
     var ph = document.createElement("option");
     ph.value=""; ph.textContent = PROJECTS.length ? tr("Choose a project\u2026") : tr("No projects loaded");
@@ -1583,15 +1728,16 @@ body.hasupd .wrap{padding-top:52px}
       sel.appendChild(o);
     });
   }
-  function fillBuildings(projectId){
-    var sel = $("fBuilding");
+  function fillBuildings(projectId, sel, hint){
+    sel = sel || $("fBuilding");
+    hint = hint === undefined ? $("managerHint") : hint;
     sel.innerHTML = "";
     var p = project(projectId);
     if (!p){
       var none = document.createElement("option");
       none.value=""; none.textContent = tr("Pick a project first");
       sel.appendChild(none); sel.disabled = true;
-      $("managerHint").textContent = "";
+      if (hint) hint.textContent = "";
       return;
     }
     sel.disabled = false;
@@ -1606,7 +1752,7 @@ body.hasupd .wrap{padding-top:52px}
       o.textContent = b.name + (b.city ? " · " + b.city : "");
       sel.appendChild(o);
     });
-    $("managerHint").textContent = p.manager
+    if (hint) hint.textContent = p.manager
       ? tr("Manager: ") + p.manager + (p.managerPhone ? " · " + p.managerPhone : "")
       : "";
   }
@@ -2121,6 +2267,337 @@ body.hasupd .wrap{padding-top:52px}
     }
   });
 
+  /* ---------- asking for somebody else's worker ----------
+     Two admins, one plumber, and a ceiling coming down at the second one's
+     building. Booking over the top of a colleague is not the answer and nor is
+     a phone call nobody can find afterwards: the ask is written down, whoever
+     booked the man decides, and agreeing does the work — the other job is
+     moved along or dropped, and the emergency is on the calendar.
+
+     Kept in one document beside the conversations, for the same reason: the
+     database rules already allow it and the whole list is small. */
+  var LS_REQS = "ebm-crew:reqs:v1";
+  function reqRef(){
+    return state.fb ? state.fb.collection("config").doc("requests") : null;
+  }
+  function subscribeReqs(){
+    if (state.reqUnsub){ try{ state.reqUnsub(); }catch(e){} state.reqUnsub = null; }
+    var ref = reqRef();
+    if (!ref) return;
+    state.reqUnsub = ref.onSnapshot(function(snap){
+      var d = (snap.exists && snap.data()) || {};
+      state.reqs = Array.isArray(d.list) ? d.list : [];
+      lsWrite(LS_REQS, state.reqs);
+      renderAlerts();
+      if ($("decDlg").open) drawDecision();
+    }, function(){});
+  }
+  function pushReq(r){
+    var ref = reqRef();
+    if (ref) return ref.set({list: FV().arrayUnion(r)}, {merge: true});
+    state.reqs = (state.reqs || []).concat([r]);
+    lsWrite(LS_REQS, state.reqs); renderAlerts();
+    return Promise.resolve();
+  }
+  function putReqs(list){
+    var ref = reqRef();
+    if (ref) return ref.set({list: list});
+    state.reqs = list; lsWrite(LS_REQS, state.reqs); renderAlerts();
+    return Promise.resolve();
+  }
+  function replaceReq(r){
+    return putReqs((state.reqs || []).map(function(x){ return x.id === r.id ? r : x; }));
+  }
+  /* Open asks this person has to answer: theirs to answer if one of their own
+     bookings is in the way, and the office answers for anybody. */
+  function myAsks(){
+    return (state.reqs || []).filter(function(r){
+      if (!r || r.state !== "open") return false;
+      if (r.date < todayIso) return false;
+      if (r.byId === state.me) return false;
+      return (r.askIds || []).indexOf(state.me) >= 0 || can("manage");
+    });
+  }
+  /* Answers waiting to be read by whoever asked. */
+  function myAnswers(){
+    return (state.reqs || []).filter(function(r){
+      return r && r.byId === state.me && (r.state === "approved" || r.state === "refused")
+             && !r.seen && r.date >= todayIso;
+    });
+  }
+
+  var reqWhere = {};                       // filled in by openRequest
+  function fillReqHours(){
+    var f = $("rqFrom"); f.innerHTML = "";
+    for (var i = DAY_START; i < DAY_END; i++){
+      var o = document.createElement("option");
+      o.value = i; o.textContent = hourLong(i);
+      f.appendChild(o);
+    }
+    var h = $("rqHours"); h.innerHTML = "";
+    for (var n = 1; n <= DAY_END - DAY_START; n++){
+      var o2 = document.createElement("option");
+      o2.value = n; o2.textContent = n === 1 ? tr("1 hour") : tr("{n} hours", {n: n});
+      h.appendChild(o2);
+    }
+  }
+  function reqSpan(){
+    var from = parseInt($("rqFrom").value, 10) || DAY_START;
+    var hrs = parseInt($("rqHours").value, 10) || 1;
+    return {from: from, to: Math.min(DAY_END, from + hrs)};
+  }
+  /* Who is in the way, drawn under the form so the ask is honest about what it
+     is asking somebody to give up. */
+  function drawReqClash(){
+    var host = $("rqClash"); host.innerHTML = "";
+    var ds = $("rqDate").value, who = $("rqWho").value;
+    if (!ds || !who) return;
+    var span = reqSpan();
+    var hit = collidesWith(ds, who, span.from, span.to);
+    if (!hit.length){
+      var free = document.createElement("p"); free.className = "sub";
+      free.textContent = tr("{name} has nothing booked in those hours — book it yourself instead of asking.",
+        {name: memberOr(who).name});
+      host.appendChild(free);
+      return;
+    }
+    var head = document.createElement("div"); head.className = "eyebrow";
+    head.style.marginTop = "8px";
+    head.textContent = tr("In the way");
+    host.appendChild(head);
+    hit.forEach(function(j){ host.appendChild(blockRow(j)); });
+  }
+  function blockRow(j){
+    var row = document.createElement("div"); row.className = "blockrow";
+    var hh = document.createElement("span"); hh.className = "hh"; hh.textContent = rangeShort(j);
+    var ww = document.createElement("span"); ww.className = "ww";
+    ww.textContent = j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "");
+    var oo = document.createElement("span"); oo.className = "oo";
+    oo.textContent = j.createdBy || "";
+    row.appendChild(hh); row.appendChild(ww); row.appendChild(oo);
+    return row;
+  }
+
+  function openRequest(pre){
+    pre = pre || {};
+    var host = $("rqWho"); host.innerHTML = "";
+    crewPeople().forEach(function(pp){
+      var o = document.createElement("option"); o.value = pp.id; o.textContent = pp.name;
+      host.appendChild(o);
+    });
+    fillReqHours();
+    fillProjects($("rqProject"));
+    $("rqWho").value = pre.crewId || (crewPeople()[0] || {}).id || "";
+    $("rqDate").value = pre.date || openDate || todayIso;
+    $("rqFrom").value = pre.from || Math.max(DAY_START, nextHourToday($("rqDate").value));
+    $("rqHours").value = pre.hours || 2;
+    $("rqProject").value = pre.projectId || "";
+    fillBuildings($("rqProject").value, $("rqBuilding"), null);
+    if (pre.buildingId) $("rqBuilding").value = pre.buildingId;
+    $("rqUnit").value = pre.unit || "";
+    $("rqJob").value = pre.job || "";
+    $("rqErr").textContent = "";
+    $("rqSend").disabled = false;
+    drawReqClash();
+    $("reqDlg").showModal();
+  }
+  /* An emergency is now, so the next whole hour is the useful default. */
+  function nextHourToday(ds){
+    if (ds !== todayIso) return DAY_START;
+    var h = new Date().getHours() + 1;
+    return Math.min(DAY_END - 1, Math.max(DAY_START, h));
+  }
+  function sendRequest(){
+    var ds = $("rqDate").value, who = $("rqWho").value;
+    var pid = $("rqProject").value, pr = project(pid);
+    var span = reqSpan();
+    if (!ds){ $("rqErr").textContent = tr("Pick a day."); return; }
+    if (!pr){ $("rqErr").textContent = tr("Pick a project first."); return; }
+    var what = $("rqJob").value.trim();
+    if (!what){ $("rqErr").textContent = tr("Say what the emergency is."); return; }
+    var hit = collidesWith(ds, who, span.from, span.to);
+    if (!hit.length){
+      $("rqErr").textContent = tr("Nothing is in the way — book it yourself.");
+      return;
+    }
+    var bid = $("rqBuilding").value || (pr.buildings.length === 1 ? pr.buildings[0].id : "");
+    var b = buildingOf(pid, bid) || {id: "", name: pr.name};
+    // Whoever booked what is in the way, and the office, which owns the day.
+    var ask = {};
+    hit.forEach(function(j){ if (j.createdById) ask[j.createdById] = 1; });
+    ask["office"] = 1;
+    delete ask[state.me];
+    var r = {
+      id: newId(), at: new Date().toISOString(), date: ds,
+      crewId: who, crewName: memberOr(who).name,
+      from: span.from, to: span.to,
+      projectId: pr.id, projectName: pr.name,
+      buildingId: b.id, buildingName: b.name,
+      unit: $("rqUnit").value.trim(), job: what,
+      byId: state.me, by: meName(),
+      askIds: Object.keys(ask),
+      blocking: hit.map(function(j){
+        return {id: j.id, from: j.from, to: j.to, byId: j.createdById || "",
+                by: j.createdBy || "", where: j.buildingName,
+                unit: j.unit || ""};
+      }),
+      state: "open", seen: false
+    };
+    $("rqSend").disabled = true;
+    pushReq(r).then(function(){ $("reqDlg").close(); })
+      .catch(function(e){
+        $("rqSend").disabled = false;
+        $("rqErr").textContent = errText(e, tr("The request did not send."));
+      });
+  }
+  $("rqCancel").addEventListener("click", function(){ $("reqDlg").close(); });
+  $("reqForm").addEventListener("submit", function(ev){ ev.preventDefault(); sendRequest(); });
+  $("rqProject").addEventListener("change", function(){
+    fillBuildings($("rqProject").value, $("rqBuilding"), null);
+  });
+  ["rqWho", "rqDate", "rqFrom", "rqHours"].forEach(function(id){
+    $(id).addEventListener("change", drawReqClash);
+  });
+
+  /* ---------- answering one ----------
+     Agreeing is not a message back, it is the work: the other job moves along
+     or it goes, and the emergency lands on the calendar booked to whoever
+     asked for it. Which of the two is the decider's call, and the dialog spells
+     out what each would do before they pick. */
+  var decReq = null, decHow = "push";
+  function decisionPlan(r){
+    var where = {proj: r.projectId, bld: r.buildingId};
+    return makeRoom(r.date, r.crewId, r.from, r.to, where);
+  }
+  function drawDecision(){
+    var r = (state.reqs || []).filter(function(x){ return x.id === (decReq||{}).id; })[0];
+    if (!r){ $("decDlg").close(); decReq = null; return; }
+    decReq = r;
+    $("decWho").textContent = tr("{name} is asking", {name: r.by});
+    $("decAsk").textContent = tr("{name} for {n}, {when}.", {
+      name: r.crewName,
+      n: (r.to - r.from) === 1 ? tr("1 hour") : tr("{n} hours", {n: r.to - r.from}),
+      when: (r.date === todayIso ? tr("today") : F_MED.format(fromIso(r.date))) +
+            " " + hourLong(r.from) + "\u2013" + hourLong(r.to)
+    });
+    var box = $("decJob"); box.innerHTML = "";
+    var bb = document.createElement("b");
+    bb.textContent = r.buildingName + (r.unit ? " \u00b7 " + tr("Unit {u}", {u: r.unit}) : "");
+    var dd = document.createElement("div"); dd.className = "dt"; dd.textContent = r.job;
+    box.appendChild(bb); box.appendChild(dd);
+
+    var host = $("decBlock"); host.innerHTML = "";
+    var hit = collidesWith(r.date, r.crewId, r.from, r.to);
+    if (!hit.length){
+      var gone = document.createElement("p"); gone.className = "sub";
+      gone.textContent = tr("Nothing any more — those hours are free now.");
+      host.appendChild(gone);
+    }
+    hit.forEach(function(j){ host.appendChild(blockRow(j)); });
+
+    var plan = decisionPlan(r);
+    if (!plan.ok && decHow === "push") decHow = "cancel";
+    var how = $("decHow"); how.innerHTML = "";
+    [["push", tr("Push the other work later")], ["cancel", tr("Drop the other work")]]
+      .forEach(function(pair){
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = pair[1];
+        b.disabled = pair[0] === "push" && !plan.ok;
+        b.setAttribute("aria-pressed", decHow === pair[0] ? "true" : "false");
+        b.addEventListener("click", function(){ decHow = pair[0]; drawDecision(); });
+        how.appendChild(b);
+      });
+
+    var says = "";
+    if (decHow === "push"){
+      says = plan.ok
+        ? (plan.moves.length
+            ? plan.moves.map(function(m){
+                return tr("{where} moves to {a}–{b}",
+                  {where: m.job.buildingName, a: hourLong(m.from), b: hourLong(m.to)});
+              }).join(" \u00b7 ")
+            : tr("Nothing has to move."))
+        : tr("It will not fit — {where} would run past the end of the day.",
+             {where: (plan.stuck || {}).buildingName || ""});
+    } else {
+      says = hit.length
+        ? hit.map(function(j){
+            return tr("{where} {a}–{b} is cancelled",
+              {where: j.buildingName, a: hourLong(j.from), b: hourLong(j.to)});
+          }).join(" \u00b7 ")
+        : tr("Nothing has to move.");
+    }
+    $("decWhat").textContent = says;
+    $("decYes").disabled = decHow === "push" && !plan.ok;
+  }
+  function openDecision(r){
+    decReq = r; decHow = "push";
+    $("decErr").textContent = "";
+    $("decYes").disabled = false; $("decNo").disabled = false;
+    drawDecision();
+    $("decDlg").showModal();
+  }
+  function settleRequest(r, yes){
+    var stamp = {
+      state: yes ? "approved" : "refused",
+      decidedAt: new Date().toISOString(),
+      decidedById: state.me, decidedBy: meName(),
+      how: yes ? decHow : "", seen: false
+    };
+    var done = {};
+    Object.keys(r).forEach(function(k){ done[k] = r[k]; });
+    Object.keys(stamp).forEach(function(k){ done[k] = stamp[k]; });
+    if (!yes) return replaceReq(done);
+
+    var hit = collidesWith(r.date, r.crewId, r.from, r.to);
+    var steps = [];
+    if (decHow === "cancel"){
+      hit.forEach(function(j){ steps.push(removeJob(j.id)); });
+    } else {
+      var plan = decisionPlan(r);
+      if (!plan.ok) return Promise.reject(new Error(tr("It will not fit in the day.")));
+      plan.moves.forEach(function(m){
+        steps.push(patchJob(m.job.id, {from: m.from, to: m.to, allDay: false}));
+      });
+    }
+    // The emergency belongs to whoever asked for it, and says who let it in.
+    var pr = project(r.projectId);
+    var job = {
+      v: 2, id: newId(), date: r.date, crewId: r.crewId,
+      from: r.from, to: r.to, allDay: false,
+      projectId: r.projectId, projectName: r.projectName,
+      buildingId: r.buildingId, buildingName: r.buildingName,
+      unit: r.unit || "", job: r.job,
+      photos: [], tight: false, urgent: true,
+      approvedBy: meName(), fromRequest: r.id,
+      manager: (pr && pr.manager) || "", managerPhone: (pr && pr.managerPhone) || "",
+      createdAt: new Date().toISOString(), createdBy: r.by, createdById: r.byId,
+      clockIn: null, clockOut: null, breaks: [], notes: []
+    };
+    done.madeId = job.id;
+    return Promise.all(steps).then(function(){ return saveJob(job); })
+      .then(function(){ return replaceReq(done); });
+  }
+  $("decClose").addEventListener("click", function(){ $("decDlg").close(); decReq = null; });
+  [["decYes", true], ["decNo", false]].forEach(function(pair){
+    $(pair[0]).addEventListener("click", function(){
+      var r = decReq; if (!r) return;
+      $("decYes").disabled = true; $("decNo").disabled = true;
+      settleRequest(r, pair[1]).then(function(){
+        $("decDlg").close(); decReq = null; render();
+      }).catch(function(e){
+        $("decYes").disabled = false; $("decNo").disabled = false;
+        $("decErr").textContent = errText(e, tr("That did not go through."));
+      });
+    });
+  });
+  function markAnswerSeen(r){
+    var done = {};
+    Object.keys(r).forEach(function(k){ done[k] = r[k]; });
+    done.seen = true;
+    return replaceReq(done);
+  }
+
   /* ---------- messages ----------
      One conversation between two people, and nobody else's is fetched: each
      pair has its own document and the app only listens to the ones the person
@@ -2203,6 +2680,12 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T04:00:00Z", who:"office",
+     en:"Booking for somebody else in the office? Set Booked by to their name and it becomes theirs to edit or cancel, with your name kept beside it.",
+     fr:"Vous r\u00e9servez pour quelqu\u2019un d\u2019autre au bureau\u00a0? Mettez R\u00e9serv\u00e9 par \u00e0 son nom et il pourra le modifier ou l\u2019annuler, votre nom rest\u00e9 \u00e0 c\u00f4t\u00e9."},
+    {at:"2026-09-10T03:00:00Z", who:"office",
+     en:"Need somebody who is already booked? Open their day and tap Ask to use them. Whoever booked them decides, and can move the other work later or drop it — agreeing books your job for you.",
+     fr:"Besoin de quelqu\u2019un d\u00e9j\u00e0 r\u00e9serv\u00e9\u00a0? Ouvrez sa journ\u00e9e et touchez Demander cette personne. Celui qui l\u2019a r\u00e9serv\u00e9 d\u00e9cide et peut d\u00e9caler ou annuler l\u2019autre travail \u2014 accepter r\u00e9serve votre travail."},
     {at:"2026-09-10T02:00:00Z",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job. The time you were away is not counted as worked.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail. Le temps d\u2019absence n\u2019est pas compt\u00e9 comme travaill\u00e9."},
@@ -2969,6 +3452,39 @@ body.hasupd .wrap{padding-top:52px}
     ev.preventDefault(); finishJob(readUsed());
   });
 
+  /* Clear a stretch of somebody's day by moving what is in it later, keeping
+     the hour to travel where the address changes, and taking whatever follows
+     along with it. Nothing is written here — it works out whether it can be
+     done and what it would look like, so the person deciding sees it before
+     agreeing to it. */
+  function makeRoom(ds, crewId, from, to, where, skipId){
+    var later = jobsOn(ds, crewId).filter(function(j){
+      return j.id !== skipId && j.to > from;
+    }).sort(function(a, b){ return a.from - b.from; });
+    var moves = [], prev = {projectId: where.proj, buildingId: where.bld, to: to};
+    for (var i = 0; i < later.length; i++){
+      var x = later[i];
+      var gap = samePlace(prev.projectId, prev.buildingId, x.projectId, x.buildingId) ? 0 : 1;
+      var earliest = prev.to + gap;
+      if (x.from >= earliest){
+        prev = {projectId: x.projectId, buildingId: x.buildingId, to: x.to};
+        continue;
+      }
+      var shift = earliest - x.from;
+      if (x.to + shift > DAY_END) return {ok: false, stuck: x};
+      moves.push({job: x, from: x.from + shift, to: x.to + shift});
+      prev = {projectId: x.projectId, buildingId: x.buildingId, to: x.to + shift};
+    }
+    return {ok: true, moves: moves};
+  }
+  /* What actually sits in the asked-for hours, as opposed to what merely comes
+     after them and would be shoved along. */
+  function collidesWith(ds, crewId, from, to){
+    return jobsOn(ds, crewId).filter(function(j){
+      return j.from < to && j.to > from;
+    }).sort(function(a, b){ return a.from - b.from; });
+  }
+
   function grantable(j){
     return can("book") && !!j.late && !j.clockOut && j.late.until > j.to;
   }
@@ -3045,6 +3561,54 @@ body.hasupd .wrap{padding-top:52px}
   /* Anything waiting on the office sits above the calendar, so opening the app
      from a notification puts the answer on screen instead of asking whoever
      tapped it to go hunting for the right day. */
+  function askRow(r){
+    var row = document.createElement("div"); row.className = "alert ask";
+    var tx = document.createElement("div"); tx.className = "txt";
+    var hd = document.createElement("div"); hd.className = "hd";
+    hd.textContent = tr("{who} is asking for {name}", {who: r.by, name: r.crewName});
+    var dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = (r.date === todayIso ? tr("today") : F_MED.format(fromIso(r.date))) +
+      " \u00b7 " + hourLong(r.from) + "\u2013" + hourLong(r.to) +
+      " \u00b7 " + r.buildingName + (r.unit ? " \u00b7 " + tr("Unit {u}", {u: r.unit}) : "");
+    tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+    var op = document.createElement("button"); op.type = "button"; op.className = "btn btn-primary";
+    op.textContent = tr("Look at it");
+    op.addEventListener("click", function(){ openDecision(r); });
+    row.appendChild(op);
+    return row;
+  }
+  function answerRow(r){
+    var yes = r.state === "approved";
+    var row = document.createElement("div"); row.className = "alert ask";
+    var tx = document.createElement("div"); tx.className = "txt";
+    var hd = document.createElement("div"); hd.className = "hd";
+    hd.textContent = yes
+      ? tr("{who} agreed \u2014 {name} is yours", {who: r.decidedBy, name: r.crewName})
+      : tr("{who} said no to {name}", {who: r.decidedBy, name: r.crewName});
+    var dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = (r.date === todayIso ? tr("today") : F_MED.format(fromIso(r.date))) +
+      " \u00b7 " + hourLong(r.from) + "\u2013" + hourLong(r.to) +
+      " \u00b7 " + r.buildingName +
+      (yes ? " \u00b7 " + (r.how === "cancel" ? tr("the other work was dropped")
+                                              : tr("the other work moved later")) : "");
+    tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+    if (yes){
+      var op = document.createElement("button"); op.type = "button"; op.className = "btn";
+      op.textContent = tr("Open the day");
+      op.addEventListener("click", function(){
+        if (isOffice()) state.who = r.crewId;
+        state.anchor = fromIso(r.date);
+        markAnswerSeen(r); render(); openDay(r.date);
+      });
+      row.appendChild(op);
+    }
+    var ok = document.createElement("button"); ok.type = "button"; ok.className = "btn";
+    ok.textContent = tr("Got it");
+    ok.addEventListener("click", function(){ ok.disabled = true; markAnswerSeen(r); });
+    row.appendChild(ok);
+    return row;
+  }
+
   function renderAlerts(){
     var host = $("alerts"); host.innerHTML = "";
     var rows = [];
@@ -3055,7 +3619,11 @@ body.hasupd .wrap{padding-top:52px}
       });
       rows.sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
     }
-    host.hidden = !rows.length;
+    var asks = can("book") ? myAsks() : [];
+    var answers = can("book") ? myAnswers() : [];
+    host.hidden = !rows.length && !asks.length && !answers.length;
+    asks.forEach(function(r){ host.appendChild(askRow(r)); });
+    answers.forEach(function(r){ host.appendChild(answerRow(r)); });
     rows.forEach(function(j){
       var m = memberOr(j.crewId);
       var row = document.createElement("div"); row.className = "alert";
@@ -3093,6 +3661,8 @@ body.hasupd .wrap{padding-top:52px}
     top.appendChild(t); top.appendChild(w);
     if (j.clockOut){
       var p1=document.createElement("span"); p1.className="pill off"; p1.textContent=tr("Finished"); top.appendChild(p1);
+    } else if (j.urgent && !j.clockIn){
+      var p4=document.createElement("span"); p4.className="pill hold"; p4.textContent=tr("Emergency"); top.appendChild(p4);
     } else if (onBreak(j)){
       var p3=document.createElement("span"); p3.className="pill hold"; p3.textContent=tr("Paused"); top.appendChild(p3);
     } else if (j.clockIn){
@@ -3106,7 +3676,9 @@ body.hasupd .wrap{padding-top:52px}
 
     if (j.createdBy){
       var by = document.createElement("div"); by.className="job-sub";
-      by.textContent = tr("Booked by {name}", {name: j.createdBy});
+      by.textContent = tr("Booked by {name}", {name: j.createdBy}) +
+        (j.bookedBy ? " \u00b7 " + tr("put in by {name}", {name: j.bookedBy}) : "") +
+        (j.approvedBy ? " \u00b7 " + tr("agreed by {name}", {name: j.approvedBy}) : "");
       card.appendChild(by);
     }
 
@@ -3442,6 +4014,7 @@ body.hasupd .wrap{padding-top:52px}
       }
       cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+
         (yt ? ", "+yt : "")+", "+(list.length ? tr("{n} jobs", {n:list.length}) : (isWeekend(ds) ? tr("day off") : tr("free"))));
+      cell.dataset.d = ds;
       (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
     }
@@ -3525,6 +4098,9 @@ body.hasupd .wrap{padding-top:52px}
                        {n: free, a: hourLong(DAY_START), b: hourLong(DAY_END)})));
     $("addJobBtn").hidden = !can("book");
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
+    // Only worth offering when somebody else's booking is what is in the way.
+    $("askJobBtn").hidden = !can("book") || dayIsPast(ds) ||
+      !jobsOn(ds, viewCrewId()).some(function(j){ return !ownsJob(j); });
 
     var host=$("dayJobs"); host.innerHTML="";
     var list=jobsOn(ds, viewCrewId());
@@ -3538,10 +4114,55 @@ body.hasupd .wrap{padding-top:52px}
   }
   $("dayClose").addEventListener("click", function(){ $("dayDlg").close(); });
   $("addJobBtn").addEventListener("click", function(){ showFormPane(null); });
+  $("askJobBtn").addEventListener("click", function(){
+    openRequest({crewId: viewCrewId(), date: openDate});
+  });
+  /* From inside the form, carrying across whatever has already been typed —
+     the address and the job do not want typing twice. */
+  $("formAskBtn").addEventListener("click", function(){
+    var pid = $("fProject").value, pr = project(pid);
+    var from = $("fAllDay").checked ? DAY_START : parseInt($("fFrom").value, 10);
+    var to   = $("fAllDay").checked ? DAY_END   : parseInt($("fTo").value, 10);
+    openRequest({
+      crewId: editing ? editing.crewId : viewCrewId(), date: openDate,
+      from: from, hours: Math.max(1, (to || from + 1) - from),
+      projectId: pid, buildingId: pr ? $("fBuilding").value : "",
+      unit: $("fUnit").value.trim(), job: $("fJob").value.trim()
+    });
+  });
   $("formBack").addEventListener("click", function(){ editing=null; showDayPane(); });
 
   /* ---------- booking form: new, or editing an existing job ---------- */
   var editing = null;
+
+  /* Everyone in the office who could hold a booking: whoever is signed in
+     first, then the master code and the other admins. */
+  function ownerChoices(){
+    var out = [], seen = {};
+    function add(id, name){
+      if (!id || seen[id]) return;
+      seen[id] = 1; out.push({id: id, name: name});
+    }
+    add(state.me, meName());
+    add("office", state.officeName || tr("Office"));
+    state.people.forEach(function(pp){ if (isAdmin(pp)) add(pp.id, pp.name); });
+    return out;
+  }
+  function fillOwner(pick){
+    var sel = $("fOwner"); sel.innerHTML = "";
+    ownerChoices().forEach(function(o){
+      var op = document.createElement("option");
+      op.value = o.id;
+      op.textContent = o.id === state.me ? tr("{name} (you)", {name: o.name}) : o.name;
+      sel.appendChild(op);
+    });
+    sel.value = pick && ownerChoices().some(function(o){ return o.id === pick; })
+      ? pick : state.me;
+  }
+  function ownerName(id){
+    var hit = ownerChoices().filter(function(o){ return o.id === id; })[0];
+    return hit ? hit.name : meName();
+  }
 
   function editJob(j){
     openDate = j.date;
@@ -3581,6 +4202,11 @@ body.hasupd .wrap{padding-top:52px}
     $("paneForm").reset();
     fillProjects();
     $("travelWarn").hidden = true;
+    // Booking on somebody else's behalf: the name on it decides whose it is
+    // to edit or cancel afterwards, so it is only offered where there is
+    // somebody else to name.
+    $("ownerRow").hidden = ownerChoices().length < 2;
+    fillOwner(editing ? editing.createdById : state.me);
     formShots = editing ? (editing.photos || []).slice() : [];
     drawFormShots();
 
@@ -3634,6 +4260,25 @@ body.hasupd .wrap{padding-top:52px}
       $("travelWarn").textContent =
         tr("No travel time \u2014 another job at {where} runs right up against this one.",
            {where: clash});
+
+    /* Somebody else's booking fills the day. There is nothing to override —
+       the hours are simply not his to give — so the form offers the ask
+       instead of leaving the admin at a dead end. */
+    var ds = openDate, crewId = editing ? editing.crewId : viewCrewId();
+    var theirs = ds ? jobsOn(ds, crewId).filter(function(j){
+      return (!editing || j.id !== editing.id) && !ownsJob(j);
+    }) : [];
+    var show = !!theirs.length && can("book");
+    $("busyWarn").hidden = !show;
+    $("formAskBtn").hidden = !show;
+    if (show){
+      $("busyWarn").textContent = tr("{name} is booked {a}–{b} at {where}, by {who}.", {
+        name: memberOr(crewId).name,
+        a: hourLong(theirs[0].from), b: hourLong(theirs[0].to),
+        where: theirs[0].buildingName, who: theirs[0].createdBy || tr("someone else")
+      }) + (theirs.length > 1
+        ? " " + tr("{n} more that day.", {n: theirs.length - 1}) : "");
+    }
   }
 
   $("fProject").addEventListener("change", function(){
@@ -3690,6 +4335,7 @@ body.hasupd .wrap{padding-top:52px}
         unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
         photos: formShots,
         tight: !!(clash && travelOff()),
+        createdBy: ownerName($("fOwner").value), createdById: $("fOwner").value || state.me,
         manager:p.manager||"", managerPhone:p.managerPhone||""
       }).then(function(){ editing=null; showDayPane(); })
         .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The changes did not save.")); });
@@ -3706,7 +4352,9 @@ body.hasupd .wrap{padding-top:52px}
       photos: formShots,
       tight: !!(clash && travelOff()),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
-      createdAt:new Date().toISOString(), createdBy:meName(), createdById:state.me,
+      createdAt:new Date().toISOString(),
+      createdBy: ownerName($("fOwner").value), createdById: $("fOwner").value || state.me,
+      bookedBy: state.me === ($("fOwner").value || state.me) ? "" : meName(),
       clockIn:null, clockOut:null, breaks:[], notes:[]
     };
     $("formSave").disabled=true;
@@ -3970,6 +4618,7 @@ body.hasupd .wrap{padding-top:52px}
       }
       rosterSettled();
       subscribeChats();
+      subscribeReqs();
       render();
     }, function(){ rosterSettled(); });
   }
@@ -4196,6 +4845,11 @@ body.hasupd .wrap{padding-top:52px}
     if (c && c.threads) state.chats = c;
   })();
 
+  (function loadCachedRequests(){
+    var r = lsRead(LS_REQS, null);
+    if (Array.isArray(r)) state.reqs = r;
+  })();
+
   (function loadCachedRoster(){
     var c = lsRead(LS_ROSTER, null);
     if (c && Array.isArray(c.people) && c.people.length){
@@ -4239,6 +4893,7 @@ body.hasupd .wrap{padding-top:52px}
     // Which conversations exist depends on who this is, so they can only be
     // listened to once somebody has signed in.
     subscribeChats();
+    subscribeReqs();
     setupPush();
     loadAlerts();
     // A notification was tapped before anyone had signed in.
