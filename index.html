@@ -381,6 +381,15 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   margin-bottom:5px; opacity:.72; font-size:12.5px; line-height:1.3}
 .quote b{display:block; font-family:"Archivo",sans-serif; font-weight:700; font-size:11.5px}
 .bub .fwd{display:block; font-size:11px; opacity:.7; font-style:italic; margin-bottom:3px}
+/* The whole bubble opens the actions, but nothing said so. A quiet mark in
+   the corner does — not the row of buttons that made the thread look like a
+   form the last time. */
+.bub{position:relative}
+.bub .dots{position:absolute; top:2px; right:4px; width:22px; height:20px; padding:0;
+  border:0; background:none; color:currentColor; opacity:.42; cursor:pointer;
+  font:inherit; font-size:15px; line-height:1; letter-spacing:1px}
+.bub .dots:hover{opacity:1}
+.bub.hasdots{padding-right:26px}
 .replybar{display:flex; gap:8px; align-items:center; margin-bottom:7px; font-size:12.5px;
   padding:7px 9px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
 .replybar .who{font-family:"Archivo",sans-serif; font-weight:700; flex:none}
@@ -866,7 +875,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
 <dialog id="reqDlg">
   <form method="dialog" class="dlg" id="reqForm">
     <div class="eyebrow" data-t>Emergency</div>
-    <h3 data-t>Ask to use somebody</h3>
+    <h3 data-t>Emergency request</h3>
     <p class="sub" data-t>They are booked. Say what you need them for and for how long, and whoever booked them decides — they can push the other work later or drop it.</p>
 
     <div class="row2">
@@ -959,7 +968,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   <div class="shotwrap">
     <img class="shotfull" id="shotFull" alt="">
     <div class="shotbar">
-      <button type="button" class="btn" id="shotSave" data-t>Save the photo</button>
+      <button type="button" class="btn" id="shotSave" data-t>Download</button>
       <button type="button" class="btn" id="shotClose" data-t>Close</button>
     </div>
   </div>
@@ -972,7 +981,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     <div class="actions" style="flex-direction:column; align-items:stretch; gap:7px">
       <button type="button" class="btn btn-primary btn-block" id="msgReply" data-t>Reply to this</button>
       <button type="button" class="btn btn-block" id="msgFwd" data-t>Forward it</button>
-      <button type="button" class="btn btn-block" id="msgSave" hidden data-t>Save the photo</button>
+      <button type="button" class="btn btn-block" id="msgSave" hidden data-t>Download the photo</button>
       <button type="button" class="btn btn-block" id="msgShut" data-t>Close</button>
     </div>
   </div>
@@ -1013,7 +1022,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     <p class="err" id="dayErr"></p>
     <div class="actions">
       <button type="button" class="btn btn-primary" id="addJobBtn" data-t>Add a job</button>
-      <button type="button" class="btn" id="askJobBtn" hidden data-t>Ask to use them</button>
+      <button type="button" class="btn" id="askJobBtn" hidden data-t>Emergency request</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="dayClose" data-t>Close</button>
     </div>
@@ -1081,7 +1090,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     </label>
     <p class="warn" id="travelWarn" hidden></p>
     <p class="warn" id="busyWarn" hidden></p>
-    <button type="button" class="btn" id="formAskBtn" hidden data-t>Ask whoever booked them</button>
+    <button type="button" class="btn" id="formAskBtn" hidden data-t>Emergency request</button>
 
     <p class="err" id="formErr"></p>
     <div class="actions">
@@ -1351,7 +1360,8 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
-    "Save the photo": "Enregistrer la photo",
+    "Download": "T\u00e9l\u00e9charger", "Download the photo": "T\u00e9l\u00e9charger la photo",
+    "What to do with this message": "Que faire de ce message",
     "Reply to this": "R\u00e9pondre", "Forward it": "Transf\u00e9rer",
     "Forward": "Transfert", "Send it on to": "Transf\u00e9rer \u00e0",
     "Replying to {name}": "R\u00e9ponse \u00e0 {name}",
@@ -1361,7 +1371,9 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     "Put it in somebody else\u2019s name and it becomes theirs to edit or cancel. Leave it as you and it stays yours.":
       "Mettez-le au nom de quelqu\u2019un d\u2019autre et il pourra le modifier ou l\u2019annuler. Laissez votre nom et il reste \u00e0 vous.",
     "{name} (you)": "{name} (vous)", "put in by {name}": "saisi par {name}",
-    "Emergency": "Urgence", "Ask to use somebody": "Demander quelqu\u2019un",
+    "Emergency": "Urgence", "Emergency request": "Demande d\u2019urgence",
+    "Nobody is booked by anyone else that day": "Personne n\u2019est r\u00e9serv\u00e9 par quelqu\u2019un d\u2019autre ce jour-l\u00e0",
+    "Nobody is booked by anyone else that day.": "Personne n\u2019est r\u00e9serv\u00e9 par quelqu\u2019un d\u2019autre ce jour-l\u00e0.",
     "They are booked. Say what you need them for and for how long, and whoever booked them decides \u2014 they can push the other work later or drop it.":
       "Cette personne est r\u00e9serv\u00e9e. Dites pourquoi vous en avez besoin et pour combien de temps\u00a0; celui qui l\u2019a r\u00e9serv\u00e9e d\u00e9cide et peut d\u00e9caler l\u2019autre travail ou l\u2019annuler.",
     "Who you need": "Qui vous faut-il", "Day": "Jour",
@@ -1377,8 +1389,6 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     "{name} has nothing booked in those hours \u2014 book it yourself instead of asking.":
       "{name} n\u2019a rien de r\u00e9serv\u00e9 \u00e0 ces heures \u2014 r\u00e9servez-le vous-m\u00eame.",
     "In the way": "Ce qui bloque",
-    "Ask to use them": "Demander cette personne",
-    "Ask whoever booked them": "Demander \u00e0 qui l\u2019a r\u00e9serv\u00e9",
     "{name} is booked {a}\u2013{b} at {where}, by {who}.":
       "{name} est r\u00e9serv\u00e9 {a}\u2013{b} \u00e0 {where}, par {who}.",
     "{n} more that day.": "{n} de plus ce jour-l\u00e0.",
@@ -1622,7 +1632,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v73";
+  var APP_VERSION = "v74";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2448,17 +2458,37 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     return row;
   }
 
-  function openRequest(pre){
-    pre = pre || {};
+  /* Only the men somebody else has already booked that day. Everybody else is
+     either free — book them — or yours already, and offering them was the
+     dialog asking a question with no answer. */
+  function askable(ds){
+    return crewPeople().filter(function(pp){
+      return jobsOn(ds, pp.id).some(function(j){ return !bookedByMe(j); });
+    });
+  }
+  function fillReqWho(ds, keep){
     var host = $("rqWho"); host.innerHTML = "";
-    crewPeople().forEach(function(pp){
+    var list = askable(ds);
+    if (!list.length){
+      var none = document.createElement("option");
+      none.value = ""; none.textContent = tr("Nobody is booked by anyone else that day");
+      host.appendChild(none); host.disabled = true;
+      return;
+    }
+    host.disabled = false;
+    list.forEach(function(pp){
       var o = document.createElement("option"); o.value = pp.id; o.textContent = pp.name;
       host.appendChild(o);
     });
+    host.value = list.some(function(pp){ return pp.id === keep; }) ? keep : list[0].id;
+  }
+
+  function openRequest(pre){
+    pre = pre || {};
     fillReqHours();
     fillProjects($("rqProject"));
-    $("rqWho").value = pre.crewId || (crewPeople()[0] || {}).id || "";
     $("rqDate").value = pre.date || openDate || todayIso;
+    fillReqWho($("rqDate").value, pre.crewId);
     $("rqFrom").value = pre.from || Math.max(DAY_START, nextHourToday($("rqDate").value));
     $("rqHours").value = pre.hours || 2;
     $("rqProject").value = pre.projectId || "";
@@ -2482,6 +2512,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     var pid = $("rqProject").value, pr = project(pid);
     var span = reqSpan();
     if (!ds){ $("rqErr").textContent = tr("Pick a day."); return; }
+    if (!who){ $("rqErr").textContent = tr("Nobody is booked by anyone else that day."); return; }
     if (!pr){ $("rqErr").textContent = tr("Pick a project first."); return; }
     var what = $("rqJob").value.trim();
     if (!what){ $("rqErr").textContent = tr("Say what the emergency is."); return; }
@@ -2525,8 +2556,13 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   $("rqProject").addEventListener("change", function(){
     fillBuildings($("rqProject").value, $("rqBuilding"), null);
   });
-  ["rqWho", "rqDate", "rqFrom", "rqHours"].forEach(function(id){
+  ["rqWho", "rqFrom", "rqHours"].forEach(function(id){
     $(id).addEventListener("change", drawReqClash);
+  });
+  // A different day is a different set of people worth asking about.
+  $("rqDate").addEventListener("change", function(){
+    fillReqWho($("rqDate").value, $("rqWho").value);
+    drawReqClash();
   });
 
   /* ---------- answering one ----------
@@ -2750,6 +2786,9 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T06:00:00Z",
+     en:"Every message now has a \u22ef in the corner: tap it, or the message, to reply with a quote, forward it, or download a photo out of it.",
+     fr:"Chaque message a maintenant un \u22ef dans le coin\u00a0: touchez-le, ou le message, pour r\u00e9pondre en citation, transf\u00e9rer ou t\u00e9l\u00e9charger la photo."},
     {at:"2026-09-10T05:00:00Z",
      en:"Tap any message to reply to it with a quote, forward it to somebody else, or save a photo out of it. On iPhone the top of the app no longer hides behind the clock.",
      fr:"Touchez un message pour y r\u00e9pondre en citation, le transf\u00e9rer \u00e0 quelqu\u2019un ou en enregistrer la photo. Sur iPhone, le haut de l\u2019application ne se cache plus derri\u00e8re l\u2019heure."},
@@ -3214,7 +3253,16 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
       b.appendChild(tm);
       // Anywhere but the picture itself, which opens on its own.
       if (chatOpen !== SYSTEM){
+        b.classList.add("hasdots");
         b.style.cursor = "pointer";
+        var dots = document.createElement("button");
+        dots.type = "button"; dots.className = "dots";
+        dots.textContent = "\u22ef";
+        dots.setAttribute("aria-label", tr("What to do with this message"));
+        dots.addEventListener("click", function(ev){
+          ev.stopPropagation(); openMsgActions(m);
+        });
+        b.appendChild(dots);
         b.addEventListener("click", function(ev){
           if (ev.target.tagName === "IMG" || ev.target.tagName === "AUDIO") return;
           openMsgActions(m);
