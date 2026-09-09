@@ -133,14 +133,60 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
       return;
     }
 
+    const used = (after.used || [])
+      .map((u) => (u.qty ? `${u.qty} × ${u.item}` : u.item))
+      .join(", ");
     const title = endedNow ? `${who} finished` : `${who} clocked in`;
     const body = endedNow
-      ? `${where} · job done`
+      ? `${where} · ${used ? `used ${used}` : "nothing used"}`
       : `${where} · started ${HOURS(after.from)}`;
 
     const sent = await push(db, aud.map, aud.forOffice(), title, body,
       `${event.params.jobId}-${endedNow ? "out" : "in"}`);
     logger.info(`${title} — notified ${sent} office phone(s)`);
+  }
+);
+
+/** A message reaches the other side of its thread.
+ *
+ *  Threads live in one document keyed by crew member, with the whole office
+ *  on the other side, so the direction is decided by who sent it: the crew
+ *  member's own messages go to the office, anybody else's go to him.
+ */
+exports.notifyOnMessage = onDocumentUpdated(
+  {document: "config/chats", region: "northamerica-northeast1"},
+  async (event) => {
+    const before = (event.data.before.data() || {}).threads || {};
+    const after = (event.data.after.data() || {}).threads || {};
+
+    const db = getFirestore();
+    const aud = await audience(db);
+    const officeTokens = new Set(aud.forOffice());
+
+    for (const crewId of Object.keys(after)) {
+      const now = Array.isArray(after[crewId]) ? after[crewId] : [];
+      const was = Array.isArray(before[crewId]) ? before[crewId] : [];
+      // arrayUnion appends, so anything past the old length is new.
+      const fresh = now.slice(was.length);
+      if (!fresh.length) continue;
+
+      const last = fresh[fresh.length - 1];
+      const person = aud.people.find((p) => p.id === crewId);
+      const crewName = person ? person.name : crewId;
+
+      const fromCrew = last.by === crewId;
+      const tokens = fromCrew
+        ? aud.forOffice()
+        : aud.forPerson(crewId).filter((t) => !officeTokens.has(t));
+
+      const title = fromCrew ? `${crewName}: message` : `${last.name || "Office"}: message`;
+      const body = fresh.length > 1
+        ? `${last.text} (+${fresh.length - 1} more)`
+        : last.text;
+
+      const sent = await push(db, aud.map, tokens, title, body, `chat-${crewId}`);
+      logger.info(`message in ${crewId} thread from ${last.by} — notified ${sent} phone(s)`);
+    }
   }
 );
 
