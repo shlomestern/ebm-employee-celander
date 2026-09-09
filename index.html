@@ -149,12 +149,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .layout{display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; align-items:start}
 /* A crew member has no crew column. Without this the hidden aside leaves the
    calendar to fall into the 230px track meant for it. */
-@media (min-width:1101px){
-  /* A crew member has no crew list, but the messages bar still lives in that
-     column. Below this width the dock is pinned to the bottom instead and the
-     calendar gets the whole width. */
-  body.nocrewbar .layout{grid-template-columns:200px minmax(0,1fr)}
-}
+body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .crew{display:flex; flex-direction:column; gap:7px}
 .person{
   display:flex; align-items:center; gap:11px; text-align:left; width:100%;
@@ -362,21 +357,17 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .usedlist{font-size:13px; color:var(--ink-2); margin-top:6px}
 .usedlist b{color:var(--ink); font-weight:600}
 
-.dock{display:flex; flex-direction:column; gap:9px; min-width:0}
-.msgbar{display:flex; align-items:center; gap:10px; width:100%; font:inherit; cursor:pointer;
-  padding:12px 14px; border-radius:11px; border:1px solid var(--line);
-  background:var(--surface); color:var(--ink); text-align:left; box-shadow:var(--shadow)}
-.msgbar:hover{border-color:var(--ink-3)}
-.msgbar svg{width:19px; height:19px; flex:none; color:var(--ink-3)}
-.msgbar .lbl{font-family:"Archivo",sans-serif; font-weight:600; font-size:14px;
-  letter-spacing:-.01em; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;
-  white-space:nowrap}
-.msgbar .cnt{min-width:20px; height:20px; border-radius:10px; background:var(--danger);
-  color:#fff; font-size:11.5px; font-weight:700; font-family:"Archivo",sans-serif;
-  display:grid; place-items:center; padding:0 5px; flex:none}
-.msgbar .chev{width:16px; height:16px; opacity:.55}
-.msgbar.lit{border-color:var(--danger)}
-.msgbar.lit svg, .msgbar.lit .lbl{color:var(--danger)}
+/* Floats over the calendar on the right, clear of the crew bar below it. */
+.fab{position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom));
+  z-index:45; width:54px; height:54px; border-radius:50%; border:none; cursor:pointer;
+  display:grid; place-items:center; background:var(--sel); color:#fff;
+  box-shadow:0 3px 10px rgba(19,26,32,.22), 0 12px 28px -10px rgba(19,26,32,.4)}
+.fab:hover{filter:brightness(1.08)}
+.fab svg{width:23px; height:23px; display:block}
+.fab .cnt{position:absolute; top:-2px; right:-2px; min-width:21px; height:21px;
+  border-radius:11px; background:var(--danger); color:#fff; font-size:11.5px; font-weight:700;
+  font-family:"Archivo",sans-serif; display:grid; place-items:center; padding:0 5px;
+  border:2px solid var(--ground)}
 .threads{display:flex; flex-direction:column; gap:7px; margin:4px 0 2px}
 .thread{display:flex; gap:11px; align-items:center; text-align:left; width:100%;
   padding:11px 12px; border:1px solid var(--line); border-radius:10px;
@@ -391,8 +382,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   text-overflow:ellipsis; white-space:nowrap}
 .thread .ago{font-size:11.5px; color:var(--ink-3); flex:none; font-variant-numeric:tabular-nums}
 .thread .dot{width:9px; height:9px; border-radius:50%; background:var(--danger); flex:none}
-.chatlog{max-height:min(52vh,420px); overflow-y:auto; display:flex; flex-direction:column;
-  gap:7px; padding:4px 2px; margin:6px 0}
+.chatlog{height:min(56vh,440px); overflow-y:auto; display:flex; flex-direction:column;
+  justify-content:flex-end; gap:7px; padding:8px 2px; margin:8px 0}
+.chatlog .empty{margin:auto 0}
 .bub{max-width:78%; padding:8px 11px; border-radius:12px; font-size:13.5px; line-height:1.35}
 .bub .nm{display:block; font-size:11px; font-weight:700; letter-spacing:.02em;
   font-family:"Archivo",sans-serif; opacity:.75; margin-bottom:2px}
@@ -415,22 +407,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 @media (max-width:1100px){
   /* On anything held in the hands — phone or tablet — whose calendar you are
      looking at becomes a bottom bar, where the thumb already is. */
-  .dock{
-    position:fixed; left:0; right:0; bottom:0; z-index:40; gap:0;
+  .crew{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    flex-direction:row; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
     background:var(--surface); border-top:1px solid var(--line);
     box-shadow:0 -2px 16px rgba(19,26,32,.07);
     padding-bottom:env(safe-area-inset-bottom);
   }
-  /* Above the crew names, where he asked for it, and full width so it is a
-     bar rather than a button hiding in a corner. */
-  .msgbar{
-    border:none; border-radius:0; box-shadow:none; background:transparent;
-    padding:11px 14px; border-bottom:1px solid var(--line);
-  }
-  .msgbar:hover{border-color:transparent; border-bottom-color:var(--line)}
-  .crew{
-    flex-direction:row; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
-  }
+  /* Lifted above the crew bar so it never covers a name. */
+  .fab{bottom:calc(98px + env(safe-area-inset-bottom))}
+  body.nocrewbar .fab{bottom:calc(20px + env(safe-area-inset-bottom))}
   .crew .eyebrow{display:none}
   .crew .empty{border:none; padding:16px 12px; font-size:12.5px}
   .person{
@@ -446,16 +432,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   .person .txt{min-width:0}
   .person .nm{font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .person .mt{font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .wrap{padding-bottom:calc(134px + env(safe-area-inset-bottom))}
-  body.nocrewbar .wrap{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
+  .wrap{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  body.nocrewbar .wrap{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
   .calbar h2{font-size:17px; white-space:nowrap; flex:1 1 auto}
   .seg{flex:1 1 100%}
   .seg button{flex:1; padding:9px 8px}
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .dock{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
+  :root:not([data-theme="light"]) .crew{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
 }
-:root[data-theme="dark"] .dock{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
+:root[data-theme="dark"] .crew{box-shadow:0 -2px 16px rgba(0,0,0,.5)}
 @media (max-width:1100px){
 }
 @media (max-width:1100px){
@@ -468,7 +454,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   .crew .person .mt{display:none}
   .crew .person{padding:11px 8px; gap:8px}
   .crew .person .nm{font-size:13px}
-  .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
+  .wrap{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 }
 @media (max-width:520px){
   .wrap{padding-left:10px; padding-right:10px; padding-top:14px}
@@ -515,21 +501,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   <!-- OFFICE / ADMIN -->
   <div id="calView" hidden>
     <div class="layout">
-      <div class="dock">
-        <button type="button" class="msgbar" id="msgBar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.9 8.9 0 0 1-3.9-.9L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 7.9 7.9z"/>
-          </svg>
-          <span class="lbl" id="msgBarLabel">Messages</span>
-          <span class="cnt" id="msgCount" hidden>0</span>
-          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </button>
-        <aside class="crew" id="crew"><div class="eyebrow" data-t>Crew</div></aside>
-      </div>
+      <aside class="crew" id="crew"><div class="eyebrow" data-t>Crew</div></aside>
       <main>
         <div class="alerts" id="alerts" hidden></div>
         <div class="calbar">
@@ -628,6 +600,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     </div>
   </form>
 </dialog>
+
+<button type="button" class="fab" id="msgFab" data-ta="Messages" aria-label="Messages" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.9 8.9 0 0 1-3.9-.9L3 21l1.9-5.1a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.5-8.4h.5a8.4 8.4 0 0 1 7.9 7.9z"/>
+  </svg>
+  <span class="cnt" id="msgCount" hidden>0</span>
+</button>
 
 <dialog id="chatDlg">
   <div class="dlg">
@@ -987,7 +967,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     "Nothing used": "Rien utilis\u00e9", "Save and finish": "Enregistrer et terminer",
     "Used: ": "Utilis\u00e9\u00a0: ",
     "Messages": "Messages", "Send": "Envoyer",
-    "{n} new message": "{n} nouveau message", "{n} new messages": "{n} nouveaux messages",
     "Just the two of you.": "Entre vous deux seulement.",
     "Write a message": "\u00c9crire un message",
     "No messages yet": "Aucun message pour l\u2019instant",
@@ -1188,7 +1167,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v53";
+  var APP_VERSION = "v54";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1534,12 +1513,27 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var v = t[threadKey(state.me, otherId)];
     return Array.isArray(v) ? v : [];
   }
-  /* Everyone but yourself. A plumber can write to the office or to the other
-     plumber; the office can write to any of them. */
+  /* Who there is to write to. The office writes to the men on the tools, not
+     to a list of eleven other admins; a worker writes to the office. Anybody
+     who has already written is kept on the list either way, so a message from
+     one named admin is never hidden from the worker it was sent to. */
   function contacts(){
-    var out = [];
-    if (state.me !== "office") out.push("office");
-    state.people.forEach(function(pp){ if (pp.id !== state.me) out.push(pp.id); });
+    var out = [], seen = {};
+    function add(id){
+      if (!id || id === state.me || seen[id]) return;
+      seen[id] = 1; out.push(id);
+    }
+    var me = member(state.me);
+    if (state.me === "office" || (me && isAdmin(me))) crewPeople().forEach(function(pp){ add(pp.id); });
+    else add("office");
+
+    var threads = (state.chats && state.chats.threads) || {};
+    Object.keys(threads).forEach(function(key){
+      if (!(threads[key] || []).length) return;
+      var pair = key.split("__");
+      if (pair.indexOf(state.me) < 0) return;
+      add(pair[0] === state.me ? pair[1] : pair[0]);
+    });
     return out;
   }
   function chatSeen(){ return lsRead(LS_SEEN, {}) || {}; }
@@ -1562,12 +1556,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function renderMsgBar(){
     var n = unreadTotal();
+    $("msgFab").hidden = !state.me;
     $("msgCount").hidden = !n;
     $("msgCount").textContent = n > 9 ? "9+" : String(n);
-    $("msgBarLabel").textContent = n
-      ? tr(n === 1 ? "{n} new message" : "{n} new messages", {n:n})
-      : tr("Messages");
-    $("msgBar").classList.toggle("lit", !!n);
   }
 
   function subscribeChats(){
@@ -1689,7 +1680,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       $("chatErr").textContent = errText(e, tr("The message did not send."));
     });
   }
-  $("msgBar").addEventListener("click", openChat);
+  $("msgFab").addEventListener("click", openChat);
   $("chatClose").addEventListener("click", function(){ $("chatDlg").close(); chatOpen = null; });
   $("chatBack").addEventListener("click", openChat);
   $("chatSend").addEventListener("click", submitMessage);
