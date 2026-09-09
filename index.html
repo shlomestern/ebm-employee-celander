@@ -1370,7 +1370,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v68";
+  var APP_VERSION = "v69";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2103,9 +2103,16 @@ body.hasupd .wrap{padding-top:52px}
      announcements into. Oldest first, so the newest ends up at the bottom
      where a conversation puts it. Add an entry when a release is worth
      mentioning to the people using it — not for every fix. */
-  /* who: left out means anybody using the app; "office" for something only
-     an admin ever does; "manage" for the things behind the office's own code,
-     which nobody else needs to know exists. */
+  /* who: left out means anybody using the app, and that is what most of these
+     are for — the men on the tools hearing what changed for them. "office" is
+     for something only an admin ever does. "me" is the master office code
+     alone: the report, the spreadsheet, the crew's codes. Those are nobody
+     else's business, not even an admin's, and they are only in the list at all
+     so there is a record of when they arrived.
+
+     Worth saying plainly: none of this is ever pushed to a phone. A note ships
+     inside the release and shows up in the thread; the only notifications are
+     the ones the server actually sends about jobs and messages. */
   var RELEASES = [
     {at:"2026-09-08T14:00:00Z",
      en:"The app is now in French as well. Change it under Language in your account.",
@@ -2131,13 +2138,13 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T19:30:00Z", who:"office",
      en:"Nobody clocked in twenty minutes after a job was due? You and whoever booked it get told, once.",
      fr:"Personne n\u2019a point\u00e9 vingt minutes apr\u00e8s l\u2019heure pr\u00e9vue\u00a0? Vous et la personne qui a r\u00e9serv\u00e9 \u00eates avertis, une fois."},
-    {at:"2026-09-09T19:45:00Z", who:"manage",
+    {at:"2026-09-09T19:45:00Z", who:"me",
      en:"Hours worked, in your account panel: what each person clocked and where, over any dates, with a file for the spreadsheet.",
      fr:"Heures travaill\u00e9es, dans votre compte\u00a0: ce que chacun a point\u00e9 et o\u00f9, sur les dates de votre choix, avec un fichier pour le tableur."},
     {at:"2026-09-09T20:00:00Z",
      en:"Messages take a photo, a voice note or an emoji now. The buttons are beside the box.",
      fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
-    {at:"2026-09-09T21:00:00Z", who:"manage",
+    {at:"2026-09-09T21:00:00Z", who:"me",
      en:"Hours worked now downloads as a real Excel file: one page of totals per project, one page with every job behind them.",
      fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."},
     {at:"2026-09-09T22:00:00Z",
@@ -2146,7 +2153,7 @@ body.hasupd .wrap{padding-top:52px}
     {at:"2026-09-09T22:15:00Z",
      en:"You can scroll up in a conversation to read older messages now, and it no longer reloads the page.",
      fr:"Vous pouvez maintenant remonter dans une conversation pour lire les anciens messages, et \u00e7a ne recharge plus la page."},
-    {at:"2026-09-09T23:30:00Z", who:"manage",
+    {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
     {at:"2026-09-10T01:00:00Z", who:"office",
@@ -2163,6 +2170,7 @@ body.hasupd .wrap{padding-top:52px}
      are behind the office's own code and there is no reason for anybody else
      to know they are there. */
   function releaseFor(r){
+    if (r.who === "me")     return state.me === "office";
     if (r.who === "manage") return can("manage");
     if (r.who === "office") return isOffice();
     return true;
