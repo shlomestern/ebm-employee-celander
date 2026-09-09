@@ -74,6 +74,20 @@ async function push(db, map, tokens, title, body, tag) {
   return res.successCount;
 }
 
+/** The next job that day for the same person, so a hold-up can name what it
+ *  is about to delay. Two equality filters need no composite index; the sort
+ *  is done here rather than asking Firestore for one. */
+async function nextJobAfter(db, job) {
+  const snap = await db.collection("bookings")
+    .where("crewId", "==", job.crewId)
+    .where("date", "==", job.date)
+    .get();
+  return snap.docs
+    .map((d) => d.data())
+    .filter((j) => j.v === 2 && j.id !== job.id && j.from >= job.to)
+    .sort((a, b) => a.from - b.from)[0] || null;
+}
+
 /** The office hears when a crew member starts, stops, or finishes. */
 exports.notifyOfficeOnClock = onDocumentUpdated(
   {document: "bookings/{jobId}", region: "northamerica-northeast1"},
@@ -84,13 +98,40 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
 
     const startedNow = !before.clockIn && !!after.clockIn;
     const endedNow = !before.clockOut && !!after.clockOut;
-    if (!startedNow && !endedNow) return;
+    const lateBefore = (before.late && before.late.at) || "";
+    const lateNow = !!after.late && after.late.at !== lateBefore;
+    if (!startedNow && !endedNow && !lateNow) return;
 
     const db = getFirestore();
     const aud = await audience(db);
     const person = aud.people.find((p) => p.id === after.crewId);
     const who = person ? person.name : after.crewId;
     const where = after.buildingName + (after.unit ? ` · Unit ${after.unit}` : "");
+
+    // A hold-up is not general news: it goes to whoever booked the job he is
+    // standing on and whoever booked the one he is about to be late for,
+    // because between them they are the ones who can move something. The
+    // office hears it too, since it owns the day.
+    if (lateNow) {
+      const next = await nextJobAfter(db, after);
+      const ids = new Set(aud.forOffice().map((t) => aud.map[t]));
+      ids.add("office");
+      if (after.createdById) ids.add(after.createdById);
+      if (next && next.createdById) ids.add(next.createdById);
+      const tokens = Object.keys(aud.map).filter((t) => ids.has(aud.map[t]));
+
+      const nextWhere = next
+        ? next.buildingName + (next.unit ? ` · Unit ${next.unit}` : "")
+        : "";
+      const body = `${where} · needs until ${HOURS(after.late.until)}` +
+        (next ? ` · next: ${nextWhere} at ${HOURS(next.from)}` : " · nothing after it");
+
+      const sent = await push(db, aud.map, tokens, `${who} running late`, body,
+        `${event.params.jobId}-late`);
+      logger.info(`${who} running late until ${after.late.until} — ` +
+        `notified ${sent} phone(s)${next ? ", next job affected" : ", nothing after it"}`);
+      return;
+    }
 
     const title = endedNow ? `${who} finished` : `${who} clocked in`;
     const body = endedNow

@@ -336,6 +336,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .actions{display:flex; gap:8px; justify-content:flex-end; margin-top:15px; flex-wrap:wrap; align-items:center}
 .actions .spacer{flex:1}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
+.warn{color:var(--mark); font-size:13px; margin:10px 0 0}
+.job-late{font-family:"Archivo",sans-serif; font-size:13px; font-weight:600;
+  color:var(--mark); margin-top:2px}
 
 @media (max-width:1100px){
   /* On anything held in the hands — phone or tablet — whose calendar you are
@@ -597,6 +600,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       <textarea id="fJob" maxlength="400" data-tp="e.g. Kitchen sink leaking under the cabinet" placeholder="e.g. Kitchen sink leaking under the cabinet"></textarea>
     </div>
 
+    <label class="check" id="travelRow" hidden>
+      <input type="checkbox" id="fTravelOverride">
+      <span data-th><b>Book back to back anyway</b>There is no hour left to travel between the two addresses.</span>
+    </label>
+    <p class="warn" id="travelWarn" hidden></p>
+
     <p class="err" id="formErr"></p>
     <div class="actions">
       <button type="button" class="btn" id="formBack" data-t>Back</button>
@@ -731,6 +740,22 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     "Manager: ": "Gestionnaire\u00a0: ",
     "e.g. 3, or Basement": "ex.\u00a0: 3, ou Sous-sol",
     "{h} \u2014 taken": "{h} \u2014 occup\u00e9",
+    "{h} \u2014 travelling from {where}": "{h} \u2014 en route depuis {where}",
+    "{h} \u2014 due at {where}": "{h} \u2014 attendu \u00e0 {where}",
+    "<b>Book back to back anyway</b>There is no hour left to travel between the two addresses.":
+      "<b>R\u00e9server \u00e0 la suite quand m\u00eame</b>Il ne reste aucune heure pour se rendre d\u2019une adresse \u00e0 l\u2019autre.",
+    "No travel time \u2014 another job at {where} runs right up against this one.":
+      "Aucun temps de d\u00e9placement \u2014 un autre travail \u00e0 {where} se colle \u00e0 celui-ci.",
+    "No time to get there \u2014 {name} has a job at {where} right against this one. Tick the box to book it anyway.":
+      "Pas le temps de s\u2019y rendre \u2014 {name} a un travail \u00e0 {where} juste \u00e0 c\u00f4t\u00e9 de celui-ci. Cochez la case pour r\u00e9server quand m\u00eame.",
+    "Back to back \u2014 no travel time": "\u00c0 la suite \u2014 aucun temps de d\u00e9placement",
+    "Running late": "En retard",
+    "Running late \u2014 needs until {h}": "En retard \u2014 a besoin jusqu\u2019\u00e0 {h}",
+    "+{n} hour": "+{n} heure", "+{n} hours": "+{n} heures",
+    "Could not send that.": "L\u2019envoi a \u00e9chou\u00e9.",
+    "Give him until {h}": "Prolonger jusqu\u2019\u00e0 {h}",
+    "The next job is in the way. Move or cancel it first.":
+      "Le travail suivant bloque. D\u00e9placez-le ou annulez-le d\u2019abord.",
     "From": "De", "To": "\u00c0",
     "Work to do": "Travail \u00e0 faire",
     "e.g. Kitchen sink leaking under the cabinet":
@@ -988,7 +1013,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v48";
+  var APP_VERSION = "v49";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1192,16 +1217,33 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   /* Hours already taken by another job are not offered at all, rather than
      accepted and then rejected on save. */
-  var busyMap = {};
-  function computeBusy(ds, crewId, skipId){
-    busyMap = {};
+  var busyMap = {}, travelStart = {}, travelEnd = {};
+  function locKey(j){ return (j.projectId||"") + "/" + (j.buildingId||""); }
+  /* Two jobs at different addresses cannot touch: 8-10 then 10-12 across town
+     means being in two places at once. An hour is kept free for getting
+     there, and two jobs in the same building can still run back to back. */
+  function computeBusy(ds, crewId, skipId, here){
+    busyMap = {}; travelStart = {}; travelEnd = {};
     jobsOn(ds, crewId).forEach(function(j){
       if (skipId && j.id === skipId) return;
       for (var h=j.from; h<j.to; h++) busyMap[h] = true;
+      if (!here || locKey(j) === here) return;
+      // Cannot start the hour he finishes elsewhere, cannot start the hour
+      // before he is due there, and cannot still be working up to it.
+      travelStart[j.to] = j.buildingName;
+      travelStart[j.from - 1] = j.buildingName;
+      travelEnd[j.from] = j.buildingName;
     });
   }
+  function travelOff(){ return !!$("fTravelOverride").checked; }
+  function blockedStart(h){ return !!busyMap[h] || (!!travelStart[h] && !travelOff()); }
+  function travelClash(from, to){
+    return travelStart[from] || travelEnd[to] || null;
+  }
   function firstFreeHour(){
-    for (var h=DAY_START; h<DAY_END; h++) if (!busyMap[h]) return h;
+    var h;
+    for (h=DAY_START; h<DAY_END; h++) if (!blockedStart(h)) return h;
+    for (h=DAY_START; h<DAY_END; h++) if (!busyMap[h]) return h;
     return DAY_START;
   }
   function fillFrom(){
@@ -1209,8 +1251,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     for (var i=DAY_START;i<DAY_END;i++){
       var o=document.createElement("option");
       o.value=i;
-      o.textContent = busyMap[i] ? tr("{h} \u2014 taken", {h: hourLong(i)}) : hourLong(i);
-      o.disabled = !!busyMap[i];
+      if (busyMap[i]){
+        o.textContent = tr("{h} \u2014 taken", {h: hourLong(i)});
+        o.disabled = true;
+      } else if (travelStart[i] && !travelOff()){
+        o.textContent = tr("{h} \u2014 travelling from {where}",
+                           {h: hourLong(i), where: travelStart[i]});
+        o.disabled = true;
+      } else {
+        o.textContent = hourLong(i);
+      }
       f.appendChild(o);
     }
   }
@@ -1224,9 +1274,23 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var want = keep || parseInt(t.value,10);
     t.innerHTML="";
     for (var i=from+1;i<=maxTo;i++){
-      var o=document.createElement("option"); o.value=i; o.textContent=hourLong(i); t.appendChild(o);
+      var o=document.createElement("option"); o.value=i;
+      if (travelEnd[i] && !travelOff()){
+        o.textContent = tr("{h} \u2014 due at {where}", {h: hourLong(i), where: travelEnd[i]});
+        o.disabled = true;
+      } else {
+        o.textContent = hourLong(i);
+      }
+      t.appendChild(o);
     }
-    t.value = (want && want>from && want<=maxTo) ? String(want) : String(Math.min(from+1, maxTo));
+    // Land on something that can actually be chosen, nearest the wanted end.
+    var pick = null, i2;
+    for (i2=0;i2<t.options.length;i2++){
+      if (t.options[i2].disabled) continue;
+      if (pick === null) pick = t.options[i2].value;
+      if (want && +t.options[i2].value === +want) { pick = t.options[i2].value; break; }
+    }
+    if (pick !== null) t.value = pick;
   }
   function refreshAllDay(){
     var taken = false, h;
@@ -1290,6 +1354,18 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (j.job){
       var d=document.createElement("div"); d.className="job-desc"; d.textContent=j.job; card.appendChild(d);
     }
+    if (j.tight){
+      var tg=document.createElement("div"); tg.className="job-sub";
+      tg.textContent = tr("Back to back \u2014 no travel time");
+      card.appendChild(tg);
+    }
+    // Only while the ask is still outstanding: once the hours are granted,
+    // j.to has caught up and there is nothing left to chase.
+    if (j.late && !j.clockOut && j.late.until > j.to){
+      var lt=document.createElement("div"); lt.className="job-late";
+      lt.textContent = tr("Running late \u2014 needs until {h}", {h: hourLong(j.late.until)});
+      card.appendChild(lt);
+    }
     if (j.clockIn){
       var cs=document.createElement("div"); cs.className="job-sub";
       cs.textContent = j.clockOut
@@ -1315,7 +1391,44 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
           patchJob(j.id, {clockOut:new Date().toISOString()}).catch(function(e){ bo.disabled=false; alert(errText(e,tr("Could not clock out."))); });
         });
         acts.appendChild(bo);
+
+        // Two taps: how much longer, then the office and whoever booked the
+        // next job hear about it. The hours are not added here — that is the
+        // office's call, and it may mean moving somebody else.
+        var la=document.createElement("button"); la.type="button"; la.className="btn";
+        la.textContent = tr("Running late");
+        la.addEventListener("click", function(){
+          if (la.dataset.armed==="1") return;
+          la.dataset.armed="1"; la.hidden=true;
+          [1,2].forEach(function(n){
+            var b=document.createElement("button"); b.type="button"; b.className="btn";
+            b.textContent = tr(n===1 ? "+{n} hour" : "+{n} hours", {n:n});
+            b.addEventListener("click", function(){
+              b.disabled=true;
+              patchJob(j.id, {late:{hours:n, until:Math.min(DAY_END, j.to+n),
+                                    at:new Date().toISOString(), by:state.me}})
+                .catch(function(e){ b.disabled=false; alert(errText(e,tr("Could not send that."))); });
+            });
+            acts.insertBefore(b, la);
+          });
+        });
+        acts.appendChild(la);
       }
+    }
+    if (opts.edit && j.late && !j.clockOut && j.late.until > j.to){
+      var gr=document.createElement("button"); gr.type="button"; gr.className="btn btn-go";
+      gr.textContent = tr("Give him until {h}", {h: hourLong(j.late.until)});
+      gr.addEventListener("click", function(){
+        gr.disabled=true;
+        if (overlaps(j.date, j.crewId, j.from, j.late.until, j.id)){
+          gr.disabled=false;
+          alert(tr("The next job is in the way. Move or cancel it first."));
+          return;
+        }
+        patchJob(j.id, {to:j.late.until, allDay:false})
+          .catch(function(e){ gr.disabled=false; alert(errText(e,tr("The changes did not save."))); });
+      });
+      acts.appendChild(gr);
     }
     if (opts.edit){
       var ed=document.createElement("button"); ed.type="button"; ed.className="btn"; ed.textContent=tr("Edit");
@@ -1576,6 +1689,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("appTitle").textContent = isOffice() ? tr("Crew Calendar") : tr("My Schedule");
     if (isOffice()) renderCrew();
     renderCalendar();
+    if ($("dayDlg").open && !$("paneDay").hidden) showDayPane();
   }
 
   /* ---------- day dialog ---------- */
@@ -1639,13 +1753,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var m = memberOr(editing ? editing.crewId : viewCrewId());
     $("paneDay").hidden=true; $("paneForm").hidden=false;
     $("formWho").textContent = m.name+" \u00b7 "+tradeName(m.trade);
-    $("formWhen").textContent = (editing ? "Edit — " : "") + F_LONG.format(fromIso(ds));
+    $("formWhen").textContent = (editing ? tr("Edit \u2014 ") : "") + F_LONG.format(fromIso(ds));
     $("formErr").textContent=""; $("formSave").disabled=false;
     $("formSave").textContent = editing ? tr("Save changes") : tr("Save job");
     $("paneForm").reset();
     fillProjects();
-    computeBusy(ds, editing ? editing.crewId : viewCrewId(), editing ? editing.id : null);
-    fillFrom();
+    $("travelWarn").hidden = true;
 
     if (editing){
       $("fProject").value = editing.projectId;
@@ -1654,24 +1767,63 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       $("fUnit").value = editing.unit || "";
       $("fJob").value = editing.job || "";
       $("fAllDay").checked = !!editing.allDay;
+      // A job already booked back to back keeps that permission, or reopening
+      // it to fix a typo would refuse to save.
+      $("fTravelOverride").checked = !!editing.tight;
       $("fFrom").value = String(editing.from);
-      fillTo(editing.to);
+      refreshHours(editing.to);
     } else {
       fillBuildings("");
-      $("fFrom").value = String(firstFreeHour());
-      fillTo();
+      refreshHours();
     }
-    refreshAllDay();
     setTimeout(function(){ $("fProject").focus(); },30);
+  }
+
+  function hereKey(){
+    var pid = $("fProject").value, p = project(pid);
+    if (!p) return "";
+    var bid = $("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "");
+    return pid + "/" + bid;
+  }
+  /* The travel gap depends on which address was picked, so the hours have to
+     be worked out again every time that changes. */
+  function refreshHours(keepTo){
+    var kept = $("fFrom").value;
+    computeBusy(openDate, editing ? editing.crewId : viewCrewId(),
+                editing ? editing.id : null, hereKey());
+    fillFrom();
+    if (kept) $("fFrom").value = kept;
+    var opt = $("fFrom").options[$("fFrom").selectedIndex];
+    if (!opt || opt.disabled) $("fFrom").value = String(firstFreeHour());
+    fillTo(keepTo);
+    refreshAllDay();
+    refreshTravelUi();
+  }
+  function refreshTravelUi(){
+    var any = Object.keys(travelStart).length || Object.keys(travelEnd).length;
+    $("travelRow").hidden = !any || $("fAllDay").checked;
+    if (!any) $("fTravelOverride").checked = false;
+    var clash = $("fAllDay").checked ? null
+      : travelClash(parseInt($("fFrom").value,10), parseInt($("fTo").value,10));
+    $("travelWarn").hidden = !(clash && travelOff());
+    if (clash && travelOff())
+      $("travelWarn").textContent =
+        tr("No travel time \u2014 another job at {where} runs right up against this one.",
+           {where: clash});
   }
 
   $("fProject").addEventListener("change", function(){
     fillBuildings($("fProject").value);
+    refreshHours();
   });
-  $("fFrom").addEventListener("change", function(){ fillTo(); });
+  $("fBuilding").addEventListener("change", function(){ refreshHours(); });
+  $("fTravelOverride").addEventListener("change", function(){ refreshHours(); });
+  $("fFrom").addEventListener("change", function(){ fillTo(); refreshTravelUi(); });
+  $("fTo").addEventListener("change", refreshTravelUi);
 
   $("fAllDay").addEventListener("change", function(){
     $("timeRow").hidden = $("fAllDay").checked;
+    refreshTravelUi();
   });
 
 
@@ -1696,6 +1848,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         {name: memberOr(crewId).name});
       return;
     }
+    // The dropdowns already hide these hours; this catches the case where the
+    // address was changed after the time was picked.
+    var clash = allDay ? null : travelClash(from, to);
+    if (clash && !travelOff()){
+      $("formErr").textContent = tr("No time to get there \u2014 {name} has a job at {where} right against this one. Tick the box to book it anyway.",
+        {name: memberOr(crewId).name, where: clash});
+      return;
+    }
 
     if (editing){
       $("formSave").disabled=true;
@@ -1704,6 +1864,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         projectId:p.id, projectName:p.name,
         buildingId:b.id, buildingName:b.name,
         unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
+        tight: !!(clash && travelOff()),
         manager:p.manager||"", managerPhone:p.managerPhone||""
       }).then(function(){ editing=null; showDayPane(); })
         .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The changes did not save.")); });
@@ -1717,6 +1878,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       buildingId:b.id, buildingName:b.name,
       unit:$("fUnit").value.trim(),
       job:$("fJob").value.trim(),
+      tight: !!(clash && travelOff()),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
       createdAt:new Date().toISOString(), createdBy:meName(), createdById:state.me,
       clockIn:null, clockOut:null, notes:[]
@@ -1824,7 +1986,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (!first) notifyNew(fresh);
     Object.keys(fresh).forEach(function(k){ state.seen[k]=1; });
     render();
-    if ($("dayDlg").open && !$("paneDay").hidden) showDayPane();
   }
   function notifyNew(fresh){
     if (isOffice() || !("Notification" in window) || Notification.permission!=="granted") return;
