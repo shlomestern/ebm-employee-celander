@@ -78,11 +78,6 @@ body{
   font-family:"Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
 }
-/* No pull to refresh: dragging downwards inside a conversation was reloading
-   the page instead of scrolling it, and the app keeps itself up to date
-   anyway. It has to sit on the root element — the viewport takes its
-   overscroll from there, not from the body. */
-html{overscroll-behavior-y:contain}
 h1,h2,h3{font-family:"Archivo", ui-sans-serif, system-ui, sans-serif}
 button{font:inherit; color:inherit; cursor:pointer}
 :focus-visible{outline:2px solid var(--sel); outline-offset:2px; border-radius:4px}
@@ -281,24 +276,42 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .noteadd{display:flex; gap:6px}
 .noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
-.prow{display:grid; grid-template-columns:minmax(0,1fr) 118px 118px 34px; gap:7px;
-  align-items:center; margin-bottom:8px}
-.prow input,.prow select{font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface-2);
-  border:1px solid var(--line-2); border-radius:7px; padding:8px 9px; width:100%; min-width:0}
-.prow .rm{width:34px; height:34px; padding:0; display:grid; place-items:center; border-radius:7px;
-  border:1px solid var(--line-2); background:var(--surface); color:var(--ink-3); font-size:16px}
-.prow .rm:hover{background:var(--danger); border-color:var(--danger); color:#fff}
-.pperm{display:flex; gap:16px; flex-wrap:wrap; margin:-3px 0 11px 2px;
-  padding:8px 10px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px}
+/* A name to a line. Everyone's code and permissions at once was a wall of
+   boxes to scroll past; the one you came to change is a tap away. */
+.prow{border:1px solid var(--line); border-radius:11px; background:var(--surface);
+  margin-bottom:6px}
+.prow.open{border-color:var(--line-2); background:var(--surface-2)}
+.phdr{display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:9px 10px; margin:0; background:none; border:0; border-radius:11px;
+  font:inherit; color:var(--ink); cursor:pointer}
+.phdr:hover{background:var(--surface-2)}
+.prow.open .phdr{border-bottom-left-radius:0; border-bottom-right-radius:0}
+.phdr .pav{width:28px; height:28px; flex:none; border-radius:9px; display:grid;
+  place-items:center; font-family:"Archivo",sans-serif; font-size:12.5px; font-weight:700;
+  background:var(--pc-soft); color:var(--pc)}
+.phdr .pnm{flex:1; min-width:0; font-family:"Archivo",sans-serif; font-weight:600;
+  font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.phdr .prole{flex:none; font-size:12px; color:var(--ink-3)}
+.phdr .pcar{flex:none; color:var(--ink-3); font-size:13px; width:14px; text-align:center}
+.pbody{padding:1px 10px 10px}
+.pgrid{display:grid; grid-template-columns:minmax(0,1fr) 150px; gap:7px}
+.pgrid > div{min-width:0}
+.pbody .plab{display:block; font-family:"Archivo",sans-serif; font-size:9.5px;
+  font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-3); margin:5px 0 3px}
+.pbody input,.pbody select{font:inherit; font-size:14.5px; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line-2); border-radius:7px;
+  padding:8px 9px; width:100%; min-width:0}
+.pbody .rm{width:auto; padding:7px 12px; margin-top:8px; font-size:12.5px;
+  border:1px solid var(--line-2); border-radius:7px; background:var(--surface);
+  color:var(--ink-3); font-family:"Archivo",sans-serif}
+.pbody .rm:hover{background:var(--danger); border-color:var(--danger); color:#fff}
+.pperm{display:flex; gap:16px; flex-wrap:wrap; margin:8px 0 0;
+  padding:8px 10px; background:var(--surface); border:1px solid var(--line); border-radius:8px}
 .pperm label{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2)}
 .pperm input{accent-color:var(--sel); width:15px; height:15px; margin:0}
-.phead{display:grid; grid-template-columns:minmax(0,1fr) 118px 118px 34px; gap:7px; margin-bottom:5px}
-.phead span{font-family:"Archivo",sans-serif; font-size:10px; font-weight:600; letter-spacing:.11em;
-  text-transform:uppercase; color:var(--ink-3)}
 @media (max-width:540px){
-  .prow{grid-template-columns:minmax(0,1fr) 34px; gap:6px}
-  .prow select,.prow input.code{grid-column:1}
-  .phead{display:none}
+  .pgrid{grid-template-columns:1fr}
 }
 .steps{margin:0 0 4px; padding-left:22px; display:flex; flex-direction:column; gap:9px}
 .steps li{font-size:14px; color:var(--ink); line-height:1.45}
@@ -1124,7 +1137,8 @@ body.hasupd .wrap{padding-top:52px}
     "Hours worked": "Heures travaill\u00e9es", "Hours booked": "Heures r\u00e9serv\u00e9es",
     "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
       "Ce que chacun a r\u00e9ellement point\u00e9, et o\u00f9. Les heures r\u00e9serv\u00e9es sont \u00e0 c\u00f4t\u00e9 pour voir l\u2019\u00e9cart.",
-    "Alerts": "Alertes",
+    "What changed in the app, and what this phone was told.":
+      "Ce qui a chang\u00e9 dans l\u2019application, et ce que ce t\u00e9l\u00e9phone a re\u00e7u.",
     "Every notification this phone was sent.":
       "Toutes les notifications envoy\u00e9es \u00e0 ce t\u00e9l\u00e9phone.",
     "Person": "Personne", "Everyone": "Tout le monde", "Show": "Afficher",
@@ -1148,7 +1162,6 @@ body.hasupd .wrap{padding-top:52px}
     "Pick who to write to.": "Choisissez \u00e0 qui \u00e9crire.",
     "All messages": "Toutes les conversations",
     "System": "Syst\u00e8me",
-    "What has changed in the app.": "Ce qui a chang\u00e9 dans l\u2019application.",
     "The app writes here itself. There is nothing to reply to.":
       "L\u2019application \u00e9crit ici elle-m\u00eame. Il n\u2019y a rien \u00e0 r\u00e9pondre.",
     "The message did not send.": "Le message n\u2019a pas \u00e9t\u00e9 envoy\u00e9.",
@@ -1357,7 +1370,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v66";
+  var APP_VERSION = "v67";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2125,16 +2138,30 @@ body.hasupd .wrap{padding-top:52px}
      en:"Hours worked now downloads as a real Excel file: one page of totals per project, one page with every job behind them.",
      fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."},
     {at:"2026-09-09T22:00:00Z",
-     en:"Every notification is kept in Messages under Alerts, so a message you swiped away is still there. Tapping a notification now opens what it was about.",
-     fr:"Chaque notification est gard\u00e9e dans Messages sous Alertes, donc un avis balay\u00e9 est toujours l\u00e0. Toucher une notification ouvre maintenant ce qu\u2019elle annon\u00e7ait."},
+     en:"Every notification is kept in Messages under System, so an alert you swiped away is still there. Tapping a notification now opens what it was about.",
+     fr:"Chaque notification est gard\u00e9e dans Messages sous Syst\u00e8me, donc un avis balay\u00e9 est toujours l\u00e0. Toucher une notification ouvre maintenant ce qu\u2019elle annon\u00e7ait."},
     {at:"2026-09-09T22:15:00Z",
      en:"You can scroll up in a conversation to read older messages now, and it no longer reloads the page.",
-     fr:"Vous pouvez maintenant remonter dans une conversation pour lire les anciens messages, et \u00e7a ne recharge plus la page."}
+     fr:"Vous pouvez maintenant remonter dans une conversation pour lire les anciens messages, et \u00e7a ne recharge plus la page."},
+    {at:"2026-09-09T23:30:00Z",
+     en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
+     fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."}
   ];
+  /* One thread for everything the app has to say, in the order it said it:
+     what changed in the release, and every notification this phone was sent.
+     Two channels was one too many — nobody wants to guess which of them a
+     message went to.
+
+     The release notes stay the office's business, the way they were: a
+     plumber hears what changed from the office in their own words, and sees
+     only what was actually sent to him. */
   function systemMsgs(){
-    return RELEASES.map(function(r){
+    var out = isOffice() ? RELEASES.map(function(r){
       return {by: SYSTEM, name: tr("System"),
               text: state.lang === "fr" ? r.fr : r.en, at: r.at};
+    }) : [];
+    return out.concat(alertMsgs()).sort(function(a, b){
+      return (a.at || "") < (b.at || "") ? -1 : 1;
     });
   }
   /* ---------- what this phone was told ----------
@@ -2146,7 +2173,6 @@ body.hasupd .wrap{padding-top:52px}
 
      Per device on purpose. A notification went to that phone, not to a name,
      and this is a record of what arrived rather than a mailbox. */
-  var ALERTS = "alerts";
   var alertLog = [];
 
   function alertStore(){
@@ -2180,7 +2206,7 @@ body.hasupd .wrap{padding-top:52px}
   }
   function afterAlerts(){
     renderMsgBar();
-    if (chatOpen === ALERTS) drawChat();
+    if (chatOpen === SYSTEM) drawChat();
     else if ($("chatDlg").open && !chatOpen) drawContacts();
   }
   function alertMsgs(){
@@ -2188,21 +2214,19 @@ body.hasupd .wrap{padding-top:52px}
       return (a.at || "") < (b.at || "") ? -1 : 1;
     }).map(function(r){
       var head = r.title || "", body = r.body || "";
-      return body ? {by: ALERTS, name: tr("Alerts"), at: r.at, head: head, text: body}
-                  : {by: ALERTS, name: tr("Alerts"), at: r.at, text: head};
+      return body ? {by: SYSTEM, name: tr("System"), at: r.at, head: head, text: body}
+                  : {by: SYSTEM, name: tr("System"), at: r.at, text: head};
     });
   }
 
   function chatDoc(key){ return "chat-" + key; }
   function personName(id){
     if (id === SYSTEM) return tr("System");
-    if (id === ALERTS) return tr("Alerts");
     if (id === "office") return state.officeName || tr("Office");
     return memberOr(id).name;
   }
   function chatMsgs(otherId){
     if (otherId === SYSTEM) return systemMsgs();
-    if (otherId === ALERTS) return alertMsgs();
     var t = (state.chats && state.chats.threads) || {};
     var v = t[keyFor(otherId)];
     return Array.isArray(v) ? v : [];
@@ -2218,10 +2242,7 @@ body.hasupd .wrap{padding-top:52px}
     }
     var me = member(state.me);
     var office = state.me === "office" || (me && isAdmin(me));
-    add(ALERTS);                    // everyone keeps their own notifications
-    // What changed in the app is the office's business; the crew are told
-    // whatever matters to them by the office, in their own words.
-    if (office) add(SYSTEM);
+    add(SYSTEM);                    // everyone keeps their own notifications
     if (office){
       crewPeople().forEach(function(pp){ add(pp.id); });
     } else {
@@ -2274,7 +2295,7 @@ body.hasupd .wrap{padding-top:52px}
     if (!state.fb || !state.me) return;
     state.chats = state.chats || {threads: {}};
     contacts().forEach(function(id){
-      if (id === SYSTEM || id === ALERTS) return;   // not stored in the cloud
+      if (id === SYSTEM) return;              // on the device, not in the cloud
       var key = keyFor(id);
       state.chatUnsubs.push(
         state.fb.collection("config").doc(chatDoc(key)).onSnapshot(function(snap){
@@ -2365,7 +2386,7 @@ body.hasupd .wrap{padding-top:52px}
       var msgs = chatMsgs(id), n = unreadIn(id);
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "thread " + (id === SYSTEM || id === ALERTS ? "sys"
+      b.className = "thread " + (id === SYSTEM ? "sys"
         : (id === "office" ? "c7" : colorClass(id)));
       var av = document.createElement("span"); av.className = "av";
       av.textContent = personName(id).charAt(0).toUpperCase();
@@ -2441,11 +2462,11 @@ body.hasupd .wrap{padding-top:52px}
   }
   function openThread(id){
     chatOpen = id;
-    var mayWrite = id !== SYSTEM && id !== ALERTS;
+    var mayWrite = id !== SYSTEM;
     $("chatTitle").textContent = personName(id);
-    $("chatSub").textContent = id === SYSTEM ? tr("What has changed in the app.")
-      : id === ALERTS ? tr("Every notification this phone was sent.")
-      : tr("Just the two of you.");
+    $("chatSub").textContent = id !== SYSTEM ? tr("Just the two of you.")
+      : isOffice() ? tr("What changed in the app, and what this phone was told.")
+      : tr("Every notification this phone was sent.");
     $("chatThreads").hidden = true;
     $("chatPane").hidden = false;
     $("chatBack").hidden = false;
@@ -2474,7 +2495,7 @@ body.hasupd .wrap{padding-top:52px}
         return;
       }
     }
-    openChat(); openThread(ALERTS);
+    openChat(); openThread(SYSTEM);
   }
   var pendingTag = null;
   try {
@@ -3786,9 +3807,25 @@ body.hasupd .wrap{padding-top:52px}
   }
 
   /* ---------- crew & codes editor (office only) ---------- */
-  function addRosterRow(person){
+  function addRosterRow(person, open){
     var row = document.createElement("div");
-    row.className = "prow";
+    row.className = "prow " + colorClass(person ? person.id : "");
+    row.dataset.id = person ? person.id
+      : ("p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+
+    // The line you see until you ask for more.
+    var hdr = document.createElement("button");
+    hdr.type = "button"; hdr.className = "phdr";
+    var av = document.createElement("span"); av.className = "pav";
+    var who = document.createElement("span"); who.className = "pnm";
+    var role = document.createElement("span"); role.className = "prole";
+    var car = document.createElement("span"); car.className = "pcar";
+    hdr.appendChild(av); hdr.appendChild(who); hdr.appendChild(role); hdr.appendChild(car);
+    row.appendChild(hdr);
+
+    var body = document.createElement("div");
+    body.className = "pbody"; body.hidden = true;
+    var grid = document.createElement("div"); grid.className = "pgrid";
     var nm = document.createElement("input");
     nm.className = "nm"; nm.placeholder = tr("Name"); nm.maxLength = 30;
     nm.value = person ? person.name : "";
@@ -3801,11 +3838,16 @@ body.hasupd .wrap{padding-top:52px}
     var cd = document.createElement("input");
     cd.className = "code"; cd.placeholder = tr("Code"); cd.maxLength = 40; cd.autocomplete = "off";
     cd.value = person ? (person.code||"") : "";
-    var rm = document.createElement("button");
-    rm.type="button"; rm.className="rm"; rm.title=tr("Remove"); rm.textContent="\u00d7";
-    row.dataset.id = person ? person.id : ("p" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
-    row.appendChild(nm); row.appendChild(roleSel); row.appendChild(cd); row.appendChild(rm);
-    $("crewRows").appendChild(row);
+    function labelled(text, el){
+      var w = document.createElement("div");
+      var l = document.createElement("span"); l.className = "plab"; l.textContent = text;
+      w.appendChild(l); w.appendChild(el);
+      return w;
+    }
+    grid.appendChild(labelled(tr("Name"), nm));
+    grid.appendChild(labelled(tr("Role"), roleSel));
+    body.appendChild(grid);
+    body.appendChild(labelled(tr("Code"), cd));
 
     // What an office person is allowed to do. Hidden for a trade.
     var perm = document.createElement("div");
@@ -3819,21 +3861,41 @@ body.hasupd .wrap{padding-top:52px}
     }
     box("pbook",   tr("Can book and cancel jobs"), c.book !== false);
     box("pmanage", tr("Can add people and change codes"), c.manage === true);
-    $("crewRows").appendChild(perm);
+    body.appendChild(perm);
     row.perm = perm;
 
-    function syncPerm(){ perm.hidden = roleSel.value !== "admin"; }
-    roleSel.addEventListener("change", syncPerm);
-    syncPerm();
+    var rm = document.createElement("button");
+    rm.type="button"; rm.className="rm"; rm.textContent = tr("Remove");
+    body.appendChild(rm);
+    row.appendChild(body);
+    $("crewRows").appendChild(row);
 
-    rm.addEventListener("click", function(){ perm.remove(); row.remove(); });
+    // The line has to say who it is while the name is still being typed.
+    function syncHead(){
+      var n = nm.value.trim();
+      who.textContent = n || tr("Someone new");
+      av.textContent = (n || "?").charAt(0).toUpperCase();
+      role.textContent = roleSel.value === "admin" ? tr("Admin (office)")
+                                                   : tradeName(roleSel.value);
+      perm.hidden = roleSel.value !== "admin";
+    }
+    function setOpen(on){
+      body.hidden = !on;
+      row.classList.toggle("open", !!on);
+      car.textContent = on ? "\u2013" : "+";
+      hdr.setAttribute("aria-expanded", on ? "true" : "false");
+    }
+    nm.addEventListener("input", syncHead);
+    roleSel.addEventListener("change", syncHead);
+    hdr.addEventListener("click", function(){ setOpen(body.hidden); });
+    rm.addEventListener("click", function(){ row.remove(); });
+    syncHead(); setOpen(!!open);
     return row;
   }
   function openCrewEditor(){
     var host = $("crewRows");
-    host.innerHTML = '<div class="phead"><span>' + tr("Name") + '</span><span>' +
-      tr("Role") + '</span><span>' + tr("Code") + '</span><span></span></div>';
-    state.people.forEach(addRosterRow);
+    host.innerHTML = "";
+    state.people.forEach(function(pp){ addRosterRow(pp, false); });
     $("fOfficeName").value = state.officeName || "Office";
     $("fOfficeCode").value = state.officeCode || masterOfficeCode();
     $("crewErr").textContent = "";
@@ -3879,7 +3941,9 @@ body.hasupd .wrap{padding-top:52px}
       host.textContent = tr("Could not read the list just now.");
     });
   }
-  $("addPerson").addEventListener("click", function(){ addRosterRow(null).querySelector(".nm").focus(); });
+  $("addPerson").addEventListener("click", function(){
+    addRosterRow(null, true).querySelector(".nm").focus();
+  });
   $("crewCancel").addEventListener("click", function(){ $("crewDlg").close(); });
 
   $("crewForm").addEventListener("submit", function(ev){
