@@ -337,6 +337,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .actions .spacer{flex:1}
 .err{color:var(--danger); font-size:13px; margin:10px 0 0; min-height:1px}
 .warn{color:var(--mark); font-size:13px; margin:10px 0 0}
+.alerts{margin:0 0 16px; display:flex; flex-direction:column; gap:8px}
+.alert{display:flex; gap:11px; align-items:center; flex-wrap:wrap;
+  padding:11px 13px; border-radius:10px; background:var(--surface);
+  border:1px solid var(--mark); box-shadow:inset 4px 0 0 var(--mark)}
+.alert .txt{flex:1; min-width:170px}
+.alert .hd{font-family:"Archivo",sans-serif; font-weight:700; font-size:14px;
+  color:var(--mark); letter-spacing:-.01em}
+.alert .dt{font-size:12.5px; color:var(--ink-2)}
 .job-late{font-family:"Archivo",sans-serif; font-size:13px; font-weight:600;
   color:var(--mark); margin-top:2px}
 
@@ -436,6 +444,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     <div class="layout">
       <aside class="crew" id="crew"><div class="eyebrow" data-t>Crew</div></aside>
       <main>
+        <div class="alerts" id="alerts" hidden></div>
         <div class="calbar">
           <button class="nav" id="prevMonth" data-ta="Previous month" aria-label="Previous month">&#8249;</button>
           <button class="nav" id="nextMonth" data-ta="Next month" aria-label="Next month">&#8250;</button>
@@ -754,6 +763,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     "+{n} hour": "+{n} heure", "+{n} hours": "+{n} heures",
     "Could not send that.": "L\u2019envoi a \u00e9chou\u00e9.",
     "Give him until {h}": "Prolonger jusqu\u2019\u00e0 {h}",
+    "{name} is running late": "{name} est en retard",
+    "booked to {h}": "r\u00e9serv\u00e9 jusqu\u2019\u00e0 {h}",
+    "Open the day": "Ouvrir la journ\u00e9e",
     "The next job is in the way. Move or cancel it first.":
       "Le travail suivant bloque. D\u00e9placez-le ou annulez-le d\u2019abord.",
     "From": "De", "To": "\u00c0",
@@ -1013,7 +1025,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v49";
+  var APP_VERSION = "v50";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1218,7 +1230,14 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   /* Hours already taken by another job are not offered at all, rather than
      accepted and then rejected on save. */
   var busyMap = {}, travelStart = {}, travelEnd = {};
-  function locKey(j){ return (j.projectId||"") + "/" + (j.buildingId||""); }
+  /* Same site or not. A job booked for the whole project counts as being at
+     any of its buildings — otherwise leaving the building blank on one of two
+     jobs at the same address demanded an hour of travel between them. */
+  function samePlace(aProj, aBld, bProj, bBld){
+    if (aProj !== bProj) return false;
+    if (!aBld || !bBld) return true;
+    return aBld === bBld;
+  }
   /* Two jobs at different addresses cannot touch: 8-10 then 10-12 across town
      means being in two places at once. An hour is kept free for getting
      there, and two jobs in the same building can still run back to back. */
@@ -1227,7 +1246,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     jobsOn(ds, crewId).forEach(function(j){
       if (skipId && j.id === skipId) return;
       for (var h=j.from; h<j.to; h++) busyMap[h] = true;
-      if (!here || locKey(j) === here) return;
+      if (!here.proj || samePlace(j.projectId, j.buildingId, here.proj, here.bld)) return;
       // Cannot start the hour he finishes elsewhere, cannot start the hour
       // before he is due there, and cannot still be working up to it.
       travelStart[j.to] = j.buildingName;
@@ -1323,6 +1342,66 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("footnote").innerHTML = note;
   }
 
+  /* Not gated on owning the booking: the alert goes to whoever booked this
+     job and whoever booked the next one, and either of them has to be able to
+     answer it. The crew member asked for the hours himself. */
+  function grantable(j){
+    return can("book") && !!j.late && !j.clockOut && j.late.until > j.to;
+  }
+  function grantButton(j){
+    var gr=document.createElement("button"); gr.type="button"; gr.className="btn btn-go";
+    gr.textContent = tr("Give him until {h}", {h: hourLong(j.late.until)});
+    gr.addEventListener("click", function(){
+      gr.disabled=true;
+      if (overlaps(j.date, j.crewId, j.from, j.late.until, j.id)){
+        gr.disabled=false;
+        alert(tr("The next job is in the way. Move or cancel it first."));
+        return;
+      }
+      patchJob(j.id, {to:j.late.until, allDay:false})
+        .catch(function(e){ gr.disabled=false; alert(errText(e,tr("The changes did not save."))); });
+    });
+    return gr;
+  }
+
+  /* Anything waiting on the office sits above the calendar, so opening the app
+     from a notification puts the answer on screen instead of asking whoever
+     tapped it to go hunting for the right day. */
+  function renderAlerts(){
+    var host = $("alerts"); host.innerHTML = "";
+    var rows = [];
+    if (can("book")){
+      Object.keys(state.jobs).forEach(function(k){
+        var j = state.jobs[k];
+        if (j && j.date >= todayIso && grantable(j)) rows.push(j);
+      });
+      rows.sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
+    }
+    host.hidden = !rows.length;
+    rows.forEach(function(j){
+      var m = memberOr(j.crewId);
+      var row = document.createElement("div"); row.className = "alert";
+      var tx = document.createElement("div"); tx.className = "txt";
+      var hd = document.createElement("div"); hd.className = "hd";
+      hd.textContent = tr("{name} is running late", {name: m.name});
+      var dt = document.createElement("div"); dt.className = "dt";
+      dt.textContent = j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u:j.unit}) : "") +
+        " \u00b7 " + (j.date===todayIso ? tr("today") : F_MED.format(fromIso(j.date))) +
+        " \u00b7 " + tr("booked to {h}", {h: hourLong(j.to)});
+      tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+      row.appendChild(grantButton(j));
+      var op = document.createElement("button"); op.type="button"; op.className="btn";
+      op.textContent = tr("Open the day");
+      op.addEventListener("click", function(){
+        if (isOffice()) state.who = j.crewId;
+        state.anchor = fromIso(j.date);
+        render(); openDay(j.date);
+      });
+      row.appendChild(op);
+      host.appendChild(row);
+    });
+  }
+
   function jobCard(j, opts){
     opts = opts || {};
     var m = memberOr(j.crewId);
@@ -1415,21 +1494,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
         acts.appendChild(la);
       }
     }
-    if (opts.edit && j.late && !j.clockOut && j.late.until > j.to){
-      var gr=document.createElement("button"); gr.type="button"; gr.className="btn btn-go";
-      gr.textContent = tr("Give him until {h}", {h: hourLong(j.late.until)});
-      gr.addEventListener("click", function(){
-        gr.disabled=true;
-        if (overlaps(j.date, j.crewId, j.from, j.late.until, j.id)){
-          gr.disabled=false;
-          alert(tr("The next job is in the way. Move or cancel it first."));
-          return;
-        }
-        patchJob(j.id, {to:j.late.until, allDay:false})
-          .catch(function(e){ gr.disabled=false; alert(errText(e,tr("The changes did not save."))); });
-      });
-      acts.appendChild(gr);
-    }
+    if (grantable(j)) acts.appendChild(grantButton(j));
     if (opts.edit){
       var ed=document.createElement("button"); ed.type="button"; ed.className="btn"; ed.textContent=tr("Edit");
       ed.addEventListener("click", function(){ editJob(j); });
@@ -1688,6 +1753,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     document.body.classList.toggle("nocrewbar", !isOffice());
     $("appTitle").textContent = isOffice() ? tr("Crew Calendar") : tr("My Schedule");
     if (isOffice()) renderCrew();
+    renderAlerts();
     renderCalendar();
     if ($("dayDlg").open && !$("paneDay").hidden) showDayPane();
   }
@@ -1781,9 +1847,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   function hereKey(){
     var pid = $("fProject").value, p = project(pid);
-    if (!p) return "";
-    var bid = $("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "");
-    return pid + "/" + bid;
+    if (!p) return {proj:"", bld:""};
+    return {proj: pid,
+            bld: $("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "")};
   }
   /* The travel gap depends on which address was picked, so the hours have to
      be worked out again every time that changes. */
