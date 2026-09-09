@@ -392,8 +392,16 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .bub.mine{align-self:flex-end; background:var(--sel); color:#fff; border-bottom-right-radius:4px}
 .bub.theirs{align-self:flex-start; background:var(--surface-2); border:1px solid var(--line);
   border-bottom-left-radius:4px}
-.chatsend{display:flex; gap:7px; align-items:center}
-.chatsend input{margin:0; flex:1; min-width:0}
+.chatsend{display:flex; gap:8px; align-items:stretch}
+.chatsend input{
+  margin:0; flex:1; min-width:0; font:inherit; font-size:16px; line-height:1.3;
+  color:var(--ink); background:var(--surface-2); border:1px solid var(--line-2);
+  border-radius:10px; padding:13px 14px;
+}
+.chatsend input:focus-visible{outline:2px solid var(--sel); outline-offset:1px}
+.chatsend .btn{padding:13px 20px; font-size:15px}
+.sysnote{font-size:12.5px; color:var(--ink-3); margin:8px 0 0}
+.thread.sys{--pc:var(--accent); --pc-soft:var(--accent-soft)}
 .alert{display:flex; gap:11px; align-items:center; flex-wrap:wrap;
   padding:11px 13px; border-radius:10px; background:var(--surface);
   border:1px solid var(--mark); box-shadow:inset 4px 0 0 var(--mark)}
@@ -619,10 +627,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
     <div id="chatPane" hidden>
       <div class="chatlog" id="chatLog"></div>
-      <div class="chatsend">
+      <div class="chatsend" id="chatSendRow">
         <input id="chatInput" maxlength="500" data-tp="Write a message" placeholder="Write a message">
         <button type="button" class="btn btn-primary" id="chatSend" data-t>Send</button>
       </div>
+      <p class="sysnote" id="sysNote" hidden data-t>Announcements only — you cannot reply here.</p>
       <p class="err" id="chatErr"></p>
     </div>
 
@@ -972,6 +981,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     "No messages yet": "Aucun message pour l\u2019instant",
     "Pick who to write to.": "Choisissez \u00e0 qui \u00e9crire.",
     "All messages": "Toutes les conversations",
+    "System": "Syst\u00e8me",
+    "News about the app. Everybody sees this one.":
+      "Nouvelles de l\u2019application. Tout le monde la voit.",
+    "Announcements only \u2014 you cannot reply here.":
+      "Annonces seulement \u2014 vous ne pouvez pas r\u00e9pondre ici.",
     "The message did not send.": "Le message n\u2019a pas \u00e9t\u00e9 envoy\u00e9.",
     "Up to four. Taken with the phone's camera or picked from it.":
       "Jusqu\u2019\u00e0 quatre. Prises avec l\u2019appareil photo ou choisies dessus.",
@@ -1167,7 +1181,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v54";
+  var APP_VERSION = "v55";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1502,15 +1516,24 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   var LS_SEEN = "ebm-crew:chatseen:v1";
   var chatOpen = null;                    // the other person's id, or null
 
+  /* "system" is not a person: it is one announcements channel everybody
+     reads, so it has a single key rather than a pair. Only somebody who runs
+     the app can write to it; for everyone else it is read-only. */
+  var SYSTEM = "system";
   function threadKey(a, b){ return [a, b].sort().join("__"); }
+  function keyFor(otherId){
+    return otherId === SYSTEM ? SYSTEM : threadKey(state.me, otherId);
+  }
+  function canAnnounce(){ return can("manage"); }
   function chatDoc(key){ return "chat-" + key; }
   function personName(id){
+    if (id === SYSTEM) return tr("System");
     if (id === "office") return state.officeName || tr("Office");
     return memberOr(id).name;
   }
   function chatMsgs(otherId){
     var t = (state.chats && state.chats.threads) || {};
-    var v = t[threadKey(state.me, otherId)];
+    var v = t[keyFor(otherId)];
     return Array.isArray(v) ? v : [];
   }
   /* Who there is to write to. The office writes to the men on the tools, not
@@ -1523,6 +1546,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       if (!id || id === state.me || seen[id]) return;
       seen[id] = 1; out.push(id);
     }
+    add(SYSTEM);                             // announcements sit at the top
     var me = member(state.me);
     if (state.me === "office" || (me && isAdmin(me))) crewPeople().forEach(function(pp){ add(pp.id); });
     else add("office");
@@ -1541,11 +1565,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     var msgs = chatMsgs(otherId);
     if (!msgs.length) return;
     var seen = chatSeen();
-    seen[threadKey(state.me, otherId)] = msgs[msgs.length - 1].at;
+    seen[keyFor(otherId)] = msgs[msgs.length - 1].at;
     lsWrite(LS_SEEN, seen);
   }
   function unreadIn(otherId){
-    var seen = chatSeen()[threadKey(state.me, otherId)] || "";
+    var seen = chatSeen()[keyFor(otherId)] || "";
     return chatMsgs(otherId).filter(function(m){
       return m.at > seen && m.by !== state.me;
     }).length;
@@ -1567,7 +1591,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     if (!state.fb || !state.me) return;
     state.chats = state.chats || {threads: {}};
     contacts().forEach(function(id){
-      var key = threadKey(state.me, id);
+      var key = keyFor(id);
       state.chatUnsubs.push(
         state.fb.collection("config").doc(chatDoc(key)).onSnapshot(function(snap){
           var d = (snap.exists && snap.data()) || {};
@@ -1583,7 +1607,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 
   function sendMessage(otherId, text){
     var msg = {by: state.me, name: meName(), text: text, at: new Date().toISOString()};
-    var key = threadKey(state.me, otherId);
+    if (otherId === SYSTEM) msg.name = tr("System");
+    var key = keyFor(otherId);
     if (state.fb){
       // Appended on the server, so two people writing in the same moment
       // cannot overwrite each other.
@@ -1605,7 +1630,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var msgs = chatMsgs(id), n = unreadIn(id);
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "thread " + (id === "office" ? "c7" : colorClass(id));
+      b.className = "thread " + (id === SYSTEM ? "sys" : (id === "office" ? "c7" : colorClass(id)));
       var av = document.createElement("span"); av.className = "av";
       av.textContent = personName(id).charAt(0).toUpperCase();
       var tx = document.createElement("span"); tx.className = "txt";
@@ -1649,14 +1674,20 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function openThread(id){
     chatOpen = id;
+    var sys = id === SYSTEM;
+    var mayWrite = !sys || canAnnounce();
     $("chatTitle").textContent = personName(id);
-    $("chatSub").textContent = tr("Just the two of you.");
+    $("chatSub").textContent = sys
+      ? tr("News about the app. Everybody sees this one.")
+      : tr("Just the two of you.");
     $("chatThreads").hidden = true;
     $("chatPane").hidden = false;
     $("chatBack").hidden = false;
     $("chatErr").textContent = "";
+    $("chatSendRow").hidden = !mayWrite;
+    $("sysNote").hidden = mayWrite;
     drawChat();
-    setTimeout(function(){ $("chatInput").focus(); }, 30);
+    if (mayWrite) setTimeout(function(){ $("chatInput").focus(); }, 30);
   }
   function openChat(){
     chatOpen = null;
@@ -3166,9 +3197,51 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   refreshInstallButton();
   checkInstalled();
 
+  /* ---------- picking up a new version on its own ----------
+     The worker already fetches fresh files, but a phone left open for a week
+     goes on running the copy it started with. So the worker is asked whether
+     there is a newer one — on opening, whenever the app comes back to the
+     foreground, and every quarter of an hour — and when a new one takes over,
+     the page reloads itself.
+
+     Never mid-sentence, though: a reload while somebody is typing a message
+     or halfway through booking a job would throw the work away. It waits for
+     the dialogs to be shut and the keyboard to be idle. */
   if ("serviceWorker" in navigator){
+    var hadController = !!navigator.serviceWorker.controller;
+    var updateWaiting = false;
+
+    function busyNow(){
+      if (document.querySelector("dialog[open]")) return true;
+      var el = document.activeElement;
+      if (!el) return false;
+      var tag = (el.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return true;
+      return el.isContentEditable === true;
+    }
+    function applyUpdate(){
+      if (!updateWaiting) return;
+      if (busyNow()) return;             // asked again as soon as it is not
+      location.reload();
+    }
+    navigator.serviceWorker.addEventListener("controllerchange", function(){
+      // A first install also changes the controller; that one is not an update.
+      if (!hadController) { hadController = true; return; }
+      updateWaiting = true;
+      applyUpdate();
+    });
+    document.addEventListener("click", applyUpdate, true);
+    document.addEventListener("focusout", function(){ setTimeout(applyUpdate, 400); });
+
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js").catch(function(e){ console.warn("sw", e); });
+      navigator.serviceWorker.register("sw.js").then(function(reg){
+        function look(){ try { reg.update(); } catch(e){} }
+        look();
+        setInterval(look, 15 * 60 * 1000);
+        document.addEventListener("visibilitychange", function(){
+          if (document.visibilityState === "visible"){ look(); applyUpdate(); }
+        });
+      }).catch(function(e){ console.warn("sw", e); });
     });
   }
 })();
