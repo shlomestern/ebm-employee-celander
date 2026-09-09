@@ -1622,7 +1622,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v72";
+  var APP_VERSION = "v73";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1670,6 +1670,10 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   /* Only the person who booked a job may cancel it. The master office code
      from config.js can cancel anything — someone has to be able to. Jobs made
      before this rule existed carry no owner, so they stay cancellable. */
+  /* Whose booking it is by name, which is not the same question as who is
+     allowed to change it: the office code may edit anything, so asking
+     "can I edit this" would never find somebody to ask. */
+  function bookedByMe(j){ return (j.createdById || "office") === state.me; }
   function ownsJob(j){
     if (!can("book")) return false;
     if (state.me === "office") return true;
@@ -4310,9 +4314,9 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
                        {n: free, a: hourLong(DAY_START), b: hourLong(DAY_END)})));
     $("addJobBtn").hidden = !can("book");
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
-    // Only worth offering when somebody else's booking is what is in the way.
+    // Only worth offering when the booking in the way is somebody else's.
     $("askJobBtn").hidden = !can("book") || dayIsPast(ds) ||
-      !jobsOn(ds, viewCrewId()).some(function(j){ return !ownsJob(j); });
+      !jobsOn(ds, viewCrewId()).some(function(j){ return !bookedByMe(j); });
 
     var host=$("dayJobs"); host.innerHTML="";
     var list=jobsOn(ds, viewCrewId());
@@ -4478,7 +4482,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
        instead of leaving the admin at a dead end. */
     var ds = openDate, crewId = editing ? editing.crewId : viewCrewId();
     var theirs = ds ? jobsOn(ds, crewId).filter(function(j){
-      return (!editing || j.id !== editing.id) && !ownsJob(j);
+      return (!editing || j.id !== editing.id) && !bookedByMe(j);
     }) : [];
     var show = !!theirs.length && can("book");
     $("busyWarn").hidden = !show;
