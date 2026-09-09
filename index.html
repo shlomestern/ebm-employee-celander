@@ -404,6 +404,21 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .sendbtn:hover{filter:brightness(1.1)}
 .sendbtn svg{width:20px; height:20px; display:block}
 .sysnote{font-size:12.5px; color:var(--ink-3); margin:8px 0 0}
+dialog.repwide{width:min(calc(100vw - 24px), 860px)}
+.reptable{width:100%; border-collapse:collapse; font-size:13px; margin-top:4px}
+.reptable th{text-align:left; font-family:"Archivo",sans-serif; font-size:10.5px;
+  font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+  border-bottom:1px solid var(--line); padding:6px 8px 5px}
+.reptable td{padding:6px 8px; border-bottom:1px solid var(--line)}
+.reptable td.n, .reptable th.n{text-align:right; font-variant-numeric:tabular-nums}
+.reptable tr.who td{font-family:"Archivo",sans-serif; font-weight:700; font-size:13.5px;
+  background:var(--surface-2); color:var(--pc, var(--ink))}
+.reptable tr.tot td{font-weight:700}
+.reptable .thin{color:var(--ink-3)}
+.repscroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+.repsum{display:flex; gap:18px; flex-wrap:wrap; margin:12px 0 2px;
+  font-family:"Archivo",sans-serif; font-size:13.5px}
+.repsum b{font-size:19px; font-weight:700; display:block; letter-spacing:-.02em}
 .bub img{display:block; max-width:100%; width:210px; border-radius:9px; cursor:zoom-in;
   margin:1px 0 3px}
 .bub audio{display:block; width:min(240px,60vw); margin:2px 0 3px; height:34px}
@@ -613,6 +628,7 @@ body.hasupd .wrap{padding-top:52px}
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55"></p>
 
     <div class="actions">
+      <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
       <button type="button" class="btn" id="meCrewBtn" hidden data-t>Crew &amp; codes</button>
       <span class="spacer"></span>
       <button type="button" class="btn btn-danger" id="meSignOut" data-t>Sign out</button>
@@ -665,6 +681,43 @@ body.hasupd .wrap{padding-top:52px}
   </svg>
   <span class="cnt" id="msgCount" hidden>0</span>
 </button>
+
+<dialog id="repDlg" class="repwide">
+  <div class="dlg">
+    <div class="eyebrow" data-t>Office only</div>
+    <h3 data-t>Hours worked</h3>
+    <p class="sub" data-t>What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.</p>
+
+    <div class="row2">
+      <div class="field">
+        <label for="repFrom" data-t>From</label>
+        <input type="date" id="repFrom">
+      </div>
+      <div class="field">
+        <label for="repTo" data-t>To</label>
+        <input type="date" id="repTo">
+      </div>
+    </div>
+    <div class="field">
+      <label for="repWho" data-t>Person</label>
+      <select id="repWho"></select>
+    </div>
+    <div class="actions" style="margin-top:2px">
+      <button type="button" class="btn btn-primary" id="repRun" data-t>Show</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="repCsvSum" hidden data-t>Download totals</button>
+      <button type="button" class="btn" id="repCsvAll" hidden data-t>Download every job</button>
+    </div>
+
+    <p class="err" id="repErr"></p>
+    <div id="repOut"></div>
+
+    <div class="actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="repClose" data-t>Close</button>
+    </div>
+  </div>
+</dialog>
 
 <dialog id="chatDlg">
   <div class="dlg">
@@ -1057,6 +1110,21 @@ body.hasupd .wrap{padding-top:52px}
     "Qty": "Qt\u00e9", "Another line": "Une autre ligne",
     "Nothing used": "Rien utilis\u00e9", "Save and finish": "Enregistrer et terminer",
     "Used: ": "Utilis\u00e9\u00a0: ",
+    "Hours worked": "Heures travaill\u00e9es", "Hours booked": "Heures r\u00e9serv\u00e9es",
+    "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
+      "Ce que chacun a r\u00e9ellement point\u00e9, et o\u00f9. Les heures r\u00e9serv\u00e9es sont \u00e0 c\u00f4t\u00e9 pour voir l\u2019\u00e9cart.",
+    "Person": "Personne", "Everyone": "Tout le monde", "Show": "Afficher",
+    "Download totals": "T\u00e9l\u00e9charger les totaux",
+    "Download every job": "T\u00e9l\u00e9charger chaque travail",
+    "Place": "Endroit", "Jobs": "Travaux", "Booked": "R\u00e9serv\u00e9", "Worked": "Travaill\u00e9",
+    "Total": "Total", "State": "\u00c9tat", "Materials": "Mat\u00e9riel",
+    "Clocked in": "Arriv\u00e9e", "Clocked out": "D\u00e9part", "Booked by": "R\u00e9serv\u00e9 par",
+    "Not clocked in": "Non point\u00e9", "Date": "Date",
+    "hours": "heures", "jobs": "travaux",
+    "Nothing was booked in those dates.": "Rien n\u2019a \u00e9t\u00e9 r\u00e9serv\u00e9 durant ces dates.",
+    "Pick both dates.": "Choisissez les deux dates.",
+    "The second date is before the first.": "La deuxi\u00e8me date pr\u00e9c\u00e8de la premi\u00e8re.",
+    "Could not read those dates.": "Impossible de lire ces dates.",
     "Messages": "Messages", "Send": "Envoyer",
     "Just the two of you.": "Entre vous deux seulement.",
     "Write a message": "\u00c9crire un message",
@@ -1273,7 +1341,7 @@ body.hasupd .wrap{padding-top:52px}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v62";
+  var APP_VERSION = "v63";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1594,6 +1662,228 @@ body.hasupd .wrap{padding-top:52px}
   /* Not gated on owning the booking: the alert goes to whoever booked this
      job and whoever booked the next one, and either of them has to be able to
      answer it. The crew member asked for the hours himself. */
+  /* ---------- hours worked ----------
+     What somebody clocked, not what was booked for them, because those are
+     different numbers and only one of them is worth paying. Booked hours sit
+     alongside so the gap is visible rather than hidden.
+
+     The report reaches back further than the calendar keeps in memory, so it
+     asks the database for its own range instead of reading what happens to
+     be loaded. */
+  function hoursBetween(a, b){
+    var t0 = Date.parse(a), t1 = Date.parse(b);
+    if (!(t0 && t1) || t1 <= t0) return 0;
+    return (t1 - t0) / 3600000;
+  }
+  function round2(n){ return Math.round(n * 100) / 100; }
+  function placeOf(j){
+    return (j.projectId ? j.projectId + " — " : "") + (j.buildingName || j.projectName || "");
+  }
+
+  function reportRows(from, to, whoId){
+    var pick = function(list){
+      return list.filter(function(j){
+        if (!j || j.v !== 2 || !j.date) return false;
+        if (j.date < from || j.date > to) return false;
+        return !whoId || j.crewId === whoId;
+      });
+    };
+    if (state.fb){
+      return state.fb.collection("bookings")
+        .where("date", ">=", from).where("date", "<=", to).get()
+        .then(function(snap){
+          return pick(snap.docs.map(function(d){
+            var j = d.data() || {}; j.id = j.id || d.id; return j;
+          }));
+        });
+    }
+    return Promise.resolve(pick(Object.keys(state.jobs).map(function(k){ return state.jobs[k]; })));
+  }
+
+  /* Rows for the table and the file: one line per job, in date order. */
+  function reportLines(jobs){
+    return jobs.slice().sort(function(a, b){
+      return a.date === b.date ? a.from - b.from : (a.date < b.date ? -1 : 1);
+    }).map(function(j){
+      var m = memberOr(j.crewId);
+      var worked = hoursBetween(j.clockIn, j.clockOut);
+      return {
+        job: j, date: j.date, who: m.name, trade: tradeName(m.trade),
+        place: placeOf(j), unit: j.unit || "",
+        booked: Math.max(0, (j.to || 0) - (j.from || 0)),
+        worked: round2(worked),
+        started: j.clockIn ? F_TIME.format(new Date(j.clockIn)) : "",
+        ended: j.clockOut ? F_TIME.format(new Date(j.clockOut)) : "",
+        state: j.clockOut ? tr("Finished") : (j.clockIn ? tr("On site") : tr("Not clocked in")),
+        used: (j.used || []).map(function(u){
+          return u.qty ? u.qty + " \u00d7 " + u.item : u.item;
+        }).join("; "),
+        by: j.createdBy || ""
+      };
+    });
+  }
+  /* Totals per person, then per place inside that person. */
+  function reportTotals(lines){
+    var people = [];
+    lines.forEach(function(r){
+      var p = people.filter(function(x){ return x.who === r.who; })[0];
+      if (!p){ p = {who: r.who, id: r.job.crewId, booked: 0, worked: 0, jobs: 0, places: []}; people.push(p); }
+      p.booked += r.booked; p.worked += r.worked; p.jobs += 1;
+      var pl = p.places.filter(function(x){ return x.place === r.place; })[0];
+      if (!pl){ pl = {place: r.place, booked: 0, worked: 0, jobs: 0}; p.places.push(pl); }
+      pl.booked += r.booked; pl.worked += r.worked; pl.jobs += 1;
+    });
+    people.forEach(function(p){
+      p.booked = round2(p.booked); p.worked = round2(p.worked);
+      p.places.forEach(function(x){ x.booked = round2(x.booked); x.worked = round2(x.worked); });
+      p.places.sort(function(a, b){ return b.worked - a.worked; });
+    });
+    people.sort(function(a, b){ return b.worked - a.worked; });
+    return people;
+  }
+
+  /* A spreadsheet reads this: quotes where a field could contain a comma, and
+     a byte order mark so Excel opens the accents in a building's name right
+     rather than as mojibake. */
+  function csv(rows){
+    var out = rows.map(function(row){
+      return row.map(function(cell){
+        var v = cell === null || cell === undefined ? "" : String(cell);
+        return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      }).join(",");
+    }).join("\r\n");
+    return "\ufeff" + out;
+  }
+  function saveFile(name, text){
+    var blob = new Blob([text], {type: "text/csv;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  var repLines = [], repPeople = [], repSpan = ["", ""];
+
+  function drawReport(){
+    var host = $("repOut"); host.innerHTML = "";
+    if (!repLines.length){
+      var e = document.createElement("div"); e.className = "empty";
+      e.textContent = tr("Nothing was booked in those dates.");
+      host.appendChild(e);
+      $("repCsvSum").hidden = true; $("repCsvAll").hidden = true;
+      return;
+    }
+    var worked = 0, booked = 0;
+    repPeople.forEach(function(p){ worked += p.worked; booked += p.booked; });
+
+    var sum = document.createElement("div"); sum.className = "repsum";
+    [[tr("Hours worked"), round2(worked)], [tr("Hours booked"), round2(booked)],
+     [tr("Jobs"), repLines.length]].forEach(function(pair){
+      var b = document.createElement("div");
+      var big = document.createElement("b"); big.textContent = pair[1];
+      b.appendChild(big); b.appendChild(document.createTextNode(pair[0]));
+      sum.appendChild(b);
+    });
+    host.appendChild(sum);
+
+    var wrap = document.createElement("div"); wrap.className = "repscroll";
+    var t = document.createElement("table"); t.className = "reptable";
+    var head = document.createElement("tr");
+    [tr("Place"), tr("Jobs"), tr("Booked"), tr("Worked")].forEach(function(h, i){
+      var th = document.createElement("th"); th.textContent = h;
+      if (i) th.className = "n";
+      head.appendChild(th);
+    });
+    t.appendChild(head);
+
+    repPeople.forEach(function(p){
+      var hr = document.createElement("tr");
+      hr.className = "who " + colorClass(p.id);
+      var td = document.createElement("td"); td.textContent = p.who;
+      var j = document.createElement("td"); j.className = "n"; j.textContent = p.jobs;
+      var bk = document.createElement("td"); bk.className = "n"; bk.textContent = p.booked;
+      var wk = document.createElement("td"); wk.className = "n"; wk.textContent = p.worked;
+      hr.appendChild(td); hr.appendChild(j); hr.appendChild(bk); hr.appendChild(wk);
+      t.appendChild(hr);
+      p.places.forEach(function(pl){
+        var r = document.createElement("tr");
+        var a = document.createElement("td"); a.className = "thin"; a.textContent = pl.place;
+        var b = document.createElement("td"); b.className = "n thin"; b.textContent = pl.jobs;
+        var c = document.createElement("td"); c.className = "n thin"; c.textContent = pl.booked;
+        var d = document.createElement("td"); d.className = "n"; d.textContent = pl.worked;
+        r.appendChild(a); r.appendChild(b); r.appendChild(c); r.appendChild(d);
+        t.appendChild(r);
+      });
+    });
+    wrap.appendChild(t); host.appendChild(wrap);
+    $("repCsvSum").hidden = false; $("repCsvAll").hidden = false;
+  }
+
+  function runReport(){
+    var from = $("repFrom").value, to = $("repTo").value;
+    if (!from || !to){ $("repErr").textContent = tr("Pick both dates."); return; }
+    if (to < from){ $("repErr").textContent = tr("The second date is before the first."); return; }
+    $("repErr").textContent = "";
+    $("repRun").disabled = true;
+    repSpan = [from, to];
+    reportRows(from, to, $("repWho").value || "").then(function(jobs){
+      repLines = reportLines(jobs);
+      repPeople = reportTotals(repLines);
+      $("repRun").disabled = false;
+      drawReport();
+    }).catch(function(e){
+      $("repRun").disabled = false;
+      $("repErr").textContent = errText(e, tr("Could not read those dates."));
+    });
+  }
+
+  function openReport(){
+    var host = $("repWho"); host.innerHTML = "";
+    var all = document.createElement("option");
+    all.value = ""; all.textContent = tr("Everyone");
+    host.appendChild(all);
+    crewPeople().forEach(function(p){
+      var o = document.createElement("option"); o.value = p.id; o.textContent = p.name;
+      host.appendChild(o);
+    });
+    var first = new Date(today.getFullYear(), today.getMonth(), 1);
+    $("repFrom").value = iso(first);
+    $("repTo").value = todayIso;
+    $("repErr").textContent = "";
+    $("repOut").innerHTML = "";
+    $("repCsvSum").hidden = true; $("repCsvAll").hidden = true;
+    $("repDlg").showModal();
+    runReport();
+  }
+
+  $("meRepBtn").addEventListener("click", function(){ $("meDlg").close(); openReport(); });
+  $("repClose").addEventListener("click", function(){ $("repDlg").close(); });
+  $("repRun").addEventListener("click", runReport);
+  $("repWho").addEventListener("change", runReport);
+  $("repCsvSum").addEventListener("click", function(){
+    var rows = [[tr("Person"), tr("Place"), tr("Jobs"), tr("Hours booked"), tr("Hours worked")]];
+    repPeople.forEach(function(p){
+      p.places.forEach(function(pl){
+        rows.push([p.who, pl.place, pl.jobs, pl.booked, pl.worked]);
+      });
+      rows.push([p.who, tr("Total"), p.jobs, p.booked, p.worked]);
+    });
+    saveFile("EBM " + tr("hours") + " " + repSpan[0] + " " + repSpan[1] + ".csv", csv(rows));
+  });
+  $("repCsvAll").addEventListener("click", function(){
+    var rows = [[tr("Date"), tr("Person"), tr("Role"), tr("Place"), tr("Unit"),
+                 tr("From"), tr("To"), tr("Hours booked"), tr("Clocked in"),
+                 tr("Clocked out"), tr("Hours worked"), tr("State"),
+                 tr("Materials"), tr("Booked by")]];
+    repLines.forEach(function(r){
+      rows.push([r.date, r.who, r.trade, r.place, r.unit,
+                 hourLong(r.job.from), hourLong(r.job.to), r.booked,
+                 r.started, r.ended, r.worked, r.state, r.used, r.by]);
+    });
+    saveFile("EBM " + tr("jobs") + " " + repSpan[0] + " " + repSpan[1] + ".csv", csv(rows));
+  });
+
   /* ---------- messages ----------
      One conversation between two people, and nobody else's is fetched: each
      pair has its own document and the app only listens to the ones the person
@@ -2967,6 +3257,7 @@ body.hasupd .wrap{padding-top:52px}
     $("meConnText").textContent = conn;
 
     $("meCrewBtn").hidden = !can("manage");
+    $("meRepBtn").hidden = !can("manage");
     $("meVersion").textContent = tr("EBM Crew Calendar") + " " + APP_VERSION;
     $("meDlg").showModal();
   }
