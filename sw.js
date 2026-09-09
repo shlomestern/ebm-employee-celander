@@ -1,6 +1,6 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v58";
+var CACHE = "ebm-crew-v59";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
@@ -38,7 +38,7 @@ self.addEventListener("fetch", function(e){
   // running the old app while appearing to have reloaded — the crew have no
   // reason to know a hard reload exists. Images are left alone; they are the
   // heavy ones and they change with their filename.
-  var fresh = /\.(?:html|js|webmanifest)$|\/$/.test(url.pathname)
+  var fresh = /\.(?:html|js|webmanifest|txt)$|\/$/.test(url.pathname)
     ? new Request(req.url, {cache: "reload", credentials: "same-origin"})
     : req;
 

@@ -408,23 +408,15 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   margin:1px 0 3px}
 .bub audio{display:block; width:min(240px,60vw); margin:2px 0 3px; height:34px}
 .bub .cap{display:block}
-.bub{position:relative}
-.bub .dots{position:absolute; top:2px; right:4px; width:20px; height:20px; border:none;
-  background:transparent; color:currentColor; opacity:.6; cursor:pointer; padding:0;
-  font-size:15px; line-height:1; border-radius:6px}
-.bub .dots:hover{opacity:1; background:rgba(255,255,255,.16)}
-.bub.mine .cap, .bub.mine > .tm{padding-right:18px}
-.bubacts{display:flex; gap:6px; margin-top:6px}
-.bubacts button{font:inherit; font-size:12px; font-weight:600; font-family:"Archivo",sans-serif;
-  padding:5px 9px; border-radius:7px; cursor:pointer; border:1px solid rgba(255,255,255,.45);
-  background:rgba(255,255,255,.16); color:#fff}
-.bub.theirs .bubacts button{border-color:var(--line-2); background:var(--surface);
-  color:var(--ink-2)}
-.bub .edited{font-size:10.5px; opacity:.6; margin-left:6px; font-style:italic}
-.editnote{display:flex; gap:8px; align-items:center; margin-bottom:7px; font-size:12.5px;
-  color:var(--ink-2)}
-.editnote .x{margin-left:auto; border:1px solid var(--line-2); background:var(--surface);
-  border-radius:8px; cursor:pointer; font-size:13px; padding:5px 9px; color:var(--ink-2)}
+.updbar{position:fixed; left:0; right:0; top:0; z-index:60; display:flex; gap:10px;
+  align-items:center; justify-content:center; padding:11px 14px;
+  background:var(--sel); color:#fff; font-family:"Archivo",sans-serif; font-weight:600;
+  font-size:13.5px; box-shadow:0 2px 14px rgba(19,26,32,.22)}
+.updbar button{font:inherit; font-size:13px; padding:7px 14px; border-radius:8px;
+  border:1px solid rgba(255,255,255,.6); background:rgba(255,255,255,.16); color:#fff;
+  cursor:pointer}
+.updbar button:hover{background:rgba(255,255,255,.28)}
+body.hasupd .wrap{padding-top:52px}
 .chattools{display:flex; gap:5px; align-items:center; flex:none}
 .tool{width:38px; height:38px; flex:none; border-radius:10px; border:1px solid var(--line);
   background:var(--surface-2); color:var(--ink-2); cursor:pointer; padding:0;
@@ -661,6 +653,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   </form>
 </dialog>
 
+<div class="updbar" id="updBar" hidden>
+  <span id="updText" data-t>A newer version is ready.</span>
+  <button type="button" id="updBtn" data-t>Load it</button>
+</div>
+
 <button type="button" class="fab" id="msgFab" data-ta="Messages" aria-label="Messages" hidden>
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -681,7 +678,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       <div class="chatlog" id="chatLog"></div>
       <div class="emojis" id="emojiRow" hidden></div>
       <div class="pending" id="chatPending" hidden></div>
-      <div class="editnote" id="editNote" hidden></div>
       <p class="recnote" id="recNote" hidden></p>
       <div class="chatsend" id="chatSendRow">
         <input id="chatInput" maxlength="500" data-tp="Write a message" placeholder="Write a message">
@@ -1068,10 +1064,8 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       "L\u2019application \u00e9crit ici elle-m\u00eame. Il n\u2019y a rien \u00e0 r\u00e9pondre.",
     "The message did not send.": "Le message n\u2019a pas \u00e9t\u00e9 envoy\u00e9.",
     "Emoji": "\u00c9mojis", "Send a photo": "Envoyer une photo",
-    "Delete": "Supprimer", "edited": "modifi\u00e9",
-    "Change this message": "Modifier ce message",
-    "Changing a message": "Modification d\u2019un message",
-    "That did not go through.": "L\u2019op\u00e9ration a \u00e9chou\u00e9.",
+    "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
+    "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
     "Voice note, {n}s": "Note vocale, {n}\u00a0s",
     "{n}s \u2014 tap to stop": "{n}\u00a0s \u2014 touchez pour arr\u00eater",
@@ -1274,7 +1268,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v58";
+  var APP_VERSION = "v59";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1638,14 +1632,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
      en:"Messages are on the round button in the corner. What you write is between you and the one person you wrote to.",
      fr:"Les messages sont sur le bouton rond dans le coin. Ce que vous \u00e9crivez reste entre vous et la personne \u00e0 qui vous \u00e9crivez."},
     {at:"2026-09-09T18:00:00Z",
-     en:"The app keeps itself up to date from now on. Nobody needs to reload it.",
-     fr:"L\u2019application se met \u00e0 jour d\u2019elle-m\u00eame d\u00e9sormais. Personne n\u2019a besoin de la recharger."},
+     en:"When a bar appears at the top saying a newer version is ready, tap Load it. Most of the time the app does it for you.",
+     fr:"Quand une barre appara\u00eet en haut disant qu\u2019une nouvelle version est pr\u00eate, touchez La charger. La plupart du temps l\u2019application le fait pour vous."},
     {at:"2026-09-09T20:00:00Z",
      en:"Messages take a photo, a voice note or an emoji now. The buttons are beside the box.",
-     fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
-    {at:"2026-09-09T22:00:00Z",
-     en:"Your own messages can be changed or removed. Tap the dots on one of yours.",
-     fr:"Vos propres messages peuvent \u00eatre modifi\u00e9s ou supprim\u00e9s. Touchez les points sur l\u2019un des v\u00f4tres."}
+     fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."}
   ];
   function systemMsgs(){
     return RELEASES.map(function(r){
@@ -1813,42 +1804,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     return Promise.resolve();
   }
 
-  /* Changing or removing a message means rewriting the conversation: an
-     append cannot reach back into what is already there. The document is
-     re-read first so a message that arrived in the meantime is not thrown
-     away by the rewrite. Only your own, and only ever your own. */
-  function rewriteThread(otherId, change){
-    var key = keyFor(otherId);
-    if (!state.fb){
-      state.chats = state.chats || {threads: {}};
-      state.chats.threads[key] = change(chatMsgs(otherId).slice());
-      lsWrite(LS_CHATS, state.chats);
-      drawChat();
-      return Promise.resolve();
-    }
-    var ref = state.fb.collection("config").doc(chatDoc(key));
-    return ref.get().then(function(snap){
-      var d = (snap.exists && snap.data()) || {};
-      var msgs = Array.isArray(d.msgs) ? d.msgs : [];
-      return ref.set({msgs: change(msgs), between: key.split("__")});
-    });
-  }
-  function editMessage(otherId, at, text){
-    return rewriteThread(otherId, function(msgs){
-      return msgs.map(function(m){
-        if (m.at !== at || m.by !== state.me) return m;
-        var out = {}; for (var k in m) out[k] = m[k];
-        out.text = text; out.edited = true;
-        return out;
-      });
-    });
-  }
-  function deleteMessage(otherId, at){
-    return rewriteThread(otherId, function(msgs){
-      return msgs.filter(function(m){ return !(m.at === at && m.by === state.me); });
-    });
-  }
-
   function drawContacts(){
     var host = $("chatThreads"); host.innerHTML = "";
     contacts().forEach(function(id){
@@ -1906,76 +1861,12 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
       var tm = document.createElement("span"); tm.className = "tm";
       try { tm.textContent = F_TIME.format(new Date(m.at)); } catch(e2){}
       b.appendChild(tm);
-      if (m.edited){
-        var ed = document.createElement("span"); ed.className = "edited";
-        ed.textContent = tr("edited"); b.appendChild(ed);
-      }
-      if (mine && chatOpen !== SYSTEM) b.appendChild(bubbleMenu(m, b));
       log.appendChild(b);
     });
     log.scrollTop = log.scrollHeight;
     markSeen(chatOpen);
     renderMsgBar();
   }
-  /* Yours to change: the dots open Edit and Delete under the message itself,
-     which is where the thumb already is. Delete asks once. */
-  function bubbleMenu(m, bub){
-    var dots = document.createElement("button");
-    dots.type = "button"; dots.className = "dots";
-    dots.textContent = "\u22ef";
-    dots.title = tr("Change this message");
-    dots.addEventListener("click", function(ev){
-      ev.stopPropagation();
-      var open = bub.querySelector(".bubacts");
-      if (open){ open.remove(); return; }
-      var row = document.createElement("div"); row.className = "bubacts";
-      var ed = document.createElement("button");
-      ed.type = "button"; ed.textContent = tr("Edit");
-      ed.addEventListener("click", function(){ startEdit(m); });
-      var del = document.createElement("button");
-      del.type = "button"; del.textContent = tr("Delete");
-      del.addEventListener("click", function(){
-        if (del.dataset.armed !== "1"){
-          del.dataset.armed = "1"; del.textContent = tr("Sure?"); return;
-        }
-        del.disabled = true;
-        deleteMessage(chatOpen, m.at).catch(function(e){
-          del.disabled = false; del.dataset.armed = "0"; del.textContent = tr("Delete");
-          $("chatErr").textContent = errText(e, tr("That did not go through."));
-        });
-      });
-      row.appendChild(ed); row.appendChild(del);
-      bub.appendChild(row);
-    });
-    return dots;
-  }
-
-  var msgEdit = null;
-  function drawEditNote(){
-    var host = $("editNote");
-    host.innerHTML = ""; host.hidden = !msgEdit;
-    if (!msgEdit) return;
-    host.appendChild(document.createTextNode(tr("Changing a message")));
-    var x = document.createElement("button");
-    x.type = "button"; x.className = "x"; x.textContent = tr("Cancel");
-    x.addEventListener("click", stopEdit);
-    host.appendChild(x);
-  }
-  function startEdit(m){
-    msgEdit = m;
-    $("chatInput").value = m.text || "";
-    $("chatTools").hidden = true;
-    pending = null; drawPending();
-    drawEditNote();
-    $("chatInput").focus();
-  }
-  function stopEdit(){
-    msgEdit = null;
-    $("chatInput").value = "";
-    $("chatTools").hidden = chatOpen === SYSTEM;
-    drawEditNote();
-  }
-
   function openThread(id){
     chatOpen = id;
     var sys = id === SYSTEM;
@@ -1993,7 +1884,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
     $("sysNote").hidden = mayWrite;
     $("emojiRow").hidden = true;
     if (rec) stopRec();
-    msgEdit = null; drawEditNote();
     pending = null; drawPending();
     drawChat();
     if (mayWrite) setTimeout(function(){ $("chatInput").focus(); }, 30);
@@ -2010,18 +1900,6 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   }
   function submitMessage(){
     var text = $("chatInput").value.trim();
-    if (msgEdit){
-      if (!text) return;                     // clearing it is a delete, not an edit
-      var target = msgEdit;
-      $("chatSend").disabled = true;
-      editMessage(chatOpen, target.at, text).then(function(){
-        $("chatSend").disabled = false; stopEdit();
-      }).catch(function(e){
-        $("chatSend").disabled = false;
-        $("chatErr").textContent = errText(e, tr("That did not go through."));
-      });
-      return;
-    }
     if ((!text && !pending) || !chatOpen) return;
     var extra = pending;
     $("chatSend").disabled = true;
@@ -3647,48 +3525,87 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
   checkInstalled();
 
   /* ---------- picking up a new version on its own ----------
-     The worker already fetches fresh files, but a phone left open for a week
-     goes on running the copy it started with. So the worker is asked whether
-     there is a newer one — on opening, whenever the app comes back to the
-     foreground, and every quarter of an hour — and when a new one takes over,
-     the page reloads itself.
+     Two ways round, because the first one is not visible when it fails. A
+     small file on the server holds the current version; if it does not match
+     the one running, a bar says so and offers one tap. The service worker
+     taking over does the same thing. Either way the page reloads itself when
+     nothing is in the middle of being typed — and when something is, the bar
+     stays until it can. */
+  var updateWaiting = false;      // a newer one exists
+  var updateAuto = false;         // and we may still load it unasked
 
-     Never mid-sentence, though: a reload while somebody is typing a message
-     or halfway through booking a job would throw the work away. It waits for
-     the dialogs to be shut and the keyboard to be idle. */
+  function showUpdBar(){
+    document.body.classList.add("hasupd");
+    $("updBar").hidden = false;
+  }
+  function busyNow(){
+    if (document.querySelector("dialog[open]")) return true;
+    var el = document.activeElement;
+    if (!el) return false;
+    var tag = (el.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return true;
+    return el.isContentEditable === true;
+  }
+  function applyUpdate(){
+    if (!updateWaiting) return;
+    showUpdBar();                      // visible whether or not it can reload now
+    if (!updateAuto || busyNow()) return;
+    location.reload();
+  }
+  /* Reloading once for a version and still not having it means reloading will
+     not help — the page came back the same. That happens if the version file
+     ever runs ahead of the page itself, and without this the app would sit
+     there reloading forever. After one try the bar stays and waits for a tap. */
+  var UPD_TRIED = "ebm-crew:updtried";
+  function markUpdate(live){
+    if (updateWaiting) return;
+    updateWaiting = true;
+    var tried = null;
+    try { tried = sessionStorage.getItem(UPD_TRIED); } catch(e){}
+    // Reloading unasked is allowed once per version. The flag has to live
+    // here rather than at the moment of reloading, or every tap afterwards
+    // would reload the page again while the two versions stayed apart.
+    updateAuto = !(live && tried === live);
+    if (live && updateAuto){
+      try { sessionStorage.setItem(UPD_TRIED, live); } catch(e){}
+    }
+    applyUpdate();
+  }
+  /* The version file is tiny and asked for without the cache, so this works
+     even when the worker's own update check does not. */
+  function checkVersion(){
+    if (updateWaiting) return;
+    fetch("version.txt?" + Date.now(), {cache: "no-store"}).then(function(r){
+      return r.ok ? r.text() : null;
+    }).then(function(txt){
+      if (!txt) return;
+      var live = String(txt).trim();
+      if (/^v\d+$/.test(live) && live !== APP_VERSION) markUpdate(live);
+    }).catch(function(){});
+  }
+  $("updBtn").addEventListener("click", function(){ location.reload(); });
+  document.addEventListener("click", applyUpdate, true);
+  document.addEventListener("focusout", function(){ setTimeout(applyUpdate, 400); });
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "visible"){ checkVersion(); applyUpdate(); }
+  });
+  setInterval(checkVersion, 10 * 60 * 1000);
+  setTimeout(checkVersion, 1500);
+
   if ("serviceWorker" in navigator){
     var hadController = !!navigator.serviceWorker.controller;
-    var updateWaiting = false;
-
-    function busyNow(){
-      if (document.querySelector("dialog[open]")) return true;
-      var el = document.activeElement;
-      if (!el) return false;
-      var tag = (el.tagName || "").toLowerCase();
-      if (tag === "input" || tag === "textarea" || tag === "select") return true;
-      return el.isContentEditable === true;
-    }
-    function applyUpdate(){
-      if (!updateWaiting) return;
-      if (busyNow()) return;             // asked again as soon as it is not
-      location.reload();
-    }
     navigator.serviceWorker.addEventListener("controllerchange", function(){
       // A first install also changes the controller; that one is not an update.
       if (!hadController) { hadController = true; return; }
-      updateWaiting = true;
-      applyUpdate();
+      markUpdate("sw");
     });
-    document.addEventListener("click", applyUpdate, true);
-    document.addEventListener("focusout", function(){ setTimeout(applyUpdate, 400); });
-
     window.addEventListener("load", function(){
       navigator.serviceWorker.register("sw.js").then(function(reg){
         function look(){ try { reg.update(); } catch(e){} }
         look();
-        setInterval(look, 15 * 60 * 1000);
+        setInterval(look, 10 * 60 * 1000);
         document.addEventListener("visibilitychange", function(){
-          if (document.visibilityState === "visible"){ look(); applyUpdate(); }
+          if (document.visibilityState === "visible") look();
         });
       }).catch(function(e){ console.warn("sw", e); });
     });
