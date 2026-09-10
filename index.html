@@ -401,6 +401,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 #shotDlg{border:none; background:transparent; padding:0; max-width:none}
 .filebtn{position:relative; overflow:hidden; align-self:flex-start}
 .filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer; font-size:0}
+.usedhead{display:grid; grid-template-columns:minmax(0,1fr) 78px 34px; gap:7px; margin:10px 0 4px;
+  font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
 .usedrow{display:grid; grid-template-columns:minmax(0,1fr) 78px 34px; gap:7px; margin-bottom:7px}
 .usedrow input{margin:0}
 .usedrow .rm{border:1px solid var(--line); background:var(--surface-2); border-radius:8px;
@@ -964,8 +967,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
 <dialog id="usedDlg">
   <form method="dialog" class="dlg" id="usedForm">
     <div class="eyebrow" id="usedWho"></div>
-    <h3 data-t>Finishing up</h3>
-    <p class="sub" data-t>What did you use on this job? Leave it empty if nothing.</p>
+    <h3 data-t>Parts and materials</h3>
+    <p class="sub" data-t>What parts did you put into this job? Not the time — the app
+      already has your hours. Tap <b>Nothing used</b> if you did not use anything.</p>
+    <div class="usedhead"><span data-t>What it was</span><span data-t>How many</span></div>
     <div id="usedRows"></div>
     <button type="button" class="btn" id="usedAdd" data-t>Another line</button>
     <p class="err" id="usedErr"></p>
@@ -1303,6 +1308,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Still starting up \u2014 try again in a second.":
       "D\u00e9marrage en cours \u2014 r\u00e9essayez dans un instant.",
     "Install app": "Installer l\u2019application",
+    "Parts and materials": "Pi\u00e8ces et mat\u00e9riaux",
+    "What parts did you put into this job? Not the time \u2014 the app\n      already has your hours. Tap <b>Nothing used</b> if you did not use anything.":
+      "Quelles pi\u00e8ces avez-vous mises dans ce travail\u00a0? Pas le temps \u2014 l\u2019application a d\u00e9j\u00e0 vos heures. Touchez <b>Rien utilis\u00e9</b> si vous n\u2019avez rien utilis\u00e9.",
+    "What it was": "Ce que c\u2019\u00e9tait", "How many": "Combien",
     "Incoming video call": "Appel vid\u00e9o entrant",
     "React with {e}": "R\u00e9agir avec {e}",
     "If something is not working": "Si quelque chose ne fonctionne pas",
@@ -1837,7 +1846,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v84";
+  var APP_VERSION = "v85";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3018,6 +3027,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T22:00:00Z",
+     en:"The box at the end of a job now says Parts and materials, with the two columns named, and says plainly that it is not asking for the time. Somebody put the clock-out time in it, which is exactly what the old wording invited.",
+     fr:"La bo\u00eete \u00e0 la fin d\u2019un travail dit maintenant Pi\u00e8ces et mat\u00e9riaux, avec les deux colonnes nomm\u00e9es, et dit clairement qu\u2019elle ne demande pas l\u2019heure."},
     {at:"2026-09-10T21:00:00Z",
      en:"Under your initial there are two checks now. Get the newest version throws away everything this phone has saved of the app and fetches it again \u2014 use it if you were told about a change you cannot see. Test video calling says whether the camera answers, whether the phone can learn its own address on the internet, and whether there is a relay for the networks where that is not enough.",
      fr:"Sous votre initiale il y a maintenant deux v\u00e9rifications. Obtenir la derni\u00e8re version jette tout ce que ce t\u00e9l\u00e9phone a gard\u00e9 de l\u2019application et la r\u00e9cup\u00e8re \u2014 utilisez-la si on vous a parl\u00e9 d\u2019un changement que vous ne voyez pas. Tester l\u2019appel vid\u00e9o dit si la cam\u00e9ra r\u00e9pond, si le t\u00e9l\u00e9phone trouve son adresse sur Internet, et s\u2019il y a un relais."},
