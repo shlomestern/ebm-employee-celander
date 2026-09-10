@@ -588,6 +588,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
   .ringing .rnm{font-size:22px}
   .rbtn .ic{width:60px; height:60px; font-size:24px}
 }
+/* The row of faces in the actions sheet, and the ones that end up on a
+   message. Big enough to hit with a thumb in a van. */
+.emojirow{display:flex; gap:6px; margin:2px 0 12px; flex-wrap:wrap}
+.emojirow .emoji{flex:1 1 0; min-width:46px; height:48px; font-size:23px; line-height:1;
+  border:1px solid var(--line); border-radius:12px; background:var(--surface-2);
+  cursor:pointer; padding:0}
+.emojirow .emoji:hover{border-color:var(--ink-3)}
+.emojirow .emoji.on{border-color:var(--sel); background:#e8f2f2; box-shadow:inset 0 0 0 1px var(--sel)}
+.bub .reacts{display:flex; gap:4px; margin:5px 0 0; flex-wrap:wrap}
+.bub .reacts .chip{font:inherit; font-size:12.5px; line-height:1; padding:4px 7px;
+  border-radius:11px; border:1px solid var(--line); background:#fff; color:var(--ink);
+  cursor:pointer}
+.bub.mine .reacts .chip{background:rgba(255,255,255,.92); border-color:rgba(255,255,255,.5)}
+.bub .reacts .chip.mine{border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel)}
 .callerr{position:absolute; left:16px; right:16px; text-align:center; color:#ffb4a8; z-index:3;
   font-size:13px; bottom:calc(96px + env(safe-area-inset-bottom))}
 .callerr.note{color:rgba(255,255,255,.78)}
@@ -1060,6 +1074,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
   <div class="dlg">
     <div class="eyebrow" id="msgFrom"></div>
     <p class="sub" id="msgPeek"></p>
+    <!-- One tap to say something back without writing anything. -->
+    <div class="emojirow" id="msgReacts"></div>
     <div class="actions" style="flex-direction:column; align-items:stretch; gap:7px">
       <button type="button" class="btn btn-primary btn-block" id="msgReply" data-t>Reply to this</button>
       <button type="button" class="btn btn-block" id="msgFwd" data-t>Forward it</button>
@@ -1276,6 +1292,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "D\u00e9marrage en cours \u2014 r\u00e9essayez dans un instant.",
     "Install app": "Installer l\u2019application",
     "Incoming video call": "Appel vid\u00e9o entrant",
+    "React with {e}": "R\u00e9agir avec {e}",
     "Decline": "Refuser",
     "Your account": "Votre compte",
     "Crew": "\u00c9quipe",
@@ -1783,7 +1800,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v82";
+  var APP_VERSION = "v83";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2964,6 +2981,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T19:00:00Z",
+     en:"You can react to a message with an emoji. Tap the three dots on it and pick one — tap the same one again to take it back.",
+     fr:"Vous pouvez réagir à un message avec un émoji. Touchez les trois points dessus et choisissez-en un — touchez le même de nouveau pour l’enlever."},
     {at:"2026-09-10T17:00:00Z",
      en:"An incoming video call now takes over the screen the way a phone call does \u2014 the name, and Answer or Decline. The notification stays up until you deal with it, buzzes in a pattern, and carries Answer and Decline on it. A call also waits 75 seconds instead of 45, because opening a shut app takes time.",
      fr:"Un appel vid\u00e9o entrant prend maintenant tout l\u2019\u00e9cran comme un vrai appel \u2014 le nom, puis R\u00e9pondre ou Refuser. La notification reste affich\u00e9e jusqu\u2019\u00e0 ce que vous r\u00e9pondiez, vibre en s\u00e9rie, et porte R\u00e9pondre et Refuser. Un appel attend 75\u00a0secondes au lieu de 45, parce qu\u2019ouvrir une application ferm\u00e9e prend du temps."},
@@ -3112,6 +3132,67 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
 
   function chatDoc(key){ return "chat-" + key; }
+
+  /* ---------- reacting to a message ----------
+
+     Kept beside the messages rather than inside them. The messages are a list
+     the server appends to, and appending is the only write to it that two
+     phones can make at the same time without one losing the other's; going
+     back to change one message in place would mean rewriting the whole list.
+     So a reaction is a small map on the same document, keyed by the message
+     and then by who reacted, and merged in — which is safe from any number of
+     phones at once, and lets somebody change their mind or take it back. */
+  var REACTIONS = ["\ud83d\udc4d", "\u2764\ufe0f", "\ud83d\ude02",
+                   "\u2705", "\ud83d\ude2e", "\ud83d\ude4f"];
+  function msgKey(m){
+    // What identifies a message: who wrote it and when. There is no id on
+    // one, and adding one now would leave every message already sent without.
+    return String(m.by || "") + "|" + String(m.at || "");
+  }
+  function reactMap(otherId){
+    var t = (state.chats && state.chats.reacts) || {};
+    return t[keyFor(otherId)] || {};
+  }
+  function reactsOn(otherId, m){
+    return reactMap(otherId)[msgKey(m)] || {};
+  }
+  function myReact(otherId, m){
+    return reactsOn(otherId, m)[state.me] || "";
+  }
+  /* Tapping the one already chosen takes it off; tapping another swaps it.
+     Nobody wants two of their own faces on the same message. */
+  function setReact(otherId, m, emoji){
+    if (otherId === SYSTEM) return Promise.resolve();
+    var key = keyFor(otherId), mk = msgKey(m);
+    var same = myReact(otherId, m) === emoji;
+    var val = same ? "" : emoji;      // "" reads as gone, everywhere
+    state.chats = state.chats || {threads: {}};
+    state.chats.reacts = state.chats.reacts || {};
+    state.chats.reacts[key] = state.chats.reacts[key] || {};
+    state.chats.reacts[key][mk] = state.chats.reacts[key][mk] || {};
+    state.chats.reacts[key][mk][state.me] = val;
+    drawChat();
+    if (state.fb){
+      var patch = {reacts: {}};
+      patch.reacts[mk] = {};
+      patch.reacts[mk][state.me] = val;
+      return state.fb.collection("config").doc(chatDoc(key))
+        .set(patch, {merge: true}).catch(function(){});
+    }
+    lsWrite(LS_CHATS, state.chats);
+    return Promise.resolve();
+  }
+  /* The emoji on a message, each with how many people put it there. */
+  function reactChips(otherId, m){
+    var who = reactsOn(otherId, m), tally = {}, order = [];
+    Object.keys(who).forEach(function(id){
+      var e = who[id];
+      if (!e) return;                       // taken back
+      if (!tally[e]){ tally[e] = 0; order.push(e); }
+      tally[e] += 1;
+    });
+    return order.map(function(e){ return {emoji: e, n: tally[e]}; });
+  }
   function personName(id){
     if (id === SYSTEM) return tr("System");
     if (id === "office") return state.officeName || tr("Office");
@@ -3204,6 +3285,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
           state.chats.threads[key] = Array.isArray(d.msgs) ? d.msgs : [];
           state.chats.seenBy = state.chats.seenBy || {};
           state.chats.seenBy[key] = d.seen || {};
+          state.chats.reacts = state.chats.reacts || {};
+          state.chats.reacts[key] = d.reacts || {};
           lsWrite(LS_CHATS, state.chats);
           renderMsgBar();
           if (chatOpen === id) drawChat();
@@ -3281,7 +3364,27 @@ dialog#callDlg::backdrop{background:#0b0f12}
       " \u00b7 " + (function(){ try { return F_TIME.format(new Date(m.at)); } catch(e){ return ""; } })();
     $("msgPeek").textContent = peekOf(m);
     $("msgSave").hidden = !m.img;
+    fillReacts(m);
     $("msgDlg").showModal();
+  }
+  function fillReacts(m){
+    var host = $("msgReacts");
+    host.innerHTML = "";
+    host.hidden = chatOpen === SYSTEM;     // announcements are not a conversation
+    if (host.hidden) return;
+    var picked = myReact(chatOpen, m);
+    REACTIONS.forEach(function(e){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "emoji" + (picked === e ? " on" : "");
+      b.textContent = e;
+      b.setAttribute("aria-label", tr("React with {e}", {e: e}));
+      b.addEventListener("click", function(){
+        setReact(chatOpen, m, e);
+        $("msgDlg").close();
+      });
+      host.appendChild(b);
+    });
   }
   function drawReplyBar(){
     var host = $("chatReply");
@@ -3908,6 +4011,25 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var tm = document.createElement("span"); tm.className = "tm";
       try { tm.textContent = F_TIME.format(new Date(m.at)); } catch(e2){}
       b.appendChild(tm);
+      if (chatOpen !== SYSTEM){
+        var chips = reactChips(chatOpen, m);
+        if (chips.length){
+          var rr = document.createElement("span"); rr.className = "reacts";
+          chips.forEach(function(c){
+            var ch = document.createElement("button");
+            ch.type = "button";
+            ch.className = "chip" + (myReact(chatOpen, m) === c.emoji ? " mine" : "");
+            ch.textContent = c.emoji + (c.n > 1 ? " " + c.n : "");
+            ch.setAttribute("aria-label", tr("React with {e}", {e: c.emoji}));
+            ch.addEventListener("click", function(ev){
+              ev.stopPropagation();
+              setReact(chatOpen, m, c.emoji);
+            });
+            rr.appendChild(ch);
+          });
+          b.appendChild(rr);
+        }
+      }
       if (mine && chatOpen !== SYSTEM){
         var read = seenAt(chatOpen) >= m.at;
         var rd = document.createElement("span");
