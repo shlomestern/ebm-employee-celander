@@ -286,6 +286,82 @@ exports.morningReminder = onSchedule(
   }
 );
 
+/** How a day's work reads at the end of it: what got done and what did not.
+ *
+ *  One line per job so it can be read on a lock screen, done ones first
+ *  because they need no thought, then the ones that are still open with the
+ *  reason plain from the state they are in.
+ */
+function eveningText(list, name) {
+  const done = list.filter((j) => j.clockOut);
+  const open = list.filter((j) => !j.clockOut);
+  const where = (j) => j.buildingName + (j.unit ? ` · Unit ${j.unit}` : "");
+  const line = (j) => {
+    const who = name(j.crewId);
+    if (j.clockOut) return `✓ ${who} · ${where(j)}`;
+    if (openBreak(j)) return `• ${who} · ${where(j)} — paused, never finished`;
+    if (j.clockIn) return `• ${who} · ${where(j)} — started, not finished`;
+    return `• ${who} · ${where(j)} — never started`;
+  };
+  const title = open.length === 0
+    ? `All ${list.length} done today`
+    : `${done.length} of ${list.length} done today`;
+  // The open ones matter most, so they are never the ones that get cut off.
+  const body = open.concat(done).map(line).join("\n");
+  return {title, body};
+}
+
+/** At the end of the day, what was booked and what actually happened.
+ *
+ *  Six in the evening, to whoever booked the work — each admin gets their own
+ *  jobs and nobody else's — and the whole day to the office. A day where
+ *  everything got done still gets a line, because "nothing arrived" and
+ *  "everything is fine" have to look different from each other.
+ */
+exports.eveningReport = onSchedule(
+  {schedule: "0 18 * * *", timeZone: ZONE, region: "northamerica-northeast1"},
+  async () => {
+    const db = getFirestore();
+    const date = DATE_IN_ZONE.format(new Date());
+
+    const snap = await db.collection("bookings").where("date", "==", date).get();
+    const jobs = snap.docs.map((d) => d.data()).filter((j) => j.v === 2);
+    if (!jobs.length) {
+      logger.info(`nothing was booked for ${date} — no evening report`);
+      return;
+    }
+
+    const aud = await audience(db);
+    const name = (id) => {
+      const p = aud.people.find((x) => x.id === id);
+      return p ? p.name : id;
+    };
+
+    // Whoever booked each job, and the office, which owns the whole day.
+    const byBooker = new Map();
+    for (const j of jobs) {
+      const who = j.createdById || "office";
+      if (!byBooker.has(who)) byBooker.set(who, []);
+      byBooker.get(who).push(j);
+    }
+    if (!byBooker.has("office")) byBooker.set("office", jobs);
+    else if (byBooker.get("office").length !== jobs.length) {
+      byBooker.set("office", jobs);
+    }
+
+    for (const [booker, list] of byBooker) {
+      const tokens = aud.forPerson(booker);
+      if (!tokens.length) {
+        logger.info(`${booker}: ${list.length} job(s) today — no registered phone`);
+        continue;
+      }
+      const {title, body} = eveningText(list, name);
+      const sent = await push(db, aud.map, tokens, title, body, `evening-${date}`);
+      logger.info(`evening report to ${booker}: ${list.length} job(s), ${sent} phone(s)`);
+    }
+  }
+);
+
 /** When the break that just ended ended, straight from the document rather
  *  than from the clock this trigger happens to run on. */
 function closedEnd(job) {
@@ -354,7 +430,12 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     const heldNow = openBreak(after);
     const pausedNow = !!heldNow && !heldBefore;
     const backNow = !heldNow && !!heldBefore && !endedNow;
-    if (!startedNow && !endedNow && !lateNow && !pausedNow && !backNow) return;
+    // Moved to another day. Whoever did not do the moving needs telling, or
+    // one of them turns up tomorrow and the other one does not know why.
+    const movedNow = (after.movedAt || "") !== (before.movedAt || "") &&
+                     !!after.movedAt && before.date !== after.date;
+    if (!startedNow && !endedNow && !lateNow && !pausedNow && !backNow &&
+        !movedNow) return;
 
     const db = getFirestore();
     const aud = await audience(db);
@@ -398,6 +479,24 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
 
     // Where he has gone, and for how long he was away — to whoever booked the
     // job, since it is their afternoon that may need moving.
+    if (movedNow) {
+      // Both sides of it: the man who is now expected on a different day, and
+      // whoever booked the work. Whoever moved it already knows.
+      const ids = new Set(["office", after.crewId]);
+      if (after.createdById) ids.add(after.createdById);
+      const tokens = Object.keys(aud.map).filter((t) => ids.has(aud.map[t]));
+      const when = after.allDay ? "all day" :
+        `${HOURS(after.from)} – ${HOURS(after.to)}`;
+      const sent = await push(db, aud.map, tokens,
+        `${who}: moved to ${after.date}`,
+        `${where} · ${when} · was ${before.date}` +
+        (after.movedBy ? ` · moved by ${after.movedBy}` : ""),
+        `${event.params.jobId}-moved`);
+      logger.info(`${who} moved from ${before.date} to ${after.date} — ` +
+        `${sent} phone(s)`);
+      return;
+    }
+
     if (pausedNow || backNow) {
       const title = pausedNow ? `${who} paused` : `${who} is back on it`;
       const body = pausedNow

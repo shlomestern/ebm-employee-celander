@@ -966,6 +966,35 @@ dialog#callDlg::backdrop{background:#0b0f12}
   </div>
 </dialog>
 
+<dialog id="mvDlg">
+  <form method="dialog" class="dlg" id="mvForm">
+    <div class="eyebrow" data-t>Move it</div>
+    <h3 data-t>Move this job to another day</h3>
+    <p class="sub" id="mvWhat"></p>
+    <div class="field">
+      <label for="mvDate" data-t>Which day</label>
+      <input type="date" id="mvDate" required>
+    </div>
+    <div class="row2" id="mvTimeRow">
+      <div class="field">
+        <label for="mvFrom" data-t>From</label>
+        <select id="mvFrom"></select>
+      </div>
+      <div class="field">
+        <label for="mvTo" data-t>To</label>
+        <select id="mvTo"></select>
+      </div>
+    </div>
+    <p class="sub" id="mvNote" style="margin:2px 0 0"></p>
+    <p class="err" id="mvErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="mvCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="mvSave" data-t>Move it</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="usedDlg">
   <form method="dialog" class="dlg" id="usedForm">
     <div class="eyebrow" id="usedWho"></div>
@@ -1330,6 +1359,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "hearing them {a} \u00b7 seeing them {b} \u00b7 sending voice {c} \u00b7 sending picture {d}":
       "on les entend {a} \u00b7 on les voit {b} \u00b7 voix envoy\u00e9e {c} \u00b7 image envoy\u00e9e {d}",
     "React with {e}": "R\u00e9agir avec {e}",
+    "Another day": "Un autre jour", "Move it": "D\u00e9placer",
+    "Move this job to another day": "D\u00e9placer ce travail \u00e0 un autre jour",
+    "Which day": "Quel jour",
+    "No room on that day. Pick another one.":
+      "Pas de place cette journ\u00e9e-l\u00e0. Choisissez-en une autre.",
+    "Pick a day and the hours.": "Choisissez un jour et les heures.",
+    "That day has gone.": "Cette journ\u00e9e est pass\u00e9e.",
+    "Could not move it.": "D\u00e9placement impossible.",
+    "{name} will be told that you moved it.":
+      "{name} sera avis\u00e9 que vous l\u2019avez d\u00e9plac\u00e9.",
+    "{name} will be told on his phone.": "{name} sera avis\u00e9 sur son t\u00e9l\u00e9phone.",
+    "The office": "Le bureau",
+    "Moved from {d} by {who}": "D\u00e9plac\u00e9 du {d} par {who}",
     "Close": "Fermer",
     "If something is not working": "Si quelque chose ne fonctionne pas",
     "Two checks. The first throws away\n        everything this phone has saved of the app and fetches it again \u2014 use it\n        if you were told about a change you cannot see. The second says whether\n        this phone and this network can carry a video call.":
@@ -1877,7 +1919,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v93";
+  var APP_VERSION = "v95";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3061,18 +3103,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
      inside the release and shows up in the thread; the only notifications are
      the ones the server actually sends about jobs and messages. */
   var RELEASES = [
-    {at:"2026-09-08T14:00:00Z",
-     en:"The app is now in French as well. Change it under Language in your account.",
-     fr:"L\u2019application est maintenant aussi en fran\u00e7ais. Changez-la sous Langue dans votre compte."},
+    {at:"2026-09-08T14:00:00Z", who:"all",
+     en:"The app is in French as well. Change it under Language in your account.",
+     fr:"L\u2019application est aussi en fran\u00e7ais. Changez-la sous Langue dans votre compte."},
     {at:"2026-09-08T18:00:00Z",
      en:"An hour is now kept free to travel between two different addresses. If a job runs long, tap Running late and the office is told.",
      fr:"Une heure est maintenant gard\u00e9e libre pour se d\u00e9placer entre deux adresses. Si un travail s\u2019\u00e9tire, touchez En retard et le bureau est averti."},
-    {at:"2026-09-09T12:00:00Z",
-     en:"You can put photos on a job now. When you clock out it asks what you used.",
-     fr:"Vous pouvez maintenant ajouter des photos \u00e0 un travail. En pointant le d\u00e9part, on vous demande ce que vous avez utilis\u00e9."},
-    {at:"2026-09-09T15:00:00Z",
-     en:"Messages are on the round button in the corner. What you write is between you and the one person you wrote to.",
-     fr:"Les messages sont sur le bouton rond dans le coin. Ce que vous \u00e9crivez reste entre vous et la personne \u00e0 qui vous \u00e9crivez."},
+    {at:"2026-09-09T12:00:00Z", who:"all",
+     en:"You can put photos on a job. When you clock out it asks what parts you used.",
+     fr:"Vous pouvez mettre des photos sur un travail. Quand vous pointez le d\u00e9part, on vous demande quelles pi\u00e8ces vous avez utilis\u00e9es."},
+    {at:"2026-09-09T15:00:00Z", who:"all",
+     en:"Messages are on the round button in the corner. What you write stays between you and the one person you wrote to.",
+     fr:"Les messages sont sur le bouton rond dans le coin. Ce que vous \u00e9crivez reste entre vous et la personne \u00e0 qui vous avez \u00e9crit."},
     {at:"2026-09-09T18:00:00Z",
      en:"When a bar appears at the top saying a newer version is ready, tap Load it. Most of the time the app does it for you.",
      fr:"Quand une barre appara\u00eet en haut disant qu\u2019une nouvelle version est pr\u00eate, touchez La charger. La plupart du temps l\u2019application le fait pour vous."},
@@ -3088,9 +3130,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T19:45:00Z", who:"me",
      en:"Hours worked, in your account panel: what each person clocked and where, over any dates, with a file for the spreadsheet.",
      fr:"Heures travaill\u00e9es, dans votre compte\u00a0: ce que chacun a point\u00e9 et o\u00f9, sur les dates de votre choix, avec un fichier pour le tableur."},
-    {at:"2026-09-09T20:00:00Z",
-     en:"Messages take a photo, a voice note or an emoji now. The buttons are beside the box.",
-     fr:"Les messages acceptent une photo, une note vocale ou un \u00e9moji. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
+    {at:"2026-09-09T20:00:00Z", who:"all",
+     en:"A message can carry a photo or a voice note. The buttons are beside the box.",
+     fr:"Un message peut porter une photo ou une note vocale. Les boutons sont \u00e0 c\u00f4t\u00e9 de la bo\u00eete."},
     {at:"2026-09-09T21:00:00Z", who:"me",
      en:"Hours worked now downloads as a real Excel file: one page of totals per project, one page with every job behind them.",
      fr:"Heures travaill\u00e9es se t\u00e9l\u00e9charge maintenant en vrai fichier Excel\u00a0: une page de totaux par projet, une page avec chaque travail derri\u00e8re."},
@@ -3103,6 +3145,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-11T18:00:00Z", who:"me",
+     en:"The System thread was showing everybody every note, including my own working notes about fixing bugs. A note now goes to the office code alone unless it is marked for the crew, and only ten of them are \u2014 the ones that change what a man on the tools actually does, each rewritten to one plain sentence.",
+     fr:"Le fil Syst\u00e8me montrait \u00e0 tout le monde chaque note. Une note ne va plus qu\u2019au code du bureau, sauf si elle est marqu\u00e9e pour l\u2019\u00e9quipe."},
+    {at:"2026-09-11T15:00:00Z", who:"all",
+     en:"A job can go to another day. Tap Another day on it, pick the day and the hours.",
+     fr:"Un travail peut aller \u00e0 un autre jour. Touchez Un autre jour dessus, choisissez le jour et les heures."},
+    {at:"2026-09-11T14:00:00Z",
+     en:"At six each evening you get the day's tally: how many of the jobs you booked were finished, and one line for each that was not \u2014 never started, started and not finished, or paused and left. The office gets the whole day.",
+     fr:"\u00c0 18\u00a0h chaque soir vous recevez le bilan de la journ\u00e9e\u00a0: combien des travaux que vous avez r\u00e9serv\u00e9s ont \u00e9t\u00e9 termin\u00e9s, et une ligne pour chacun qui ne l\u2019a pas \u00e9t\u00e9. Le bureau re\u00e7oit toute la journ\u00e9e."},
     {at:"2026-09-11T12:00:00Z",
      en:"Found it. A video call that went wrong was never cleared away, and everything about calling asks first whether a call is in progress \u2014 so that phone could never ring again, and its own call button did nothing, until the app was closed and opened. That is why it stopped coming up on the screen. A failed call now says what happened and then lets go of the phone. Hanging up also no longer deletes the next call's document out from under it.",
      fr:"Trouv\u00e9. Un appel vid\u00e9o rat\u00e9 n\u2019\u00e9tait jamais effac\u00e9, et tout ce qui touche aux appels v\u00e9rifie d\u2019abord s\u2019il y a un appel en cours \u2014 donc ce t\u00e9l\u00e9phone ne pouvait plus jamais sonner jusqu\u2019\u00e0 ce qu\u2019on ferme et rouvre l\u2019application. Un appel rat\u00e9 l\u00e2che maintenant le t\u00e9l\u00e9phone."},
@@ -3127,15 +3178,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T23:30:00Z",
      en:"Answering a video call should now actually connect. The phone answering was throwing away the caller's routes: they arrive while it is still asking for the camera and fetching the call, and a route cannot be used before that has finished \u2014 so each one was noted as seen, refused, and never offered again. They are held now and taken the moment they can be. A call also gives way to the picture as soon as the picture arrives, rather than waiting for a status some phones never report.",
      fr:"R\u00e9pondre \u00e0 un appel vid\u00e9o devrait maintenant vraiment connecter. Le t\u00e9l\u00e9phone qui r\u00e9pond jetait les routes de l\u2019appelant\u00a0: elles arrivent pendant qu\u2019il demande encore la cam\u00e9ra, et une route ne peut pas servir avant que \u00e7a soit fini. Elles sont gard\u00e9es maintenant. Et l\u2019appel montre l\u2019image d\u00e8s qu\u2019elle arrive."},
-    {at:"2026-09-10T22:00:00Z",
-     en:"The box at the end of a job now says Parts and materials, with the two columns named, and says plainly that it is not asking for the time. Somebody put the clock-out time in it, which is exactly what the old wording invited.",
-     fr:"La bo\u00eete \u00e0 la fin d\u2019un travail dit maintenant Pi\u00e8ces et mat\u00e9riaux, avec les deux colonnes nomm\u00e9es, et dit clairement qu\u2019elle ne demande pas l\u2019heure."},
+    {at:"2026-09-10T22:00:00Z", who:"all",
+     en:"The box at the end of a job asks for parts and materials, not for the time. The app already has your hours.",
+     fr:"La bo\u00eete \u00e0 la fin d\u2019un travail demande les pi\u00e8ces et les mat\u00e9riaux, pas l\u2019heure. L\u2019application a d\u00e9j\u00e0 vos heures."},
     {at:"2026-09-10T21:00:00Z",
      en:"Under your initial there are two checks now. Get the newest version throws away everything this phone has saved of the app and fetches it again \u2014 use it if you were told about a change you cannot see. Test video calling says whether the camera answers, whether the phone can learn its own address on the internet, and whether there is a relay for the networks where that is not enough.",
      fr:"Sous votre initiale il y a maintenant deux v\u00e9rifications. Obtenir la derni\u00e8re version jette tout ce que ce t\u00e9l\u00e9phone a gard\u00e9 de l\u2019application et la r\u00e9cup\u00e8re \u2014 utilisez-la si on vous a parl\u00e9 d\u2019un changement que vous ne voyez pas. Tester l\u2019appel vid\u00e9o dit si la cam\u00e9ra r\u00e9pond, si le t\u00e9l\u00e9phone trouve son adresse sur Internet, et s\u2019il y a un relais."},
-    {at:"2026-09-10T19:00:00Z",
-     en:"You can react to a message with an emoji. Tap the three dots on it and pick one — tap the same one again to take it back.",
-     fr:"Vous pouvez réagir à un message avec un émoji. Touchez les trois points dessus et choisissez-en un — touchez le même de nouveau pour l’enlever."},
+    {at:"2026-09-10T19:00:00Z", who:"all",
+     en:"You can put a face on a message instead of writing back. Tap the three dots and pick one.",
+     fr:"Vous pouvez mettre un visage sur un message au lieu de r\u00e9pondre. Touchez les trois points et choisissez-en un."},
     {at:"2026-09-10T17:00:00Z",
      en:"An incoming video call now takes over the screen the way a phone call does \u2014 the name, and Answer or Decline. The notification stays up until you deal with it, buzzes in a pattern, and carries Answer and Decline on it. A call also waits 75 seconds instead of 45, because opening a shut app takes time.",
      fr:"Un appel vid\u00e9o entrant prend maintenant tout l\u2019\u00e9cran comme un vrai appel \u2014 le nom, puis R\u00e9pondre ou Refuser. La notification reste affich\u00e9e jusqu\u2019\u00e0 ce que vous r\u00e9pondiez, vibre en s\u00e9rie, et porte R\u00e9pondre et Refuser. Un appel attend 75\u00a0secondes au lieu de 45, parce qu\u2019ouvrir une application ferm\u00e9e prend du temps."},
@@ -3157,24 +3208,24 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T08:00:00Z", who:"office",
      en:"A day sheet now names the hours that are actually free \u2014 \"3 hours still free: 2:00 PM\u20135:00 PM\" \u2014 instead of repeating the working day after the count.",
      fr:"La feuille du jour nomme maintenant les heures r\u00e9ellement libres \u2014 \u00ab\u00a03 heures encore libres\u00a0: 14\u00a0h\u201317\u00a0h\u00a0\u00bb \u2014 au lieu de r\u00e9p\u00e9ter la journ\u00e9e de travail."},
-    {at:"2026-09-10T07:00:00Z",
-     en:"Video calls. Open a conversation and tap the camera at the top. Your own messages now show one tick when sent and two when the other person has read them.",
-     fr:"Appels vid\u00e9o. Ouvrez une conversation et touchez la cam\u00e9ra en haut. Vos messages affichent une coche \u00e0 l\u2019envoi et deux quand l\u2019autre les a lus."},
+    {at:"2026-09-10T07:00:00Z", who:"all",
+     en:"Video calls. Open a conversation and tap the camera at the top.",
+     fr:"Appels vid\u00e9o. Ouvrez une conversation et touchez la cam\u00e9ra en haut."},
     {at:"2026-09-10T06:00:00Z",
      en:"Every message now has a \u22ef in the corner: tap it, or the message, to reply with a quote, forward it, or download a photo out of it.",
      fr:"Chaque message a maintenant un \u22ef dans le coin\u00a0: touchez-le, ou le message, pour r\u00e9pondre en citation, transf\u00e9rer ou t\u00e9l\u00e9charger la photo."},
-    {at:"2026-09-10T05:00:00Z",
-     en:"Tap any message to reply to it with a quote, forward it to somebody else, or save a photo out of it. On iPhone the top of the app no longer hides behind the clock.",
-     fr:"Touchez un message pour y r\u00e9pondre en citation, le transf\u00e9rer \u00e0 quelqu\u2019un ou en enregistrer la photo. Sur iPhone, le haut de l\u2019application ne se cache plus derri\u00e8re l\u2019heure."},
+    {at:"2026-09-10T05:00:00Z", who:"all",
+     en:"The three dots on a message let you reply to it with the message quoted, forward it, or save a photo to your phone.",
+     fr:"Les trois points sur un message permettent de r\u00e9pondre en citant le message, de le transf\u00e9rer, ou d\u2019enregistrer une photo sur votre t\u00e9l\u00e9phone."},
     {at:"2026-09-10T04:00:00Z", who:"office",
      en:"Booking for somebody else in the office? Set Booked by to their name and it becomes theirs to edit or cancel, with your name kept beside it.",
      fr:"Vous r\u00e9servez pour quelqu\u2019un d\u2019autre au bureau\u00a0? Mettez R\u00e9serv\u00e9 par \u00e0 son nom et il pourra le modifier ou l\u2019annuler, votre nom rest\u00e9 \u00e0 c\u00f4t\u00e9."},
     {at:"2026-09-10T03:00:00Z", who:"office",
      en:"Need somebody who is already booked? Open their day and tap Ask to use them. Whoever booked them decides, and can move the other work later or drop it — agreeing books your job for you.",
      fr:"Besoin de quelqu\u2019un d\u00e9j\u00e0 r\u00e9serv\u00e9\u00a0? Ouvrez sa journ\u00e9e et touchez Demander cette personne. Celui qui l\u2019a r\u00e9serv\u00e9 d\u00e9cide et peut d\u00e9caler ou annuler l\u2019autre travail \u2014 accepter r\u00e9serve votre travail."},
-    {at:"2026-09-10T02:00:00Z",
-     en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job. The time you were away is not counted as worked.",
-     fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail. Le temps d\u2019absence n\u2019est pas compt\u00e9 comme travaill\u00e9."},
+    {at:"2026-09-10T02:00:00Z", who:"all",
+     en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
+     fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
     {at:"2026-09-10T01:00:00Z", who:"office",
      en:"At seven each weekday morning, the office is told who has no bookings at all that day, while there is still a day to fill.",
      fr:"\u00c0 sept heures chaque matin de semaine, le bureau apprend qui n\u2019a aucune r\u00e9servation ce jour-l\u00e0, quand il reste encore une journ\u00e9e \u00e0 remplir."}
@@ -3188,11 +3239,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
      photos on a job; the hours report, the spreadsheet and the crew's codes
      are behind the office's own code and there is no reason for anybody else
      to know they are there. */
+  /* Who a note is for.
+
+     The default is the office code alone, and that is the whole point of the
+     change. It used to be everybody, so any note written without thinking
+     about it — including an explanation of what was wrong with the video
+     calling code — landed on every man's phone. Nobody wants to read that,
+     and it is not theirs to read. A note reaches the crew only when it is
+     marked all, which means somebody decided it was worth their while. */
   function releaseFor(r){
-    if (r.who === "me")     return state.me === "office";
+    if (r.who === "all")    return true;
     if (r.who === "manage") return can("manage");
     if (r.who === "office") return isOffice();
-    return true;
+    return state.me === "office";
   }
   function systemMsgs(){
     var out = RELEASES.filter(releaseFor).map(function(r){
@@ -4677,6 +4736,128 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }, Promise.resolve()).then(function(){ return list; });
   }
 
+  /* ---------- moving a job to another day ----------
+
+     Two jobs booked for one man, one of them done and the afternoon gone: the
+     other one has to land somewhere. Rebooking it by hand means cancelling
+     and typing the whole thing again, and whoever booked it never hears what
+     happened to it. This moves it, keeps everything else about it, and tells
+     the other side.
+
+     The man on the tools may move his own — he is the one who knows the
+     afternoon is gone — and whoever booked it may move it too. The same
+     hours rules apply on the new day as on any booking: hours he already has
+     are locked, and an hour is kept free for travelling. */
+  var mvJob = null;
+
+  function movable(j){
+    if (!j || j.clockOut) return false;            // finished is finished
+    /* Today still counts, even at six in the evening. dayIsPast() is about
+       whether there are working hours left in a day, which is the right
+       question for booking and the wrong one here: the conversation that
+       starts "he only got through one of them" happens after the working day
+       is over, and that is precisely when the other one needs moving. */
+    if (j.date < todayIso) return false;
+    return ownsJob(j) || j.crewId === state.me;
+  }
+  function fillMoveHours(keep){
+    var j = mvJob; if (!j) return;
+    var ds = $("mvDate").value;
+    computeBusy(ds, j.crewId, j.id, {proj: j.projectId, bld: j.buildingId});
+    var f = $("mvFrom"); f.innerHTML = "";
+    var i, o;
+    for (i = DAY_START; i < DAY_END; i++){
+      o = document.createElement("option"); o.value = i;
+      if (busyMap[i]){
+        o.textContent = tr("{h} \u2014 taken", {h: hourLong(i)}); o.disabled = true;
+      } else if (travelStart[i]){
+        o.textContent = tr("{h} \u2014 travelling from {where}",
+                           {h: hourLong(i), where: travelStart[i]});
+        o.disabled = true;
+      } else o.textContent = hourLong(i);
+      f.appendChild(o);
+    }
+    // The hour it was booked at, if that hour is free on the new day.
+    var want = keep || j.from, ok = null;
+    for (i = 0; i < f.options.length; i++){
+      if (f.options[i].disabled) continue;
+      if (ok === null) ok = f.options[i].value;
+      if (+f.options[i].value === +want){ ok = f.options[i].value; break; }
+    }
+    if (ok !== null) f.value = ok;
+    fillMoveTo();
+  }
+  function fillMoveTo(){
+    var j = mvJob; if (!j) return;
+    var from = parseInt($("mvFrom").value, 10);
+    var maxTo = DAY_END, h;
+    for (h = from; h < DAY_END; h++){ if (busyMap[h]){ maxTo = h; break; } }
+    var t = $("mvTo"); t.innerHTML = "";
+    var want = from + Math.max(1, j.to - j.from);   // keep it the same length
+    var i, o, pick = null;
+    for (i = from + 1; i <= maxTo; i++){
+      o = document.createElement("option"); o.value = i;
+      if (travelEnd[i]){
+        o.textContent = tr("{h} \u2014 due at {where}", {h: hourLong(i), where: travelEnd[i]});
+        o.disabled = true;
+      } else o.textContent = hourLong(i);
+      t.appendChild(o);
+    }
+    for (i = 0; i < t.options.length; i++){
+      if (t.options[i].disabled) continue;
+      if (pick === null) pick = t.options[i].value;
+      if (+t.options[i].value === +want){ pick = t.options[i].value; break; }
+    }
+    if (pick !== null) t.value = pick;
+    var room = t.options.length && pick !== null;
+    $("mvSave").disabled = !room;
+    $("mvErr").textContent = room ? ""
+      : tr("No room on that day. Pick another one.");
+  }
+  function moveNote(){
+    var j = mvJob; if (!j) return "";
+    // Whoever is not doing the moving is the one who needs telling.
+    if (j.crewId === state.me)
+      return tr("{name} will be told that you moved it.",
+                {name: j.createdBy || tr("The office")});
+    return tr("{name} will be told on his phone.", {name: memberOr(j.crewId).name});
+  }
+  function openMove(j){
+    mvJob = j;
+    $("mvWhat").textContent = rangeShort(j) + " \u00b7 " + j.buildingName +
+      (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "") +
+      " \u00b7 " + memberOr(j.crewId).name;
+    $("mvDate").min = todayIso;
+    $("mvDate").value = iso(addDays(fromIso(j.date), 1));
+    $("mvErr").textContent = "";
+    $("mvSave").disabled = false;
+    fillMoveHours(j.from);
+    $("mvNote").textContent = moveNote();
+    $("mvDlg").showModal();
+  }
+  $("mvDate").addEventListener("change", function(){ fillMoveHours(); });
+  $("mvFrom").addEventListener("change", function(){ fillMoveTo(); });
+  $("mvCancel").addEventListener("click", function(){ $("mvDlg").close(); mvJob = null; });
+  $("mvForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var j = mvJob; if (!j) return;
+    var ds = $("mvDate").value;
+    var from = parseInt($("mvFrom").value, 10), to = parseInt($("mvTo").value, 10);
+    if (!ds || !(to > from)){ $("mvErr").textContent = tr("Pick a day and the hours."); return; }
+    if (ds < todayIso){ $("mvErr").textContent = tr("That day has gone."); return; }
+    $("mvSave").disabled = true;
+    // The late ask belonged to the old day; the clock never started.
+    patchJob(j.id, {
+      date: ds, from: from, to: to, allDay: false, late: null,
+      movedBy: meName(), movedAt: new Date().toISOString(), movedFrom: j.date
+    }).then(function(){
+      $("mvDlg").close(); mvJob = null; render();
+    }).catch(function(e){
+      $("mvSave").disabled = false;
+      $("mvErr").textContent = errText(e, tr("Could not move it."));
+    });
+  });
+
   /* ---------- what was used ----------
      Asked once, at the moment the crew member finishes, because that is the
      only time he still remembers. Free text rather than a catalogue: nobody
@@ -5078,6 +5259,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }).join(", ")));
       card.appendChild(uw);
     }
+    if (j.movedFrom){
+      var mvd=document.createElement("div"); mvd.className="job-sub";
+      mvd.textContent = tr("Moved from {d} by {who}",
+        {d: F_MED.format(fromIso(j.movedFrom)), who: j.movedBy || ""});
+      card.appendChild(mvd);
+    }
     if (j.tight){
       var tg=document.createElement("div"); tg.className="job-sub";
       tg.textContent = tr("Back to back \u2014 no travel time");
@@ -5163,6 +5350,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }
     }
     if (grantable(j)) acts.appendChild(grantButton(j));
+    if (movable(j)){
+      var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
+      mv.textContent=tr("Another day");
+      mv.addEventListener("click", function(){ openMove(j); });
+      acts.appendChild(mv);
+    }
     if (opts.edit){
       var ed=document.createElement("button"); ed.type="button"; ed.className="btn"; ed.textContent=tr("Edit");
       ed.addEventListener("click", function(){ editJob(j); });
