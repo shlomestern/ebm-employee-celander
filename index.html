@@ -553,6 +553,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   top:calc(16px + env(safe-area-inset-top)); text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .callhead .who{font-family:"Archivo",sans-serif; font-weight:700; font-size:19px}
 .callhead .st{font-size:13px; opacity:.82}
+#callFlow{font-size:11.5px; opacity:.72; font-variant-numeric:tabular-nums}
 .callbar{position:absolute; left:0; right:0; display:flex; gap:12px; justify-content:center;
   align-items:center; bottom:calc(26px + env(safe-area-inset-bottom))}
 .cbtn{width:56px; height:56px; border-radius:50%; border:0; cursor:pointer; display:grid;
@@ -1106,10 +1107,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
 <dialog id="callDlg">
   <div class="callwrap">
     <video id="callFar" class="callfar" autoplay playsinline></video>
+    <!-- The voice gets its own element. On a video element the sound only
+         arrives if the picture is allowed to play, and on an iPhone that is
+         not a given; this way the two are not tied together. -->
+    <audio id="callSound" autoplay></audio>
     <video id="callNear" class="callnear" autoplay playsinline muted></video>
     <div class="callhead">
       <span class="who" id="callWho"></span>
       <span class="st" id="callState"></span>
+      <!-- What is actually moving, while it is moving. "It did not work" is
+           not something anybody can act on; this is. -->
+      <span class="st" id="callFlow"></span>
     </div>
     <!-- A call has to look like a call. Until it connects, the screen is the
          other person's name and two buttons, the way every phone does it —
@@ -1319,6 +1327,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Quelles pi\u00e8ces avez-vous mises dans ce travail\u00a0? Pas le temps \u2014 l\u2019application a d\u00e9j\u00e0 vos heures. Touchez <b>Rien utilis\u00e9</b> si vous n\u2019avez rien utilis\u00e9.",
     "What it was": "Ce que c\u2019\u00e9tait", "How many": "Combien",
     "Incoming video call": "Appel vid\u00e9o entrant",
+    "hearing them {a} \u00b7 seeing them {b} \u00b7 sending voice {c} \u00b7 sending picture {d}":
+      "on les entend {a} \u00b7 on les voit {b} \u00b7 voix envoy\u00e9e {c} \u00b7 image envoy\u00e9e {d}",
     "React with {e}": "R\u00e9agir avec {e}",
     "If something is not working": "Si quelque chose ne fonctionne pas",
     "Two checks. The first throws away\n        everything this phone has saved of the app and fetches it again \u2014 use it\n        if you were told about a change you cannot see. The second says whether\n        this phone and this network can carry a video call.":
@@ -1866,7 +1876,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v90";
+  var APP_VERSION = "v92";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3092,6 +3102,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-11T09:00:00Z",
+     en:"A call in progress now says what is actually moving \u2014 hearing them, seeing them, sending voice, sending picture \u2014 each with a tick or a cross, under the name. The voice also has its own player now, because on a video element the sound only arrives if the picture is allowed to play, and on an iPhone that is not a given.",
+     fr:"Un appel en cours indique maintenant ce qui circule vraiment \u2014 on les entend, on les voit, voix envoy\u00e9e, image envoy\u00e9e \u2014 avec un crochet ou une croix. La voix a aussi son propre lecteur."},
+    {at:"2026-09-11T07:00:00Z", who:"me",
+     en:"Crew & codes is the office code's alone now, the same as Hours worked. Any admin with manage could see every name, every code, and change what each person is allowed to do.",
+     fr:"\u00c9quipe et codes n\u2019appartient plus qu\u2019au code du bureau, comme Heures travaill\u00e9es. Tout admin avec \u00ab\u00a0g\u00e9rer\u00a0\u00bb pouvait voir chaque nom et chaque code."},
     {at:"2026-09-11T05:00:00Z", who:"me",
      en:"Hours worked wrote a clocked time one way and a booked hour another \u2014 \u201c8:00 AM\u201d next to \u201c8:00 a.m.\u201d in the same row of the workbook. One row, one way of writing a time.",
      fr:"Heures travaill\u00e9es \u00e9crivait l\u2019heure point\u00e9e d\u2019une fa\u00e7on et l\u2019heure r\u00e9serv\u00e9e d\u2019une autre dans la m\u00eame ligne. Une seule fa\u00e7on maintenant."},
@@ -3681,11 +3697,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var c = call; call = null;
     if (c.giveUp) clearTimeout(c.giveUp);
     if (c.hint) clearTimeout(c.hint);
+    if (c.flow) clearTimeout(c.flow);
     if (c.unsub){ try{ c.unsub(); }catch(e){} }
     if (c.local) c.local.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
     if (c.pc){ try{ c.pc.close(); }catch(e){} }
     $("callFar").srcObject = null;
     $("callNear").srcObject = null;
+    $("callSound").srcObject = null;
+    $("callFlow").textContent = "";
     if ($("callDlg").open) $("callDlg").close();
   }
   function hangUp(){
@@ -3749,6 +3768,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (call && call.hint){ clearTimeout(call.hint); call.hint = null; }
       if (far.srcObject !== ev.streams[0]){
         far.srcObject = ev.streams[0];
+        var snd = $("callSound");
+        snd.srcObject = ev.streams[0];
+        var sp = snd.play(); if (sp && sp.catch) sp.catch(function(){});
         // The autoplay attribute is not always enough — iOS in particular
         // wants to be asked, and it is a no-op where it already started.
         var go = far.play(); if (go && go.catch) go.catch(function(){});
@@ -3760,6 +3782,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (s === "connected"){
         stopRing();
         callLive();
+        watchFlow(pc);
         if (call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
         if (call.hint){ clearTimeout(call.hint); call.hint = null; }
         callErr("");
@@ -3781,7 +3804,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (!call) return;
       var st = pc.iceConnectionState;
       if (st === "connected" || st === "completed"){
-        stopRing(); callLive(); callErr("");
+        stopRing(); callLive(); callErr(""); watchFlow(pc);
         callState(tr("Connected"));
         if (call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
         if (call.hint){ clearTimeout(call.hint); call.hint = null; }
@@ -3825,6 +3848,41 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("callCam").classList.remove("off");
     if (!$("callDlg").open) $("callDlg").showModal();
   }
+  /* What is actually moving over the call, read off the connection itself
+     every couple of seconds and written on the screen. "It didn't work" is
+     not something anybody can act on. "Sending voice, no picture coming
+     back" is. */
+  function watchFlow(pc){
+    if (!pc || !pc.getStats) return;
+    var last = {ai: 0, vi: 0, ao: 0, vo: 0};
+    function tick(){
+      if (!call || call.pc !== pc) return;
+      pc.getStats().then(function(rep){
+        var now = {ai: 0, vi: 0, ao: 0, vo: 0};
+        rep.forEach(function(r){
+          if (r.type === "inbound-rtp" && !r.isRemote){
+            if (r.kind === "audio") now.ai += r.bytesReceived || 0;
+            if (r.kind === "video") now.vi += r.bytesReceived || 0;
+          }
+          if (r.type === "outbound-rtp"){
+            if (r.kind === "audio") now.ao += r.bytesSent || 0;
+            if (r.kind === "video") now.vo += r.bytesSent || 0;
+          }
+        });
+        var y = "\u2713", n = "\u2715";
+        function mark(a, b){ return b > a ? y : n; }
+        $("callFlow").textContent =
+          tr("hearing them {a} · seeing them {b} · sending voice {c} · sending picture {d}", {
+            a: mark(last.ai, now.ai), b: mark(last.vi, now.vi),
+            c: mark(last.ao, now.ao), d: mark(last.vo, now.vo)
+          });
+        last = now;
+        call.flow = setTimeout(tick, 2500);
+      }).catch(function(){});
+    }
+    call.flow = setTimeout(tick, 2500);
+  }
+
   /* The ringing screen gives way to the picture, once there is a picture. */
   function callLive(){
     $("callRing").hidden = true;
@@ -3975,12 +4033,23 @@ dialog#callDlg::backdrop{background:#0b0f12}
       call.local = stream;
       playNear(stream);
       var pc = call.pc = newPeer(otherId, false);
-      stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
       return ref.get().then(function(snap){
         var d = (snap.exists && snap.data()) || {};
         if (!d.offer) throw new Error("gone");
         return pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(d.offer)))
-          .then(function(){ flushIce(pc); return pc.createAnswer(); })
+          .then(function(){
+            flushIce(pc);
+            /* The camera and microphone go on after the offer has been
+               applied, not before. Then they land on the very slots the
+               caller asked for instead of on new ones he never offered.
+               Chrome sorts that out either way; not every phone does. */
+            stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+            // And say out loud that both directions are wanted.
+            pc.getTransceivers().forEach(function(t){
+              try { if (t.direction === "recvonly") t.direction = "sendrecv"; } catch(e){}
+            });
+            return pc.createAnswer();
+          })
           .then(function(ans){
             return pc.setLocalDescription(ans).then(function(){
               return ref.set({answer: JSON.stringify(ans), state: "live"}, {merge: true});
@@ -4765,10 +4834,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
       moves.push(shifted);
       prev = {projectId: x.projectId, buildingId: x.buildingId, to: shifted.to};
     }
-    // Moving somebody else's booking is still their business, unless the
-    // person granting the hours runs the app.
+    /* Moving somebody else's booking is still their business. Only the master
+       office code moves it without asking; an admin — including one with
+       "manage" ticked — is sent to go and talk to them. "Manage" is for
+       running the day, not for reaching into another man's afternoon. */
     for (i = 0; i < moves.length; i++){
-      if (!ownsJob(moves[i].job) && !can("manage")) return {ok: false, theirs: moves[i].job};
+      if (!ownsJob(moves[i].job) && state.me !== "office")
+        return {ok: false, theirs: moves[i].job};
     }
     return {ok: true, moves: moves};
   }
@@ -5673,7 +5745,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     // three taps on the version line below.
     $("meFixSec").hidden = true;
     fixTaps = 0;
-    $("meCrewBtn").hidden = !can("manage");
+    // Everybody's name, everybody's code, and what each of them may do. That
+    // is the master office code's, the same as Hours worked. "Manage" was
+    // never meant to hand out the whole roster.
+    $("meCrewBtn").hidden = state.me !== "office";
     // Hours worked and the workbook behind it are the office code's alone.
     // Every admin with "manage" was getting the whole crew's hours.
     $("meRepBtn").hidden = state.me !== "office";
@@ -5682,7 +5757,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
   $("meBtn").addEventListener("click", openMe);
   $("meClose").addEventListener("click", function(){ $("meDlg").close(); });
-  $("meCrewBtn").addEventListener("click", function(){ $("meDlg").close(); openCrewEditor(); });
+  $("meCrewBtn").addEventListener("click", function(){
+    if (state.me !== "office") return;      // a stale screen is still a screen
+    $("meDlg").close(); openCrewEditor();
+  });
   $("meNotifBtn").addEventListener("click", function(){
     $("meNotifBtn").disabled = true;
     state.pushDone = false;
@@ -6091,6 +6169,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return row;
   }
   function openCrewEditor(){
+    if (state.me !== "office") return;
     var host = $("crewRows");
     host.innerHTML = "";
     state.people.forEach(function(pp){ addRosterRow(pp, false); });
