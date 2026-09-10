@@ -792,6 +792,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <p class="sub" id="meConnText" style="margin:6px 0 0"></p>
     </div>
 
+    <div class="mesec" id="meFixSec">
+      <div class="eyebrow" data-t>If something is not working</div>
+      <p class="sub" data-t style="margin:6px 0 8px">Two checks. The first throws away
+        everything this phone has saved of the app and fetches it again — use it
+        if you were told about a change you cannot see. The second says whether
+        this phone and this network can carry a video call.</p>
+      <button type="button" class="btn btn-block" id="meFresh" data-t>Get the newest version</button>
+      <p class="sub" id="meFreshOut" style="margin:6px 0 10px"></p>
+      <button type="button" class="btn btn-block" id="meCallTest" data-t>Test video calling</button>
+      <p class="sub" id="meCallOut" style="margin:6px 0 0"></p>
+    </div>
+
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55"></p>
 
     <div class="actions">
@@ -1293,6 +1305,31 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Install app": "Installer l\u2019application",
     "Incoming video call": "Appel vid\u00e9o entrant",
     "React with {e}": "R\u00e9agir avec {e}",
+    "If something is not working": "Si quelque chose ne fonctionne pas",
+    "Two checks. The first throws away\n        everything this phone has saved of the app and fetches it again \u2014 use it\n        if you were told about a change you cannot see. The second says whether\n        this phone and this network can carry a video call.":
+      "Deux v\u00e9rifications. La premi\u00e8re jette tout ce que ce t\u00e9l\u00e9phone a gard\u00e9 de l\u2019application et la r\u00e9cup\u00e8re de nouveau \u2014 utilisez-la si on vous a parl\u00e9 d\u2019un changement que vous ne voyez pas. La deuxi\u00e8me dit si ce t\u00e9l\u00e9phone et ce r\u00e9seau peuvent porter un appel vid\u00e9o.",
+    "Get the newest version": "Obtenir la derni\u00e8re version",
+    "Test video calling": "Tester l\u2019appel vid\u00e9o",
+    "Throwing it away and fetching it again\u2026": "On jette tout et on r\u00e9cup\u00e8re\u2026",
+    "It would not let go. Close the app fully and open it again.":
+      "\u00c7a n\u2019a pas voulu l\u00e2cher. Fermez compl\u00e8tement l\u2019application et rouvrez-la.",
+    "Checking\u2026": "V\u00e9rification\u2026",
+    "Camera and microphone: working.": "Cam\u00e9ra et microphone\u00a0: fonctionnent.",
+    "Camera and microphone: {why}": "Cam\u00e9ra et microphone\u00a0: {why}",
+    "Your address on the internet: found.": "Votre adresse sur Internet\u00a0: trouv\u00e9e.",
+    "Your address on the internet: not found. This network is blocking it.":
+      "Votre adresse sur Internet\u00a0: introuvable. Ce r\u00e9seau la bloque.",
+    "Relay: working. Calls should connect anywhere.":
+      "Relais\u00a0: fonctionne. Les appels devraient passer partout.",
+    "Relay: set up, but it did not answer.": "Relais\u00a0: configur\u00e9, mais il n\u2019a pas r\u00e9pondu.",
+    "No connection right now, so a call cannot be set up.":
+      "Aucune connexion en ce moment, donc un appel ne peut pas \u00eatre \u00e9tabli.",
+    "Connection to the calendar: none. A call needs it to reach the other phone.":
+      "Connexion au calendrier\u00a0: aucune. Un appel en a besoin pour joindre l\u2019autre t\u00e9l\u00e9phone.",
+    "This device cannot make video calls at all.":
+      "Cet appareil ne peut pas faire d\u2019appels vid\u00e9o du tout.",
+    "Relay: none set up. Calls work on wi-fi and most networks, but not on one that hides both phones.":
+      "Relais\u00a0: aucun. Les appels fonctionnent en wi-fi et sur la plupart des r\u00e9seaux, mais pas sur un r\u00e9seau qui cache les deux t\u00e9l\u00e9phones.",
     "Decline": "Refuser",
     "Your account": "Votre compte",
     "Crew": "\u00c9quipe",
@@ -1800,7 +1837,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v83";
+  var APP_VERSION = "v84";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2981,6 +3018,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T21:00:00Z",
+     en:"Under your initial there are two checks now. Get the newest version throws away everything this phone has saved of the app and fetches it again \u2014 use it if you were told about a change you cannot see. Test video calling says whether the camera answers, whether the phone can learn its own address on the internet, and whether there is a relay for the networks where that is not enough.",
+     fr:"Sous votre initiale il y a maintenant deux v\u00e9rifications. Obtenir la derni\u00e8re version jette tout ce que ce t\u00e9l\u00e9phone a gard\u00e9 de l\u2019application et la r\u00e9cup\u00e8re \u2014 utilisez-la si on vous a parl\u00e9 d\u2019un changement que vous ne voyez pas. Tester l\u2019appel vid\u00e9o dit si la cam\u00e9ra r\u00e9pond, si le t\u00e9l\u00e9phone trouve son adresse sur Internet, et s\u2019il y a un relais."},
     {at:"2026-09-10T19:00:00Z",
      en:"You can react to a message with an emoji. Tap the three dots on it and pick one — tap the same one again to take it back.",
      fr:"Vous pouvez réagir à un message avec un émoji. Touchez les trois points dessus et choisissez-en un — touchez le même de nouveau pour l’enlever."},
@@ -3529,9 +3569,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("callErr").textContent = txt || "";
     $("callErr").className = "callerr" + (note ? " note" : "");
   }
-  function canCall(){
-    return !!state.fb && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+  /* Whether this phone could carry a call at all, and separately whether
+     there is a connection to set one up over. They were one answer for a
+     while, and a phone with no signal was told its camera was the problem. */
+  function deviceCanCall(){
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
            && typeof RTCPeerConnection !== "undefined";
+  }
+  function canCall(){ return deviceCanCall() && !!state.fb; }
+  function whyNoCall(){
+    if (!deviceCanCall()) return tr("This device cannot make video calls.");
+    return tr("No connection right now, so a call cannot be set up.");
   }
 
   function tearDown(){
@@ -3694,7 +3742,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (call) return;
     if (!mayWriteTo(otherId)) return;   // same rule as writing: not each other
     if (!canCall()){
-      alert(tr("This device cannot make video calls."));
+      alert(whyNoCall());
       return;
     }
     var ref = callRef(otherId);
@@ -5500,6 +5548,101 @@ dialog#callDlg::backdrop{background:#0b0f12}
       setTimeout(function(){ b.disabled = false; b.textContent = tr("Send a test buzz"); }, 4000);
     });
   });
+  /* ---------- two things to try when it is not working ----------
+
+     A phone that has the app on its home screen keeps its own copy of it, and
+     that copy is meant to be replaced on the next open. When it is not — an
+     old worker still in charge, a cache that will not let go — the man holding
+     the phone has no way of knowing, and no way out of it either. This is the
+     way out: throw away everything saved of the app on this phone, let go of
+     the worker running it, and fetch the lot again. */
+  $("meFresh").addEventListener("click", function(){
+    var b = $("meFresh"), out = $("meFreshOut");
+    b.disabled = true;
+    out.textContent = tr("Throwing it away and fetching it again\u2026");
+    var jobs = [];
+    if (window.caches && caches.keys)
+      jobs.push(caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+      }));
+    if ("serviceWorker" in navigator && navigator.serviceWorker.getRegistrations)
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all((regs || []).map(function(r){ return r.unregister(); }));
+      }));
+    Promise.all(jobs.map(function(p){ return p.catch(function(){}); })).then(function(){
+      // The query string is there to get past anything between here and the
+      // server that is still holding the old page.
+      var base = location.href.split("?")[0].split("#")[0];
+      location.replace(base + "?fresh=" + Date.now());
+    }).catch(function(){
+      b.disabled = false;
+      out.textContent = tr("It would not let go. Close the app fully and open it again.");
+    });
+  });
+
+  /* Whether a call can get out of this phone at all, said in words rather
+     than left for somebody to guess at. Three separate questions: does the
+     camera answer, does the phone learn its own address on the internet, and
+     is there a relay for the networks where that is not enough. */
+  $("meCallTest").addEventListener("click", function(){
+    var b = $("meCallTest"), out = $("meCallOut");
+    b.disabled = true;
+    out.textContent = tr("Checking\u2026");
+    var lines = [], stream = null;
+    function done(){
+      if (stream) stream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
+      out.innerHTML = lines.join("<br>");
+      b.disabled = false;
+    }
+    if (!deviceCanCall()){
+      lines.push(tr("This device cannot make video calls at all."));
+      return done();
+    }
+    if (!state.fb)
+      lines.push(tr("Connection to the calendar: none. A call needs it to reach the other phone."));
+    getMedia().then(function(st){
+      stream = st;
+      lines.push(tr("Camera and microphone: working."));
+    }).catch(function(e){
+      lines.push(tr("Camera and microphone: {why}", {why: mediaErr(e)}));
+    }).then(function(){
+      // Ask for routes to this phone and see what kinds come back. A "srflx"
+      // is the phone's address on the internet, learned from a stun server;
+      // a "relay" is a way through when neither end can be reached directly.
+      return new Promise(function(ok){
+        var pc, kinds = {};
+        try { pc = new RTCPeerConnection({iceServers: ICE_SERVERS}); }
+        catch (e){ lines.push(tr("This device cannot make video calls at all.")); return ok(); }
+        // A data channel is enough to make it gather routes; no camera needed.
+
+        pc.createDataChannel("t");
+        pc.onicecandidate = function(ev){
+          if (!ev.candidate){ finish(); return; }
+          var t = ev.candidate.type || (String(ev.candidate.candidate).split(" ")[7] || "");
+          kinds[t] = (kinds[t] || 0) + 1;
+        };
+        var shut = false;
+        function finish(){
+          if (shut) return; shut = true;
+          try { pc.close(); } catch(e){}
+          lines.push(kinds.srflx
+            ? tr("Your address on the internet: found.")
+            : tr("Your address on the internet: not found. This network is blocking it."));
+          var hasTurn = ICE_SERVERS.some(function(x){
+            return String([].concat(x.urls || []).join(" ")).indexOf("turn") >= 0;
+          });
+          if (kinds.relay) lines.push(tr("Relay: working. Calls should connect anywhere."));
+          else if (hasTurn) lines.push(tr("Relay: set up, but it did not answer."));
+          else lines.push(tr("Relay: none set up. Calls work on wi-fi and most networks, but not on one that hides both phones."));
+          ok();
+        }
+        pc.createOffer().then(function(o){ return pc.setLocalDescription(o); })
+          .catch(function(){ finish(); });
+        setTimeout(finish, 8000);
+      });
+    }).then(done);
+  });
+
   $("meSignOut").addEventListener("click", function(){
     try{ localStorage.removeItem(LS_PASS); }catch(e){}
     location.reload();
