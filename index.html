@@ -1442,6 +1442,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
     "No answer": "Pas de r\u00e9ponse",
+    "No route between the two phones. {a} sent, {b} received. Try again on wi-fi.":
+      "Aucune route entre les deux t\u00e9l\u00e9phones. {a} envoy\u00e9s, {b} re\u00e7us. R\u00e9essayez en wi-fi.",
     "Still ringing. They have to have the app open, or notifications turned on.":
       "\u00c7a sonne toujours. Il faut que l\u2019application soit ouverte chez eux, ou que les notifications soient activ\u00e9es.",
     "Video call": "Appel vid\u00e9o", "Answer": "R\u00e9pondre", "Hang up": "Raccrocher",
@@ -1734,7 +1736,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v79";
+  var APP_VERSION = "v80";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2915,6 +2917,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T13:00:00Z",
+     en:"Video calls should connect now. The app was throwing away its own routing information before it had finished asking for the call.",
+     fr:"Les appels vid\u00e9o devraient maintenant se connecter. L\u2019application jetait ses propres informations de connexion avant d\u2019avoir fini de lancer l\u2019appel."},
     {at:"2026-09-10T11:00:00Z", who:"office",
      en:"Two fixes: Booked by is the office code's alone now, and the notifications kept under System are only the ones sent to whoever is signed in \u2014 a shared phone no longer shows one person the other's.",
      fr:"Deux correctifs\u00a0: R\u00e9serv\u00e9 par n\u2019appartient plus qu\u2019au code du bureau, et les notifications gard\u00e9es sous Syst\u00e8me sont seulement celles envoy\u00e9es \u00e0 la personne connect\u00e9e."},
@@ -3386,14 +3391,38 @@ dialog#callDlg::backdrop{background:#0b0f12}
     tearDown();
   }
 
+  /* Ways of reaching this phone, as they are worked out.
+     They start arriving the instant the local description is set, which was
+     before the call document had been written — and the write that created it
+     replaced the whole document, so every route gathered in that window was
+     wiped. On a quick network that is most of them, and the other end was
+     left with a description it had no way to act on. They are held now until
+     the document is known to exist, and only ever appended after that. */
+  function sendIce(otherId, field, lines){
+    if (!lines.length || !state.fb) return;
+    var patch = {};
+    patch[field] = FV().arrayUnion.apply(null, lines);
+    callRef(otherId).set(patch, {merge: true}).catch(function(){});
+  }
+  function iceReady(otherId, field){
+    if (!call) return;
+    call.docReady = true;
+    var held = call.queue || [];
+    call.queue = [];
+    sendIce(otherId, field, held);
+  }
+
   function newPeer(otherId, iAmCaller){
     var pc = new RTCPeerConnection({iceServers: ICE_SERVERS});
     var mine = iAmCaller ? "callerIce" : "calleeIce";
+    call.queue = call.queue || [];
+    call.sent = 0; call.got = call.got || 0;
     pc.onicecandidate = function(ev){
-      if (!ev.candidate || !state.fb) return;
-      var patch = {};
-      patch[mine] = FV().arrayUnion(JSON.stringify(ev.candidate.toJSON()));
-      callRef(otherId).set(patch, {merge: true}).catch(function(){});
+      if (!ev.candidate || !state.fb || !call) return;
+      var line = JSON.stringify(ev.candidate.toJSON());
+      call.sent += 1;
+      if (!call.docReady){ call.queue.push(line); return; }
+      sendIce(otherId, mine, [line]);
     };
     pc.ontrack = function(ev){
       var far = $("callFar");
@@ -3415,7 +3444,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
         callState(tr("Connected"));
       }
       else if (s === "failed"){
-        callErr(tr("The two phones could not reach each other. Try again on wi-fi."));
+        // The counts say whether the two ends managed to tell each other
+        // anything at all, which is the difference between a signalling
+        // problem and a network that will not carry the call.
+        callErr(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
+                   {a: call.sent || 0, b: call.got || 0}));
         callState(tr("Call failed"));
       } else if (s === "disconnected") callState(tr("Reconnecting…"));
     };
@@ -3449,6 +3482,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     (list || []).forEach(function(raw){
       if (seen[raw]) return;
       seen[raw] = 1;
+      if (call) call.got = (call.got || 0) + 1;
       try { pc.addIceCandidate(new RTCIceCandidate(JSON.parse(raw))); } catch (e){}
     });
   }
@@ -3477,7 +3511,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
       stopRing();
       setTimeout(hangUp, 1200);
     }, 45000);
-    getMedia().then(function(stream){
+    // The document goes first, so the write that creates it cannot land on
+    // top of anything. Every write after this one only adds.
+    ref.set({
+      from: state.me, fromName: meName(), to: otherId,
+      at: new Date().toISOString(), state: "ringing",
+      callerIce: [], calleeIce: []
+    }).then(function(){
+      return getMedia();
+    }).then(function(stream){
       if (!call) { stream.getTracks().forEach(function(t){ t.stop(); }); return; }
       call.local = stream;
       playNear(stream);
@@ -3485,13 +3527,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
       return pc.createOffer().then(function(offer){
         return pc.setLocalDescription(offer).then(function(){
-          return ref.set({
-            from: state.me, fromName: meName(), to: otherId,
-            at: new Date().toISOString(), state: "ringing",
-            offer: JSON.stringify(offer), callerIce: [], calleeIce: []
-          });
+          return ref.set({offer: JSON.stringify(offer)}, {merge: true});
         });
       }).then(function(){
+        iceReady(otherId, "callerIce");
         call.unsub = ref.onSnapshot(function(snap){
           var d = (snap.exists && snap.data()) || {};
           if (!call) return;
@@ -3536,7 +3575,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
             return pc.setLocalDescription(ans).then(function(){
               return ref.set({answer: JSON.stringify(ans), state: "live"}, {merge: true});
             });
-          }).then(function(){ drinkIce(pc, d.callerIce, call.seenIce); });
+          }).then(function(){
+            iceReady(otherId, "calleeIce");
+            drinkIce(pc, d.callerIce, call.seenIce);
+          });
       });
     }).catch(function(e){
       callErr(mediaErr(e));
