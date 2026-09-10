@@ -33,5 +33,19 @@ self.EBM_CONFIG = {   /* self, not window: the service worker reads this file to
   /* Phone notifications. Paste the Web Push certificate key pair from
      Firebase console → Project settings → Cloud Messaging → Web Push
      certificates → Generate key pair. Leave "" and notifications stay off. */
-  vapidKey: "BJKLqsvXz4E6Lpu7Q5vX8iMKY3hdPOMTTfZTi-1If5bCdd22XrpAJT8Moybx2BH7yzmOMiWgOoWlcUNdwiZt7nQ"
+  vapidKey: "BJKLqsvXz4E6Lpu7Q5vX8iMKY3hdPOMTTfZTi-1If5bCdd22XrpAJT8Moybx2BH7yzmOMiWgOoWlcUNdwiZt7nQ",
+
+  /* Video calls, on mobile networks.
+
+     A call goes straight between the two phones wherever it can. On some
+     mobile networks it cannot, and then it needs a relay to carry the
+     picture — without one those calls say "no route between the two phones".
+     A relay is a paid service; paste the details a provider gives you here
+     and nothing else has to change. Leave it empty and calls still work on
+     wi-fi and on most networks.
+
+     turn: [
+       {urls: "turn:your-relay:3478", username: "user", credential: "secret"}
+     ] */
+  turn: []
 };

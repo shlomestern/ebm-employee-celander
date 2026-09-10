@@ -559,7 +559,36 @@ dialog#callDlg::backdrop{background:#0b0f12}
 .cbtn.off{background:#fff; color:#0b0f12}
 .cbtn.end{background:var(--danger); width:auto; padding:0 22px; border-radius:28px}
 .cbtn.go{background:var(--open); width:auto; padding:0 22px; border-radius:28px}
-.callerr{position:absolute; left:16px; right:16px; text-align:center; color:#ffb4a8;
+/* The ringing screen, over the video and under nothing. */
+.ringing{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:14px; text-align:center; z-index:2;
+  padding:0 22px calc(30px + env(safe-area-inset-bottom));
+  background:radial-gradient(120% 80% at 50% 24%, #1d3946 0%, #0b0f12 78%)}
+.ringing .rav{width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,.14);
+  display:grid; place-items:center; font-family:"Archivo",sans-serif; font-weight:700;
+  font-size:42px; color:#fff; border:2px solid rgba(255,255,255,.22);
+  animation:callpulse 1.6s ease-in-out infinite}
+@keyframes callpulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.20)}
+  50%{box-shadow:0 0 0 18px rgba(255,255,255,0)}}
+.ringing .rnm{font-family:"Archivo",sans-serif; font-weight:700; font-size:27px; line-height:1.15}
+.ringing .rsub{font-size:14.5px; opacity:.75; margin-top:-6px}
+.ringing .rbtns{display:flex; gap:34px; margin-top:26px}
+.rbtn{border:0; background:none; padding:0; cursor:pointer; color:#fff; font:inherit;
+  display:flex; flex-direction:column; align-items:center; gap:9px}
+.rbtn .ic{width:70px; height:70px; border-radius:50%; display:grid; place-items:center;
+  font-size:28px; line-height:1}
+.rbtn .lb{font-family:"Archivo",sans-serif; font-weight:700; font-size:13px;
+  letter-spacing:.04em}
+.rbtn.take .ic{background:#1f9d55}
+.rbtn.drop .ic{background:#c2452f}
+.rbtn:active .ic{transform:scale(.94)}
+@media (max-height:620px){
+  .ringing .rav{width:80px; height:80px; font-size:32px}
+  .ringing .rnm{font-size:22px}
+  .rbtn .ic{width:60px; height:60px; font-size:24px}
+}
+.callerr{position:absolute; left:16px; right:16px; text-align:center; color:#ffb4a8; z-index:3;
   font-size:13px; bottom:calc(96px + env(safe-area-inset-bottom))}
 .callerr.note{color:rgba(255,255,255,.78)}
 .callbtn{width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--line);
@@ -1048,7 +1077,23 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <span class="who" id="callWho"></span>
       <span class="st" id="callState"></span>
     </div>
-    <div class="callbar">
+    <!-- A call has to look like a call. Until it connects, the screen is the
+         other person's name and two buttons, the way every phone does it —
+         not a small Answer tucked in with the mute and camera controls. -->
+    <div class="ringing" id="callRing" hidden>
+      <div class="rav" id="callAv"></div>
+      <div class="rnm" id="callRingWho"></div>
+      <div class="rsub" id="callRingSub"></div>
+      <div class="rbtns">
+        <button type="button" class="rbtn drop" id="callDrop">
+          <span class="ic">&#10005;</span><span class="lb" id="callDropLb" data-t>Decline</span>
+        </button>
+        <button type="button" class="rbtn take" id="callTake" hidden>
+          <span class="ic">&#9742;</span><span class="lb" data-t>Answer</span>
+        </button>
+      </div>
+    </div>
+    <div class="callbar" id="callBar">
       <button type="button" class="cbtn" id="callMic" data-ta="Mute" aria-label="Mute">
         <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor"
              stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -1230,6 +1275,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Still starting up \u2014 try again in a second.":
       "D\u00e9marrage en cours \u2014 r\u00e9essayez dans un instant.",
     "Install app": "Installer l\u2019application",
+    "Incoming video call": "Appel vid\u00e9o entrant",
+    "Decline": "Refuser",
     "Your account": "Votre compte",
     "Crew": "\u00c9quipe",
     "Previous month": "Mois pr\u00e9c\u00e9dent",
@@ -1736,7 +1783,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v81";
+  var APP_VERSION = "v82";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2917,6 +2964,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T17:00:00Z",
+     en:"An incoming video call now takes over the screen the way a phone call does \u2014 the name, and Answer or Decline. The notification stays up until you deal with it, buzzes in a pattern, and carries Answer and Decline on it. A call also waits 75 seconds instead of 45, because opening a shut app takes time.",
+     fr:"Un appel vid\u00e9o entrant prend maintenant tout l\u2019\u00e9cran comme un vrai appel \u2014 le nom, puis R\u00e9pondre ou Refuser. La notification reste affich\u00e9e jusqu\u2019\u00e0 ce que vous r\u00e9pondiez, vibre en s\u00e9rie, et porte R\u00e9pondre et Refuser. Un appel attend 75\u00a0secondes au lieu de 45, parce qu\u2019ouvrir une application ferm\u00e9e prend du temps."},
     {at:"2026-09-10T16:00:00Z",
      en:"Messages go up and down between the office and the crew, not sideways. A man on the tools writes to the office and to whoever books his work; he no longer has the other men on his list.",
      fr:"Les messages circulent entre le bureau et l’équipe, pas entre collègues. Un travailleur écrit au bureau et à la personne qui fait ses réservations ; il n’a plus les autres travailleurs dans sa liste."},
@@ -3304,9 +3354,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
      Note the call document is deliberately small and short-lived — it is torn
      down as soon as the call ends. */
+  /* How the two phones find each other.
+
+     The stun servers only tell a phone its own public address. That is enough
+     on wi-fi and on most home networks, and it is not enough on some mobile
+     networks, where neither end can be reached directly and the call needs a
+     relay in the middle to carry the picture. A relay is a paid service, so
+     it is not built in — paste one into config.js as turn: [...] and calls
+     start working on those networks too. SETUP.md says where to get one. */
   var ICE_SERVERS = [
     {urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]}
-  ];
+  ].concat(((self.EBM_CONFIG || {}).turn) || []);
   var call = null;         // {other, caller, pc, local, doc, unsub, seenIce}
 
   /* A phone that rings. Made here rather than carried as a file: two tones,
@@ -3375,6 +3433,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   function tearDown(){
     stopRing();
+    dropCallNote();
     if (!call) return;
     var c = call; call = null;
     if (c.giveUp) clearTimeout(c.giveUp);
@@ -3448,6 +3507,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var s = pc.connectionState;
       if (s === "connected"){
         stopRing();
+        callLive();
         if (call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
         if (call.hint){ clearTimeout(call.hint); call.hint = null; }
         callErr("");
@@ -3477,13 +3537,43 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var go = near.play(); if (go && go.catch) go.catch(function(){});
   }
   function showCall(otherId, incoming){
-    $("callWho").textContent = personName(otherId);
+    var name = personName(otherId);
+    $("callWho").textContent = name;
     callErr("");
     callState(incoming ? tr("Calling you…") : tr("Ringing…"));
-    $("callAnswer").hidden = !incoming;
+    // Until it connects, the whole screen is the call: a name, and Answer or
+    // Decline. The mute and camera buttons are for a call in progress.
+    $("callRingWho").textContent = name;
+    $("callAv").textContent = (name || "?").trim().charAt(0).toUpperCase();
+    $("callRingSub").textContent = incoming
+      ? tr("Incoming video call") : tr("Ringing…");
+    $("callTake").hidden = !incoming;
+    $("callDropLb").textContent = incoming ? tr("Decline") : tr("Hang up");
+    $("callRing").hidden = false;
+    $("callBar").hidden = true;
+    $("callAnswer").hidden = true;
     $("callMic").classList.remove("off");
     $("callCam").classList.remove("off");
     if (!$("callDlg").open) $("callDlg").showModal();
+  }
+  /* The ringing screen gives way to the picture, once there is a picture. */
+  function callLive(){
+    $("callRing").hidden = true;
+    $("callBar").hidden = false;
+  }
+  /* A ringing notification is left up on purpose, so it has to be taken down
+     on purpose too — otherwise a call answered in the app leaves "somebody is
+     calling" sitting on the lock screen. */
+  function dropCallNote(){
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.ready.then(function(reg){
+      if (!reg.getNotifications) return;
+      return reg.getNotifications().then(function(list){
+        (list || []).forEach(function(n){
+          if ((n.tag || "").indexOf("ring-") === 0) n.close();
+        });
+      });
+    }).catch(function(){});
   }
 
   /* Taking the ice the other side has trickled in. Each candidate is added
@@ -3521,7 +3611,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       callErr("");
       stopRing();
       setTimeout(hangUp, 1200);
-    }, 45000);
+      // Opening a shut app from a notification is not quick: the phone has to
+      // wake the browser, load the app and reach the database before it can
+      // know there is a call at all. Forty-five seconds was not enough.
+    }, 75000);
     // The document goes first, so the write that creates it cannot land on
     // top of anything. Every write after this one only adds.
     ref.set({
@@ -3553,6 +3646,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
               .catch(function(){});
             stopRing();
             callErr("");
+            callLive();
             callState(tr("Connecting…"));
           }
           drinkIce(pc, d.calleeIce, call.seenIce);
@@ -3568,8 +3662,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var c = call;
     if (!c || c.caller || c.pc) return;
     var otherId = c.other, ref = callRef(otherId);
+    $("callTake").hidden = true;
+    $("callDropLb").textContent = tr("Hang up");
     $("callAnswer").hidden = true;
     stopRing();
+    dropCallNote();
+    $("callRingSub").textContent = tr("Connecting…");
     callState(tr("Connecting…"));
     getMedia().then(function(stream){
       if (!call) { stream.getTracks().forEach(function(t){ t.stop(); }); return; }
@@ -3639,6 +3737,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (chatOpen && chatOpen !== SYSTEM) startCall(chatOpen);
   });
   $("callAnswer").addEventListener("click", answerCall);
+  $("callTake").addEventListener("click", answerCall);
+  $("callDrop").addEventListener("click", hangUp);
   $("callEnd").addEventListener("click", hangUp);
   $("callMic").addEventListener("click", function(){
     if (!call || !call.local) return;
@@ -3868,6 +3968,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!state.me) { pendingTag = tag; return; }
     pendingTag = null;
     tag = String(tag || "");
+    // A call is not something to open a conversation about. The ringing screen
+    // comes up by itself the moment the app can see the call document, so the
+    // tap only has to have brought the app to the front — which it has.
+    if (tag.indexOf("ring-") === 0) return;
     if (tag.indexOf("chat-") === 0){
       var pair = tag.slice(5).split("__");
       if (pair.indexOf(state.me) >= 0){
@@ -3890,6 +3994,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     navigator.serviceWorker.addEventListener("message", function(e){
       var d = e.data || {};
       if (d.kind === "push" && d.push){ alertLog.push(d.push); afterAlerts(); }
+      else if (d.kind === "decline"){ if (call && !call.caller) hangUp(); }
       else if (d.kind === "open") openFromTag(d.tag);
     });
   }

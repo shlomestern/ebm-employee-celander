@@ -1,6 +1,6 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v81";
+var CACHE = "ebm-crew-v82";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
@@ -141,14 +141,27 @@ self.addEventListener("push", function(e){
   // A message is kept in its own conversation; logging it again would put a
   // copy of somebody's private line into the System thread.
   var keep = rec.tag.indexOf("chat-") !== 0;
+  /* A call is not an announcement. It stays on the screen until it is dealt
+     with, it buzzes in a pattern rather than once, and it carries the two
+     buttons a call is supposed to carry — somebody rang and all that arrived
+     was a line of text that vanished when it was swiped. */
+  var ringing = rec.tag.indexOf("ring-") === 0;
+  var opts = {
+    body: rec.body,
+    icon: "./icons/icon-192.png",
+    badge: "./icons/badge-96.png",
+    tag: rec.tag,
+    data: {tag: rec.tag}
+  };
+  if (ringing){
+    opts.requireInteraction = true;
+    opts.renotify = true;
+    opts.vibrate = [500, 250, 500, 250, 500, 250, 500];
+    opts.actions = [{action: "answer", title: "Answer"},
+                    {action: "decline", title: "Decline"}];
+  }
   e.waitUntil(Promise.all([
-    self.registration.showNotification(rec.title, {
-      body: rec.body,
-      icon: "./icons/icon-192.png",
-      badge: "./icons/badge-96.png",
-      tag: rec.tag,
-      data: {tag: rec.tag}
-    }),
+    self.registration.showNotification(rec.title, opts),
     keep ? logPush(rec) : Promise.resolve(),
     keep ? tell({kind: "push", push: rec}) : Promise.resolve()
   ]));
@@ -160,6 +173,14 @@ self.addEventListener("push", function(e){
 self.addEventListener("notificationclick", function(e){
   e.notification.close();
   var tag = (e.notification.data && e.notification.data.tag) || e.notification.tag || "";
+  var act = e.action || "";
+  // Declining is the one tap that does not open anything: it tells the app to
+  // put the call down, and if the app is not running there is nothing to put
+  // down at this end anyway — the caller's own timer ends it.
+  if (act === "decline"){
+    e.waitUntil(tell({kind: "decline", tag: tag}));
+    return;
+  }
   e.waitUntil(self.clients.matchAll({type:"window", includeUncontrolled:true}).then(function(list){
     for (var i=0;i<list.length;i++){
       var c = list[i];
