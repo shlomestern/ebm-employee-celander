@@ -362,14 +362,23 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     const who = person ? person.name : after.crewId;
     const where = after.buildingName + (after.unit ? ` · Unit ${after.unit}` : "");
 
+    // Whoever booked this job, and the master office code. Not every admin on
+    // the roster: an admin who had nothing to do with a job does not want to
+    // be told that somebody clocked in on it, and was being told anyway.
+    const owners = new Set(["office"]);
+    if (after.createdById) owners.add(after.createdById);
+    const theirs = Object.keys(aud.map).filter((t) => owners.has(aud.map[t]));
+
     // A hold-up is not general news: it goes to whoever booked the job he is
     // standing on and whoever booked the one he is about to be late for,
     // because between them they are the ones who can move something. The
     // office hears it too, since it owns the day.
     if (lateNow) {
       const next = await nextJobAfter(db, after);
-      const ids = new Set(aud.forOffice().map((t) => aud.map[t]));
-      ids.add("office");
+      // The comment above was the intention; the code was also pulling in
+      // every admin on the roster, which is how somebody with no part in the
+      // job came to be told about it.
+      const ids = new Set(["office"]);
       if (after.createdById) ids.add(after.createdById);
       if (next && next.createdById) ids.add(next.createdById);
       const tokens = Object.keys(aud.map).filter((t) => ids.has(aud.map[t]));
@@ -387,18 +396,17 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
       return;
     }
 
-    // Where he has gone, and for how long he was away. Straight to the whole
-    // office: somebody who is off buying a part is somebody whose afternoon
-    // may need moving.
+    // Where he has gone, and for how long he was away — to whoever booked the
+    // job, since it is their afternoon that may need moving.
     if (pausedNow || backNow) {
       const title = pausedNow ? `${who} paused` : `${who} is back on it`;
       const body = pausedNow
         ? `${where} · ${whyOf(heldNow)}`
         : `${where} · away ${awayFor(heldBefore, closedEnd(after))} · ` +
           `${whyOf(heldBefore)}`;
-      const sent = await push(db, aud.map, aud.forOffice(), title, body,
+      const sent = await push(db, aud.map, theirs, title, body,
         `${event.params.jobId}-${pausedNow ? "pause" : "back"}`);
-      logger.info(`${title} — notified ${sent} office phone(s)`);
+      logger.info(`${title} — notified ${sent} phone(s) of whoever booked it`);
       return;
     }
 
@@ -410,9 +418,9 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
       ? `${where} · ${used ? `used ${used}` : "nothing used"}`
       : `${where} · started ${HOURS(after.from)}`;
 
-    const sent = await push(db, aud.map, aud.forOffice(), title, body,
+    const sent = await push(db, aud.map, theirs, title, body,
       `${event.params.jobId}-${endedNow ? "out" : "in"}`);
-    logger.info(`${title} — notified ${sent} office phone(s)`);
+    logger.info(`${title} — notified ${sent} phone(s) of whoever booked it`);
   }
 );
 
