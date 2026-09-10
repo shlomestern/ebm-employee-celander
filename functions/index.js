@@ -474,6 +474,31 @@ exports.notifyOnRequest = onDocumentWritten(
   }
 );
 
+/** A ringing phone. The call document appears named after the pair, the same
+ *  as a conversation, and the one being called is told at once — a call that
+ *  waits for somebody to open the app is not a call.
+ */
+exports.notifyOnCall = onDocumentWritten(
+  {document: "config/{docId}", region: "northamerica-northeast1"},
+  async (event) => {
+    const id = event.params.docId;
+    if (!id.startsWith("call-")) return;
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    // Only the moment it starts ringing, not every candidate trickled in.
+    if (after.state !== "ringing" || before.state === "ringing") return;
+    if (!after.to) return;
+
+    const db = getFirestore();
+    const aud = await audience(db);
+    const tokens = aud.forPerson(after.to);
+    const sent = await push(db, aud.map, tokens,
+      `${after.fromName || "Somebody"} is calling`,
+      "Open the app to answer", `ring-${id}`);
+    logger.info(`ring ${id} to ${after.to} — ${sent} phone(s)`);
+  }
+);
+
 /** A message reaches the one person it was written to.
  *
  *  Each conversation is its own document, named chat-<a>__<b> after the two

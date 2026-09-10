@@ -447,6 +447,9 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .bub .nm{display:block; font-size:11px; font-weight:700; letter-spacing:.02em;
   font-family:"Archivo",sans-serif; opacity:.75; margin-bottom:2px}
 .bub .tm{font-size:10.5px; opacity:.65; margin-left:7px}
+/* One tick sent, two read — the shorthand everybody already knows. */
+.bub .rd{font-size:11px; margin-left:4px; opacity:.55; letter-spacing:-1px}
+.bub .rd.on{opacity:1}
 .bub.mine{align-self:flex-end; background:var(--sel); color:#fff; border-bottom-right-radius:4px}
 .bub.theirs{align-self:flex-start; background:var(--surface-2); border:1px solid var(--line);
   border-bottom-left-radius:4px}
@@ -531,6 +534,39 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink-2)}
 .whyrow button[aria-pressed="true"]{background:var(--sel); border-color:var(--sel); color:#fff}
 /* Not a choice: you opened somebody's day, and this is that somebody. */
+/* The call fills the screen, because a face at postage-stamp size is worse
+   than a phone call. The near camera sits in the corner, small, mirrored the
+   way everybody expects to see themselves. */
+dialog#callDlg{border:none; background:#0b0f12; padding:0; max-width:none; width:100vw;
+  height:100dvh; max-height:none; margin:0; border-radius:0; color:#fff}
+dialog#callDlg::backdrop{background:#0b0f12}
+.callwrap{position:relative; width:100%; height:100%; overflow:hidden}
+.callfar{width:100%; height:100%; object-fit:cover; background:#141a1f; display:block}
+.callnear{position:absolute; right:14px; width:104px; height:139px; object-fit:cover;
+  border-radius:12px; border:2px solid rgba(255,255,255,.5); background:#1b2228;
+  transform:scaleX(-1);
+  top:calc(14px + env(safe-area-inset-top))}
+.callhead{position:absolute; left:16px; right:130px; display:flex; flex-direction:column; gap:2px;
+  top:calc(16px + env(safe-area-inset-top)); text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.callhead .who{font-family:"Archivo",sans-serif; font-weight:700; font-size:19px}
+.callhead .st{font-size:13px; opacity:.82}
+.callbar{position:absolute; left:0; right:0; display:flex; gap:12px; justify-content:center;
+  align-items:center; bottom:calc(26px + env(safe-area-inset-bottom))}
+.cbtn{width:56px; height:56px; border-radius:50%; border:0; cursor:pointer; display:grid;
+  place-items:center; background:rgba(255,255,255,.19); color:#fff; font:inherit;
+  font-family:"Archivo",sans-serif; font-weight:700; font-size:13px; padding:0}
+.cbtn:hover{background:rgba(255,255,255,.3)}
+.cbtn.off{background:#fff; color:#0b0f12}
+.cbtn.end{background:var(--danger); width:auto; padding:0 22px; border-radius:28px}
+.cbtn.go{background:var(--open); width:auto; padding:0 22px; border-radius:28px}
+.callerr{position:absolute; left:16px; right:16px; text-align:center; color:#ffb4a8;
+  font-size:13px; bottom:calc(96px + env(safe-area-inset-bottom))}
+.callbtn{width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink-2); cursor:pointer; display:grid;
+  place-items:center; padding:0; margin-left:auto}
+.callbtn:hover{border-color:var(--ink-3); color:var(--ink)}
+#chatDlg .dlg > h3{display:inline-block}
+.chattop{display:flex; align-items:center; gap:10px}
 .whoshow{font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface-2);
   border:1px solid var(--line-2); border-radius:7px; padding:11px 11px;
   font-family:"Archivo",sans-serif; font-weight:600}
@@ -808,7 +844,16 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
 <dialog id="chatDlg">
   <div class="dlg">
     <div class="eyebrow" data-t>Messages</div>
-    <h3 id="chatTitle">&nbsp;</h3>
+    <div class="chattop">
+      <h3 id="chatTitle">&nbsp;</h3>
+      <button type="button" class="callbtn" id="chatCall" hidden data-ta="Video call" aria-label="Video call">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+           stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="14" height="12" rx="2.5"></rect>
+        <path d="M16 10.5 22 7v10l-6-3.5z"></path>
+      </svg>
+      </button>
+    </div>
     <p class="sub" id="chatSub"></p>
 
     <div class="threads" id="chatThreads" hidden></div>
@@ -890,8 +935,9 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
         <div class="whoshow" id="rqWhoName"></div>
       </div>
       <div class="field">
-        <label for="rqDate" data-t>Day</label>
-        <input type="date" id="rqDate">
+        <label data-t>Day</label>
+        <input type="hidden" id="rqDate">
+        <div class="whoshow" id="rqDateName"></div>
       </div>
     </div>
     <div class="row2">
@@ -990,6 +1036,36 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
       <button type="button" class="btn btn-block" id="msgSave" hidden data-t>Download the photo</button>
       <button type="button" class="btn btn-block" id="msgShut" data-t>Close</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="callDlg">
+  <div class="callwrap">
+    <video id="callFar" class="callfar" autoplay playsinline></video>
+    <video id="callNear" class="callnear" autoplay playsinline muted></video>
+    <div class="callhead">
+      <span class="who" id="callWho"></span>
+      <span class="st" id="callState"></span>
+    </div>
+    <div class="callbar">
+      <button type="button" class="cbtn" id="callMic" data-ta="Mute" aria-label="Mute">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="11" rx="3"></rect>
+          <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
+        </svg>
+      </button>
+      <button type="button" class="cbtn" id="callCam" data-ta="Camera off" aria-label="Camera off">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="6" width="14" height="12" rx="2.5"></rect>
+          <path d="M16 10.5 22 7v10l-6-3.5z"></path>
+        </svg>
+      </button>
+      <button type="button" class="cbtn go" id="callAnswer" hidden data-t>Answer</button>
+      <button type="button" class="cbtn end" id="callEnd" data-t>Hang up</button>
+    </div>
+    <p class="callerr" id="callErr"></p>
   </div>
 </dialog>
 
@@ -1203,8 +1279,6 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     "Normally a day off. ": "Normalement cong\u00e9. ",
     "This day has passed.": "Cette journ\u00e9e est pass\u00e9e.",
     "Fully booked.": "Compl\u00e8tement r\u00e9serv\u00e9.",
-    "{n} hour still free, {a} to {b}.": "{n} heure encore libre, de {a} \u00e0 {b}.",
-    "{n} hours still free, {a} to {b}.": "{n} heures encore libres, de {a} \u00e0 {b}.",
     "Add a job": "Ajouter un travail",
     "Close": "Fermer",
 
@@ -1366,6 +1440,22 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
+    "Video call": "Appel vid\u00e9o", "Answer": "R\u00e9pondre", "Hang up": "Raccrocher",
+    "Mute": "Couper le micro", "Camera off": "Couper la cam\u00e9ra",
+    "Ringing\u2026": "Sonnerie\u2026", "Calling you\u2026": "Vous appelle\u2026",
+    "Connecting\u2026": "Connexion\u2026", "Reconnecting\u2026": "Reconnexion\u2026",
+    "Connected": "Connect\u00e9", "Call ended": "Appel termin\u00e9",
+    "Call failed": "\u00c9chec de l\u2019appel", "Could not start": "D\u00e9marrage impossible",
+    "Could not answer": "R\u00e9ponse impossible",
+    "The two phones could not reach each other. Try again on wi-fi.":
+      "Les deux t\u00e9l\u00e9phones n\u2019ont pas pu se joindre. R\u00e9essayez en wi-fi.",
+    "This device cannot make video calls.": "Cet appareil ne peut pas faire d\u2019appel vid\u00e9o.",
+    "The camera and microphone are blocked. Allow them for this app in your phone\u2019s settings.":
+      "La cam\u00e9ra et le micro sont bloqu\u00e9s. Autorisez-les pour cette application dans les r\u00e9glages.",
+    "No camera or microphone on this device.": "Pas de cam\u00e9ra ni de micro sur cet appareil.",
+    "The camera is being used by something else.": "La cam\u00e9ra est utilis\u00e9e ailleurs.",
+    "The call could not start.": "L\u2019appel n\u2019a pas pu d\u00e9marrer.",
+    "Read": "Lu", "Sent": "Envoy\u00e9", "Today": "Aujourd\u2019hui",
     "Download": "T\u00e9l\u00e9charger", "Download the photo": "T\u00e9l\u00e9charger la photo",
     "What to do with this message": "Que faire de ce message",
     "Reply to this": "R\u00e9pondre", "Forward it": "Transf\u00e9rer",
@@ -1377,6 +1467,8 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     "Put it in somebody else\u2019s name and it becomes theirs to edit or cancel. Leave it as you and it stays yours.":
       "Mettez-le au nom de quelqu\u2019un d\u2019autre et il pourra le modifier ou l\u2019annuler. Laissez votre nom et il reste \u00e0 vous.",
     "{name} (you)": "{name} (vous)", "put in by {name}": "saisi par {name}",
+    "{n} hour still free: {when}.": "{n} heure encore libre\u00a0: {when}.",
+    "{n} hours still free: {when}.": "{n} heures encore libres\u00a0: {when}.",
     "Emergency": "Urgence", "Emergency request": "Demande d\u2019urgence",
     "Nobody is booked by anyone else that day": "Personne n\u2019est r\u00e9serv\u00e9 par quelqu\u2019un d\u2019autre ce jour-l\u00e0",
     "Nobody is booked by anyone else that day.": "Personne n\u2019est r\u00e9serv\u00e9 par quelqu\u2019un d\u2019autre ce jour-l\u00e0.",
@@ -1638,7 +1730,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v75";
+  var APP_VERSION = "v76";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -1794,6 +1886,28 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     var used = 0;
     jobsOn(ds, crewId).forEach(function(j){ used += (j.to - j.from); });
     return Math.max(0, (DAY_END - DAY_START) - used);
+  }
+  /* Which hours are free, not merely how many. Saying "3 hours still free,
+     8:00 AM to 5:00 PM" over a job that runs 8 until 2 reads as a
+     contradiction, because the second half was the working day rather than
+     the free part of it. */
+  function freeSpans(ds, crewId){
+    var taken = {};
+    jobsOn(ds, crewId).forEach(function(j){
+      for (var h = j.from; h < j.to; h++) taken[h] = 1;
+    });
+    var out = [], start = null;
+    for (var h = DAY_START; h <= DAY_END; h++){
+      var busy = h === DAY_END || taken[h];
+      if (!busy && start === null) start = h;
+      if (busy && start !== null){ out.push([start, h]); start = null; }
+    }
+    return out;
+  }
+  function freeSpanText(ds, crewId){
+    return freeSpans(ds, crewId).map(function(sp){
+      return nbsp(hourLong(sp[0])) + "\u2013" + nbsp(hourLong(sp[1]));
+    }).join(" \u00b7 ");
   }
 
   /* ---------- projects ---------- */
@@ -2485,8 +2599,10 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     pre = pre || {};
     fillReqHours();
     fillProjects($("rqProject"));
-    $("rqDate").value = pre.date || openDate || todayIso;
-    setReqWho($("rqDate").value, pre.crewId || viewCrewId());
+    var ds = pre.date || openDate || todayIso;
+    $("rqDate").value = ds;
+    $("rqDateName").textContent = ds === todayIso ? tr("Today") : F_LONG.format(fromIso(ds));
+    setReqWho(ds, pre.crewId || viewCrewId());
     $("rqFrom").value = pre.from || Math.max(DAY_START, nextHourToday($("rqDate").value));
     $("rqHours").value = pre.hours || 2;
     $("rqProject").value = pre.projectId || "";
@@ -2557,11 +2673,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   ["rqFrom", "rqHours"].forEach(function(id){
     $(id).addEventListener("change", drawReqClash);
   });
-  // A different day may not be a day this person is booked at all.
-  $("rqDate").addEventListener("change", function(){
-    setReqWho($("rqDate").value, $("rqWho").value);
-    drawReqClash();
-  });
+
 
   /* ---------- answering one ----------
      Agreeing is not a message back, it is the work: the other job moves along
@@ -2713,6 +2825,21 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
 
      What has been read is kept on the device, so opening a thread costs no
      write and two people reading at once cannot tread on each other. */
+  /* Read receipts. What has been read is kept on the device — that is what
+     decides the unread dot — and the last message read is also written into
+     the conversation itself, so the other side's own messages can say whether
+     they landed. One field per person in the thread, merged, so two people
+     reading at once cannot tread on each other. */
+  function tellSeen(otherId, at){
+    if (!state.fb || otherId === SYSTEM) return;
+    var seen = {}; seen[state.me] = at;
+    state.fb.collection("config").doc(chatDoc(keyFor(otherId)))
+      .set({seen: seen}, {merge: true}).catch(function(){});
+  }
+  function seenAt(otherId){
+    var by = ((state.chats || {}).seenBy || {})[keyFor(otherId)] || {};
+    return by[otherId] || "";
+  }
   var LS_SEEN = "ebm-crew:chatseen:v1";
   var chatOpen = null;                    // the other person's id, or null
 
@@ -2784,6 +2911,12 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T08:00:00Z", who:"office",
+     en:"A day sheet now names the hours that are actually free \u2014 \"3 hours still free: 2:00 PM\u20135:00 PM\" \u2014 instead of repeating the working day after the count.",
+     fr:"La feuille du jour nomme maintenant les heures r\u00e9ellement libres \u2014 \u00ab\u00a03 heures encore libres\u00a0: 14\u00a0h\u201317\u00a0h\u00a0\u00bb \u2014 au lieu de r\u00e9p\u00e9ter la journ\u00e9e de travail."},
+    {at:"2026-09-10T07:00:00Z",
+     en:"Video calls. Open a conversation and tap the camera at the top. Your own messages now show one tick when sent and two when the other person has read them.",
+     fr:"Appels vid\u00e9o. Ouvrez une conversation et touchez la cam\u00e9ra en haut. Vos messages affichent une coche \u00e0 l\u2019envoi et deux quand l\u2019autre les a lus."},
     {at:"2026-09-10T06:00:00Z",
      en:"Every message now has a \u22ef in the corner: tap it, or the message, to reply with a quote, forward it, or download a photo out of it.",
      fr:"Chaque message a maintenant un \u22ef dans le coin\u00a0: touchez-le, ou le message, pour r\u00e9pondre en citation, transf\u00e9rer ou t\u00e9l\u00e9charger la photo."},
@@ -2931,9 +3064,14 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
   function markSeen(otherId){
     var msgs = chatMsgs(otherId);
     if (!msgs.length) return;
+    var last = msgs[msgs.length - 1].at;
     var seen = chatSeen();
-    seen[seenKey(otherId)] = msgs[msgs.length - 1].at;
+    // Guarded, because this runs on every redraw and a redraw follows every
+    // write: without it, reading a thread would write to it for ever.
+    if (seen[seenKey(otherId)] === last) return;
+    seen[seenKey(otherId)] = last;
     lsWrite(LS_SEEN, seen);
+    tellSeen(otherId, last);
   }
   function unreadIn(otherId){
     var seen = chatSeen()[seenKey(otherId)] || "";
@@ -2964,6 +3102,8 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
         state.fb.collection("config").doc(chatDoc(key)).onSnapshot(function(snap){
           var d = (snap.exists && snap.data()) || {};
           state.chats.threads[key] = Array.isArray(d.msgs) ? d.msgs : [];
+          state.chats.seenBy = state.chats.seenBy || {};
+          state.chats.seenBy[key] = d.seen || {};
           lsWrite(LS_CHATS, state.chats);
           renderMsgBar();
           if (chatOpen === id) drawChat();
@@ -3099,6 +3239,254 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     $("msgDlg").close();
     openForward(actOn);
   });
+
+  /* ---------- video calls ----------
+     Straight between the two phones. The database is only the introduction:
+     each side writes what it has worked out about reaching the other into one
+     document named after the pair, watches for the other half, and once they
+     have found each other the pictures never touch a server again.
+
+     Honest about the limit: this uses public STUN and no relay, so on a mobile
+     network behind the wrong sort of carrier NAT the two ends will fail to
+     find each other and the call will not connect. A relay costs money and
+     needs a server; the day that becomes the difference between a call
+     happening and not, it is the thing to add.
+
+     Note the call document is deliberately small and short-lived — it is torn
+     down as soon as the call ends. */
+  var ICE_SERVERS = [
+    {urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"]}
+  ];
+  var call = null;         // {other, caller, pc, local, doc, unsub, seenIce}
+
+  function callDoc(otherId){ return "call-" + keyFor(otherId); }
+  function callRef(otherId){
+    return state.fb ? state.fb.collection("config").doc(callDoc(otherId)) : null;
+  }
+  function callState(txt){ $("callState").textContent = txt; }
+  function callErr(txt){ $("callErr").textContent = txt || ""; }
+  function canCall(){
+    return !!state.fb && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+           && typeof RTCPeerConnection !== "undefined";
+  }
+
+  function tearDown(){
+    if (!call) return;
+    var c = call; call = null;
+    if (c.unsub){ try{ c.unsub(); }catch(e){} }
+    if (c.local) c.local.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
+    if (c.pc){ try{ c.pc.close(); }catch(e){} }
+    $("callFar").srcObject = null;
+    $("callNear").srcObject = null;
+    if ($("callDlg").open) $("callDlg").close();
+  }
+  function hangUp(){
+    var c = call;
+    if (c && state.fb){
+      // Ended rather than deleted, so the other end learns why the picture
+      // stopped instead of watching a frozen frame.
+      callRef(c.other).set({state: "ended", by: state.me, at: new Date().toISOString()},
+        {merge: true}).catch(function(){});
+      setTimeout(function(){
+        var r = callRef(c.other);
+        if (r) r.delete().catch(function(){});
+      }, 4000);
+    }
+    tearDown();
+  }
+
+  function newPeer(otherId, iAmCaller){
+    var pc = new RTCPeerConnection({iceServers: ICE_SERVERS});
+    var mine = iAmCaller ? "callerIce" : "calleeIce";
+    pc.onicecandidate = function(ev){
+      if (!ev.candidate || !state.fb) return;
+      var patch = {};
+      patch[mine] = FV().arrayUnion(JSON.stringify(ev.candidate.toJSON()));
+      callRef(otherId).set(patch, {merge: true}).catch(function(){});
+    };
+    pc.ontrack = function(ev){
+      var far = $("callFar");
+      if (far.srcObject !== ev.streams[0]){
+        far.srcObject = ev.streams[0];
+        // The autoplay attribute is not always enough — iOS in particular
+        // wants to be asked, and it is a no-op where it already started.
+        var go = far.play(); if (go && go.catch) go.catch(function(){});
+      }
+    };
+    pc.onconnectionstatechange = function(){
+      if (!call) return;
+      var s = pc.connectionState;
+      if (s === "connected") callState(tr("Connected"));
+      else if (s === "failed"){
+        callErr(tr("The two phones could not reach each other. Try again on wi-fi."));
+        callState(tr("Call failed"));
+      } else if (s === "disconnected") callState(tr("Reconnecting…"));
+    };
+    return pc;
+  }
+
+  function getMedia(){
+    return navigator.mediaDevices.getUserMedia({
+      video: {facingMode: "user", width: {ideal: 1280}, height: {ideal: 720}},
+      audio: true
+    });
+  }
+  function playNear(stream){
+    var near = $("callNear");
+    near.srcObject = stream;
+    var go = near.play(); if (go && go.catch) go.catch(function(){});
+  }
+  function showCall(otherId, incoming){
+    $("callWho").textContent = personName(otherId);
+    callErr("");
+    callState(incoming ? tr("Calling you…") : tr("Ringing…"));
+    $("callAnswer").hidden = !incoming;
+    $("callMic").classList.remove("off");
+    $("callCam").classList.remove("off");
+    if (!$("callDlg").open) $("callDlg").showModal();
+  }
+
+  /* Taking the ice the other side has trickled in. Each candidate is added
+     once — the document holds the whole list every time it changes. */
+  function drinkIce(pc, list, seen){
+    (list || []).forEach(function(raw){
+      if (seen[raw]) return;
+      seen[raw] = 1;
+      try { pc.addIceCandidate(new RTCIceCandidate(JSON.parse(raw))); } catch (e){}
+    });
+  }
+
+  function startCall(otherId){
+    if (call) return;
+    if (!canCall()){
+      alert(tr("This device cannot make video calls."));
+      return;
+    }
+    var ref = callRef(otherId);
+    call = {other: otherId, caller: true, pc: null, local: null, seenIce: {}};
+    showCall(otherId, false);
+    getMedia().then(function(stream){
+      if (!call) { stream.getTracks().forEach(function(t){ t.stop(); }); return; }
+      call.local = stream;
+      playNear(stream);
+      var pc = call.pc = newPeer(otherId, true);
+      stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+      return pc.createOffer().then(function(offer){
+        return pc.setLocalDescription(offer).then(function(){
+          return ref.set({
+            from: state.me, fromName: meName(), to: otherId,
+            at: new Date().toISOString(), state: "ringing",
+            offer: JSON.stringify(offer), callerIce: [], calleeIce: []
+          });
+        });
+      }).then(function(){
+        call.unsub = ref.onSnapshot(function(snap){
+          var d = (snap.exists && snap.data()) || {};
+          if (!call) return;
+          if (d.state === "ended" || !snap.exists){
+            callState(tr("Call ended")); setTimeout(tearDown, 900); return;
+          }
+          if (d.answer && !pc.currentRemoteDescription){
+            pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(d.answer)))
+              .catch(function(){});
+            callState(tr("Connecting…"));
+          }
+          drinkIce(pc, d.calleeIce, call.seenIce);
+        }, function(){});
+      });
+    }).catch(function(e){
+      callErr(mediaErr(e));
+      callState(tr("Could not start"));
+    });
+  }
+
+  function answerCall(){
+    var c = call;
+    if (!c || c.caller || c.pc) return;
+    var otherId = c.other, ref = callRef(otherId);
+    $("callAnswer").hidden = true;
+    callState(tr("Connecting…"));
+    getMedia().then(function(stream){
+      if (!call) { stream.getTracks().forEach(function(t){ t.stop(); }); return; }
+      call.local = stream;
+      playNear(stream);
+      var pc = call.pc = newPeer(otherId, false);
+      stream.getTracks().forEach(function(t){ pc.addTrack(t, stream); });
+      return ref.get().then(function(snap){
+        var d = (snap.exists && snap.data()) || {};
+        if (!d.offer) throw new Error("gone");
+        return pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(d.offer)))
+          .then(function(){ return pc.createAnswer(); })
+          .then(function(ans){
+            return pc.setLocalDescription(ans).then(function(){
+              return ref.set({answer: JSON.stringify(ans), state: "live"}, {merge: true});
+            });
+          }).then(function(){ drinkIce(pc, d.callerIce, call.seenIce); });
+      });
+    }).catch(function(e){
+      callErr(mediaErr(e));
+      callState(tr("Could not answer"));
+    });
+  }
+  function mediaErr(e){
+    var n = (e && e.name) || "";
+    if (n === "NotAllowedError")
+      return tr("The camera and microphone are blocked. Allow them for this app in your phone's settings.");
+    if (n === "NotFoundError") return tr("No camera or microphone on this device.");
+    if (n === "NotReadableError") return tr("The camera is being used by something else.");
+    return errText(e, tr("The call could not start."));
+  }
+
+  /* Somebody is calling. One watcher per conversation, the same as the
+     messages, and it only ever fires for a document named after this pair. */
+  function watchCalls(){
+    (state.callUnsubs || []).forEach(function(u){ try{ u(); }catch(e){} });
+    state.callUnsubs = [];
+    if (!state.fb || !state.me) return;
+    contacts().forEach(function(id){
+      if (id === SYSTEM) return;
+      state.callUnsubs.push(callRef(id).onSnapshot(function(snap){
+        var d = (snap.exists && snap.data()) || {};
+        // Mine to answer, still ringing, and nothing else going on.
+        if (!call && snap.exists && d.state === "ringing" && d.to === state.me){
+          call = {other: id, caller: false, pc: null, local: null, seenIce: {}};
+          showCall(id, true);
+          try { navigator.vibrate && navigator.vibrate([220, 120, 220]); } catch(e){}
+          call.unsub = callRef(id).onSnapshot(function(s2){
+            var x = (s2.exists && s2.data()) || {};
+            if (!call || call.other !== id) return;
+            if (!s2.exists || x.state === "ended"){
+              callState(tr("Call ended")); setTimeout(tearDown, 900); return;
+            }
+            if (call.pc) drinkIce(call.pc, x.callerIce, call.seenIce);
+          }, function(){});
+          return;
+        }
+        if (call && call.other === id && !call.caller && !snap.exists) tearDown();
+      }, function(){}));
+    });
+  }
+
+  $("chatCall").addEventListener("click", function(){
+    if (chatOpen && chatOpen !== SYSTEM) startCall(chatOpen);
+  });
+  $("callAnswer").addEventListener("click", answerCall);
+  $("callEnd").addEventListener("click", hangUp);
+  $("callMic").addEventListener("click", function(){
+    if (!call || !call.local) return;
+    var on = false;
+    call.local.getAudioTracks().forEach(function(t){ t.enabled = !t.enabled; on = t.enabled; });
+    $("callMic").classList.toggle("off", !on);
+  });
+  $("callCam").addEventListener("click", function(){
+    if (!call || !call.local) return;
+    var on = false;
+    call.local.getVideoTracks().forEach(function(t){ t.enabled = !t.enabled; on = t.enabled; });
+    $("callCam").classList.toggle("off", !on);
+  });
+  // Closing the sheet with the escape key is still hanging up.
+  $("callDlg").addEventListener("cancel", function(ev){ ev.preventDefault(); hangUp(); });
+  window.addEventListener("pagehide", function(){ if (call) hangUp(); });
 
   /* ---------- passing one on ---------- */
   var fwdMsg = null;
@@ -3249,6 +3637,14 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
       var tm = document.createElement("span"); tm.className = "tm";
       try { tm.textContent = F_TIME.format(new Date(m.at)); } catch(e2){}
       b.appendChild(tm);
+      if (mine && chatOpen !== SYSTEM){
+        var read = seenAt(chatOpen) >= m.at;
+        var rd = document.createElement("span");
+        rd.className = "rd" + (read ? " on" : "");
+        rd.textContent = read ? "\u2713\u2713" : "\u2713";
+        rd.title = read ? tr("Read") : tr("Sent");
+        b.appendChild(rd);
+      }
       // Anywhere but the picture itself, which opens on its own.
       if (chatOpen !== SYSTEM){
         b.classList.add("hasdots");
@@ -3286,6 +3682,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     $("chatSendRow").hidden = !mayWrite;
     $("chatTools").hidden = !mayWrite;
     $("sysNote").hidden = mayWrite;
+    $("chatCall").hidden = !mayWrite || !canCall();
     $("emojiRow").hidden = true;
     if (rec) stopRec();
     pending = null; drawPending();
@@ -4355,9 +4752,9 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
       $("daySub").textContent = list0Text(ds);
     } else $("daySub").textContent = weekendNote + (dayIsPast(ds) ? tr("This day has passed.")
       : (free===0 ? tr("Fully booked.")
-                  : tr(free===1 ? "{n} hour still free, {a} to {b}."
-                                : "{n} hours still free, {a} to {b}.",
-                       {n: free, a: hourLong(DAY_START), b: hourLong(DAY_END)})));
+                  : tr(free===1 ? "{n} hour still free: {when}."
+                                : "{n} hours still free: {when}.",
+                       {n: free, when: freeSpanText(ds, viewCrewId())})));
     $("addJobBtn").hidden = !can("book");
     $("addJobBtn").disabled = dayIsPast(ds) || free===0;
     // Only worth offering when the booking in the way is somebody else's.
@@ -5155,6 +5552,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
     // Which conversations exist depends on who this is, so they can only be
     // listened to once somebody has signed in.
     subscribeChats();
+    watchCalls();
     subscribeReqs();
     setupPush();
     loadAlerts();
