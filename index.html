@@ -1330,6 +1330,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "hearing them {a} \u00b7 seeing them {b} \u00b7 sending voice {c} \u00b7 sending picture {d}":
       "on les entend {a} \u00b7 on les voit {b} \u00b7 voix envoy\u00e9e {c} \u00b7 image envoy\u00e9e {d}",
     "React with {e}": "R\u00e9agir avec {e}",
+    "Close": "Fermer",
     "If something is not working": "Si quelque chose ne fonctionne pas",
     "Two checks. The first throws away\n        everything this phone has saved of the app and fetches it again \u2014 use it\n        if you were told about a change you cannot see. The second says whether\n        this phone and this network can carry a video call.":
       "Deux v\u00e9rifications. La premi\u00e8re jette tout ce que ce t\u00e9l\u00e9phone a gard\u00e9 de l\u2019application et la r\u00e9cup\u00e8re de nouveau \u2014 utilisez-la si on vous a parl\u00e9 d\u2019un changement que vous ne voyez pas. La deuxi\u00e8me dit si ce t\u00e9l\u00e9phone et ce r\u00e9seau peuvent porter un appel vid\u00e9o.",
@@ -1876,7 +1877,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v92";
+  var APP_VERSION = "v93";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3102,6 +3103,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-11T12:00:00Z",
+     en:"Found it. A video call that went wrong was never cleared away, and everything about calling asks first whether a call is in progress \u2014 so that phone could never ring again, and its own call button did nothing, until the app was closed and opened. That is why it stopped coming up on the screen. A failed call now says what happened and then lets go of the phone. Hanging up also no longer deletes the next call's document out from under it.",
+     fr:"Trouv\u00e9. Un appel vid\u00e9o rat\u00e9 n\u2019\u00e9tait jamais effac\u00e9, et tout ce qui touche aux appels v\u00e9rifie d\u2019abord s\u2019il y a un appel en cours \u2014 donc ce t\u00e9l\u00e9phone ne pouvait plus jamais sonner jusqu\u2019\u00e0 ce qu\u2019on ferme et rouvre l\u2019application. Un appel rat\u00e9 l\u00e2che maintenant le t\u00e9l\u00e9phone."},
     {at:"2026-09-11T09:00:00Z",
      en:"A call in progress now says what is actually moving \u2014 hearing them, seeing them, sending voice, sending picture \u2014 each with a tick or a cross, under the name. The voice also has its own player now, because on a video element the sound only arrives if the picture is allowed to play, and on an iPhone that is not a given.",
      fr:"Un appel en cours indique maintenant ce qui circule vraiment \u2014 on les entend, on les voit, voix envoy\u00e9e, image envoy\u00e9e \u2014 avec un crochet ou une croix. La voix a aussi son propre lecteur."},
@@ -3707,6 +3711,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("callFlow").textContent = "";
     if ($("callDlg").open) $("callDlg").close();
   }
+  /* The tidy-up after a call, four seconds later. Held in a variable so that
+     a new call started inside those four seconds can cancel it — otherwise
+     the old call's delete lands on the new call's document and takes it away
+     before the other phone has finished ringing. */
+  var wipeLater = null;
   function hangUp(){
     var c = call;
     if (c && state.fb){
@@ -3714,12 +3723,49 @@ dialog#callDlg::backdrop{background:#0b0f12}
       // stopped instead of watching a frozen frame.
       callRef(c.other).set({state: "ended", by: state.me, at: new Date().toISOString()},
         {merge: true}).catch(function(){});
-      setTimeout(function(){
+      /* Four seconds later the document goes — but only if it is still this
+         call's document. Both phones schedule this, and only the one that
+         hung up knows it did; the other one's timer used to land squarely on
+         whatever call was in progress by then and delete it. A call rang, was
+         answered, and carried nothing, because the previous call's clean-up
+         had taken its paperwork away. Each call now carries its own name and
+         the clean-up checks it. */
+      var mine = c.cid || "";
+      if (wipeLater) clearTimeout(wipeLater);
+      wipeLater = setTimeout(function(){
+        wipeLater = null;
         var r = callRef(c.other);
-        if (r) r.delete().catch(function(){});
+        if (!r) return;
+        r.get().then(function(snap){
+          if (!snap.exists) return;
+          var d = snap.data() || {};
+          if (mine ? d.cid === mine : d.state === "ended") return r.delete();
+        }).catch(function(){});
       }, 4000);
     }
     tearDown();
+  }
+
+  /* A call that has gone wrong says so, and then lets go of the phone.
+
+     It used to say so and hold on. Everything about calling is guarded by
+     "is there a call in progress" — starting one, and answering one — so a
+     call left lying about after it failed meant that phone could never ring
+     again, and its own call button did nothing, until the app was closed and
+     opened. Which is exactly what "it doesn't come up on the screen any
+     more" looks like from the outside. */
+  function callFailed(why){
+    if (!call || call.dying) return;
+    call.dying = true;
+    // Whatever the screen was showing, it is now a failed call with one
+    // button on it, and that button says Close.
+    callLive();
+    $("callTake").hidden = true;
+    $("callDropLb").textContent = tr("Close");
+    callErr(why, false);
+    callState(tr("Call failed"));
+    stopRing();
+    setTimeout(function(){ if (call && call.dying) hangUp(); }, 4000);
   }
 
   /* Ways of reaching this phone, as they are worked out.
@@ -3792,9 +3838,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         // The counts say whether the two ends managed to tell each other
         // anything at all, which is the difference between a signalling
         // problem and a network that will not carry the call.
-        callErr(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
-                   {a: call.sent || 0, b: call.got || 0}));
-        callState(tr("Call failed"));
+        callFailed(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
+                      {a: call.sent || 0, b: call.got || 0}));
       } else if (s === "disconnected") callState(tr("Reconnecting…"));
     };
     /* Safari has carried iceConnectionState far longer than it has carried
@@ -3809,9 +3854,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         if (call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
         if (call.hint){ clearTimeout(call.hint); call.hint = null; }
       } else if (st === "failed"){
-        callErr(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
-                   {a: call.sent || 0, b: call.got || 0}));
-        callState(tr("Call failed"));
+        callFailed(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
+                      {a: call.sent || 0, b: call.got || 0}));
       }
     };
     return pc;
@@ -3937,7 +3981,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
 
   function startCall(otherId){
+    // A call that is on its way out must not block the next one. It used to:
+    // any leftover call object made this button do nothing at all.
+    if (call && call.dying) hangUp();
     if (call) return;
+    if (wipeLater){ clearTimeout(wipeLater); wipeLater = null; }
     if (!mayWriteTo(otherId)) return;   // same rule as writing: not each other
     if (!canCall()){
       alert(whyNoCall());
@@ -3966,7 +4014,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }, 75000);
     // The document goes first, so the write that creates it cannot land on
     // top of anything. Every write after this one only adds.
+    call.cid = newId();
     ref.set({
+      cid: call.cid,
       from: state.me, fromName: meName(), to: otherId,
       at: new Date().toISOString(), state: "ringing",
       callerIce: [], calleeIce: []
@@ -4003,7 +4053,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         }, function(){});
       });
     }).catch(function(e){
-      callErr(mediaErr(e));
+      callFailed(mediaErr(e));
       callState(tr("Could not start"));
     });
   }
@@ -4017,9 +4067,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     c.giveUp = setTimeout(function(){
       if (!call || call.caller) return;
       if ($("callFar").srcObject) return;
-      callState(tr("Call failed"));
-      callErr(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
-                 {a: call.sent || 0, b: call.got || 0}));
+      callFailed(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
+                    {a: call.sent || 0, b: call.got || 0}));
     }, 30000);
     $("callTake").hidden = true;
     $("callDropLb").textContent = tr("Hang up");
@@ -4061,7 +4110,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
           });
       });
     }).catch(function(e){
-      callErr(mediaErr(e));
+      callFailed(mediaErr(e));
       callState(tr("Could not answer"));
     });
   }
@@ -4084,9 +4133,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (id === SYSTEM) return;
       state.callUnsubs.push(callRef(id).onSnapshot(function(snap){
         var d = (snap.exists && snap.data()) || {};
+        // Somebody is ringing and this phone is still holding the wreck of an
+        // earlier call. Let go of it — the earlier one is over either way,
+        // and refusing to ring is the worse of the two outcomes.
+        if (call && call.dying && snap.exists && d.state === "ringing" &&
+            d.to === state.me && call.other !== id) hangUp();
         // Mine to answer, still ringing, and nothing else going on.
         if (!call && snap.exists && d.state === "ringing" && d.to === state.me){
-          call = {other: id, caller: false, pc: null, local: null, seenIce: {}};
+          call = {other: id, caller: false, pc: null, local: null, seenIce: {},
+                  cid: d.cid || ""};
           showCall(id, true);
           startRing("in");
           call.unsub = callRef(id).onSnapshot(function(s2){
