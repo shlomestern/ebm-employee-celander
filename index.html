@@ -561,6 +561,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
 .cbtn.go{background:var(--open); width:auto; padding:0 22px; border-radius:28px}
 .callerr{position:absolute; left:16px; right:16px; text-align:center; color:#ffb4a8;
   font-size:13px; bottom:calc(96px + env(safe-area-inset-bottom))}
+.callerr.note{color:rgba(255,255,255,.78)}
 .callbtn{width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--line);
   background:var(--surface-2); color:var(--ink-2); cursor:pointer; display:grid;
   place-items:center; padding:0; margin-left:auto}
@@ -1440,6 +1441,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "A newer version is ready.": "Une nouvelle version est pr\u00eate.",
     "Load it": "La charger",
     "Voice note": "Note vocale", "Photo ready to send": "Photo pr\u00eate \u00e0 envoyer",
+    "No answer": "Pas de r\u00e9ponse",
+    "Still ringing. They have to have the app open, or notifications turned on.":
+      "\u00c7a sonne toujours. Il faut que l\u2019application soit ouverte chez eux, ou que les notifications soient activ\u00e9es.",
     "Video call": "Appel vid\u00e9o", "Answer": "R\u00e9pondre", "Hang up": "Raccrocher",
     "Mute": "Couper le micro", "Camera off": "Couper la cam\u00e9ra",
     "Ringing\u2026": "Sonnerie\u2026", "Calling you\u2026": "Vous appelle\u2026",
@@ -1730,7 +1734,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v76";
+  var APP_VERSION = "v78";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2911,6 +2915,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T10:00:00Z",
+     en:"A video call rings now \u2014 a tone for you while it dials and a tone and a buzz at their end. It gives up after 45 seconds if nobody picks up. Both of you have to be on the newest version for a call to reach.",
+     fr:"Un appel vid\u00e9o sonne maintenant \u2014 une tonalit\u00e9 pendant que \u00e7a compose et une tonalit\u00e9 avec vibration \u00e0 l\u2019autre bout. Il abandonne apr\u00e8s 45\u00a0secondes sans r\u00e9ponse. Il faut la derni\u00e8re version des deux c\u00f4t\u00e9s."},
+    {at:"2026-09-10T09:00:00Z",
+     en:"Messages reach anybody now, not only the crew \u2014 the office and every admin are on the list too.",
+     fr:"Les messages atteignent maintenant tout le monde, pas seulement l\u2019\u00e9quipe \u2014 le bureau et chaque administrateur sont aussi sur la liste."},
     {at:"2026-09-10T08:00:00Z", who:"office",
      en:"A day sheet now names the hours that are actually free \u2014 \"3 hours still free: 2:00 PM\u20135:00 PM\" \u2014 instead of repeating the working day after the count.",
      fr:"La feuille du jour nomme maintenant les heures r\u00e9ellement libres \u2014 \u00ab\u00a03 heures encore libres\u00a0: 14\u00a0h\u201317\u00a0h\u00a0\u00bb \u2014 au lieu de r\u00e9p\u00e9ter la journ\u00e9e de travail."},
@@ -3036,16 +3046,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (!id || id === state.me || seen[id]) return;
       seen[id] = 1; out.push(id);
     }
-    var me = member(state.me);
-    var office = state.me === "office" || (me && isAdmin(me));
     add(SYSTEM);                    // everyone keeps their own notifications
-    if (office){
-      crewPeople().forEach(function(pp){ add(pp.id); });
-    } else {
-      // A plumber may need any of them, not just whoever holds the master code.
-      add("office");
-      state.people.forEach(function(pp){ if (isAdmin(pp)) add(pp.id); });
-    }
+    // Everybody on the roster, in the order the office keeps them: the men on
+    // the tools first, then the office. It was the crew only for a while and
+    // that left one admin unable to write to another, which is not how the
+    // day actually goes.
+    add("office");
+    state.people.forEach(function(pp){ add(pp.id); });
 
     var threads = (state.chats && state.chats.threads) || {};
     Object.keys(threads).forEach(function(key){
@@ -3259,20 +3266,76 @@ dialog#callDlg::backdrop{background:#0b0f12}
   ];
   var call = null;         // {other, caller, pc, local, doc, unsub, seenIce}
 
+  /* A phone that rings. Made here rather than carried as a file: two tones,
+     a gap, over and over — the shape everybody already reads as ringing.
+
+     The caller's tone starts from their own tap so the browser lets it play.
+     The one being called has not tapped anything, so their tone may be held
+     back until they touch the screen; the buzz is what actually gets their
+     attention, and it does not need permission. */
+  var ringer = null;
+  function startRing(kind){
+    stopRing();
+    var incoming = kind === "in";
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) throw new Error("no audio");
+      var ctx = new Ctx();
+      if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(function(){});
+      var beat = function(){
+        [0, 0.42].forEach(function(off){
+          var o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = "sine";
+          o.frequency.value = incoming ? 660 : 440;
+          o.connect(g); g.connect(ctx.destination);
+          var t = ctx.currentTime + off, peak = incoming ? 0.22 : 0.1;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(peak, t + 0.03);
+          g.gain.setValueAtTime(peak, t + 0.3);
+          g.gain.linearRampToValueAtTime(0.0001, t + 0.37);
+          o.start(t); o.stop(t + 0.4);
+        });
+      };
+      beat();
+      ringer = {ctx: ctx, timer: setInterval(beat, 3000), buzz: null};
+    } catch (e){
+      ringer = {ctx: null, timer: null, buzz: null};
+    }
+    if (incoming && navigator.vibrate){
+      var buzz = function(){ try { navigator.vibrate([420, 180, 420]); } catch(e){} };
+      buzz();
+      ringer.buzz = setInterval(buzz, 3000);
+    }
+  }
+  function stopRing(){
+    if (!ringer) return;
+    if (ringer.timer) clearInterval(ringer.timer);
+    if (ringer.buzz) clearInterval(ringer.buzz);
+    if (ringer.ctx){ try { ringer.ctx.close(); } catch(e){} }
+    try { if (navigator.vibrate) navigator.vibrate(0); } catch(e){}
+    ringer = null;
+  }
+
   function callDoc(otherId){ return "call-" + keyFor(otherId); }
   function callRef(otherId){
     return state.fb ? state.fb.collection("config").doc(callDoc(otherId)) : null;
   }
   function callState(txt){ $("callState").textContent = txt; }
-  function callErr(txt){ $("callErr").textContent = txt || ""; }
+  function callErr(txt, note){
+    $("callErr").textContent = txt || "";
+    $("callErr").className = "callerr" + (note ? " note" : "");
+  }
   function canCall(){
     return !!state.fb && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
            && typeof RTCPeerConnection !== "undefined";
   }
 
   function tearDown(){
+    stopRing();
     if (!call) return;
     var c = call; call = null;
+    if (c.giveUp) clearTimeout(c.giveUp);
+    if (c.hint) clearTimeout(c.hint);
     if (c.unsub){ try{ c.unsub(); }catch(e){} }
     if (c.local) c.local.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
     if (c.pc){ try{ c.pc.close(); }catch(e){} }
@@ -3316,7 +3379,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
     pc.onconnectionstatechange = function(){
       if (!call) return;
       var s = pc.connectionState;
-      if (s === "connected") callState(tr("Connected"));
+      if (s === "connected"){
+        stopRing();
+        if (call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
+        if (call.hint){ clearTimeout(call.hint); call.hint = null; }
+        callErr("");
+        callState(tr("Connected"));
+      }
       else if (s === "failed"){
         callErr(tr("The two phones could not reach each other. Try again on wi-fi."));
         callState(tr("Call failed"));
@@ -3365,6 +3434,21 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var ref = callRef(otherId);
     call = {other: otherId, caller: true, pc: null, local: null, seenIce: {}};
     showCall(otherId, false);
+    startRing("out");
+    /* Nothing rings a phone that has the app shut unless notifications are on,
+       and it is better to say so than to leave somebody listening to a tone. */
+    call.hint = setTimeout(function(){
+      if (call && call.caller && call.pc && !call.pc.currentRemoteDescription)
+        callErr(tr("Still ringing. They have to have the app open, or notifications turned on."), true);
+    }, 8000);
+    call.giveUp = setTimeout(function(){
+      if (!call || !call.caller) return;
+      if (call.pc && call.pc.currentRemoteDescription) return;
+      callState(tr("No answer"));
+      callErr("");
+      stopRing();
+      setTimeout(hangUp, 1200);
+    }, 45000);
     getMedia().then(function(stream){
       if (!call) { stream.getTracks().forEach(function(t){ t.stop(); }); return; }
       call.local = stream;
@@ -3389,6 +3473,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
           if (d.answer && !pc.currentRemoteDescription){
             pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(d.answer)))
               .catch(function(){});
+            stopRing();
+            callErr("");
             callState(tr("Connecting…"));
           }
           drinkIce(pc, d.calleeIce, call.seenIce);
@@ -3405,6 +3491,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!c || c.caller || c.pc) return;
     var otherId = c.other, ref = callRef(otherId);
     $("callAnswer").hidden = true;
+    stopRing();
     callState(tr("Connecting…"));
     getMedia().then(function(stream){
       if (!call) { stream.getTracks().forEach(function(t){ t.stop(); }); return; }
@@ -3451,7 +3538,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         if (!call && snap.exists && d.state === "ringing" && d.to === state.me){
           call = {other: id, caller: false, pc: null, local: null, seenIce: {}};
           showCall(id, true);
-          try { navigator.vibrate && navigator.vibrate([220, 120, 220]); } catch(e){}
+          startRing("in");
           call.unsub = callRef(id).onSnapshot(function(s2){
             var x = (s2.exists && s2.data()) || {};
             if (!call || call.other !== id) return;
@@ -5277,6 +5364,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }
       rosterSettled();
       subscribeChats();
+      watchCalls();
       subscribeReqs();
       render();
     }, function(){ rosterSettled(); });
