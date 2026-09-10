@@ -622,7 +622,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
   background:var(--surface-2); font-size:13.5px}
 .reqbox b{font-family:"Archivo",sans-serif; font-weight:700; display:block; font-size:14px}
 .reqbox .dt{color:var(--ink-2); font-size:13px}
-.blockrow{display:flex; gap:10px; align-items:baseline; padding:8px 0;
+.blockrow .ov{flex:0 0 100%; font-size:12.5px; color:var(--ink-3); margin-top:1px}
+.blockrow{display:flex; flex-wrap:wrap; gap:10px; align-items:baseline; padding:8px 0;
   border-bottom:1px solid var(--line); font-size:13.5px}
 .blockrow:last-child{border-bottom:0}
 .blockrow .hh{font-family:"Archivo",sans-serif; font-weight:700; flex:none;
@@ -1308,6 +1309,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Still starting up \u2014 try again in a second.":
       "D\u00e9marrage en cours \u2014 r\u00e9essayez dans un instant.",
     "Install app": "Installer l\u2019application",
+    "You are asking for": "Vous demandez",
+    "His booking that is in the way": "Sa r\u00e9servation qui est dans le chemin",
+    "{name}, {a} to {b}": "{name}, de {a} \u00e0 {b}",
+    "{a} to {b} of it": "de {a} \u00e0 {b} l\u00e0-dessus",
+    "all of it": "en entier",
     "Parts and materials": "Pi\u00e8ces et mat\u00e9riaux",
     "What parts did you put into this job? Not the time \u2014 the app\n      already has your hours. Tap <b>Nothing used</b> if you did not use anything.":
       "Quelles pi\u00e8ces avez-vous mises dans ce travail\u00a0? Pas le temps \u2014 l\u2019application a d\u00e9j\u00e0 vos heures. Touchez <b>Rien utilis\u00e9</b> si vous n\u2019avez rien utilis\u00e9.",
@@ -1846,7 +1852,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v88";
+  var APP_VERSION = "v89";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2693,13 +2699,32 @@ dialog#callDlg::backdrop{background:#0b0f12}
       host.appendChild(free);
       return;
     }
+    // What is being asked for, said plainly, before what it would cost.
+    var want = document.createElement("div"); want.className = "eyebrow";
+    want.style.marginTop = "8px";
+    want.textContent = tr("You are asking for");
+    host.appendChild(want);
+    var line = document.createElement("p"); line.className = "sub";
+    line.style.margin = "4px 0 2px";
+    line.textContent = tr("{name}, {a} to {b}", {
+      name: memberOr(who).name, a: hourLong(span.from), b: hourLong(span.to)
+    }) + " \u00b7 " + ((span.to - span.from) === 1
+      ? tr("1 hour") : tr("{n} hours", {n: span.to - span.from}));
+    host.appendChild(line);
+
     var head = document.createElement("div"); head.className = "eyebrow";
-    head.style.marginTop = "8px";
-    head.textContent = tr("In the way");
+    head.style.marginTop = "12px";
+    head.textContent = tr("His booking that is in the way");
     host.appendChild(head);
-    hit.forEach(function(j){ host.appendChild(blockRow(j)); });
+    hit.forEach(function(j){ host.appendChild(blockRow(j, span)); });
   }
-  function blockRow(j){
+  /* One of his bookings that the asked-for hours run into.
+
+     The row used to show only that booking's own hours, which is not the
+     question anybody is asking. Somebody asked for two hours from nine, saw
+     "9a-12p" underneath it, and read that as the request — three hours, not
+     two. So the row now says which part of it is at stake, in words. */
+  function blockRow(j, span){
     var row = document.createElement("div"); row.className = "blockrow";
     var hh = document.createElement("span"); hh.className = "hh"; hh.textContent = rangeShort(j);
     var ww = document.createElement("span"); ww.className = "ww";
@@ -2707,6 +2732,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var oo = document.createElement("span"); oo.className = "oo";
     oo.textContent = j.createdBy || "";
     row.appendChild(hh); row.appendChild(ww); row.appendChild(oo);
+    if (span){
+      var a = Math.max(j.from, span.from), b = Math.min(j.to, span.to);
+      if (b > a){
+        var ov = document.createElement("span"); ov.className = "ov";
+        ov.textContent = (b - a) >= (j.to - j.from)
+          ? tr("all of it")
+          : tr("{a} to {b} of it", {a: hourLong(a), b: hourLong(b)});
+        row.appendChild(ov);
+      }
+    }
     return row;
   }
 
@@ -2841,7 +2876,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       gone.textContent = tr("Nothing any more — those hours are free now.");
       host.appendChild(gone);
     }
-    hit.forEach(function(j){ host.appendChild(blockRow(j)); });
+    hit.forEach(function(j){ host.appendChild(blockRow(j, {from: r.from, to: r.to})); });
 
     var plan = decisionPlan(r);
     if (!plan.ok && decHow === "push") decHow = "cancel";
@@ -3043,6 +3078,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-11T04:00:00Z",
+     en:"An emergency request now says both halves plainly: what you are asking for in hours, and then which booking of his those hours run into and how much of it you would be taking. Asking for two hours from nine, against a job booked nine to twelve, was showing \u201c9a\u201312p\u201d underneath and reading like a three hour request.",
+     fr:"Une demande d\u2019urgence indique maintenant les deux c\u00f4t\u00e9s clairement\u00a0: ce que vous demandez en heures, puis quelle r\u00e9servation est touch\u00e9e et quelle partie vous prendriez."},
     {at:"2026-09-11T02:00:00Z", who:"me",
      en:"The two checks are off the sheet now. Tap the version line at the bottom of your own sheet three times and they appear; tap it three times again and they go. Nobody else has them at all.",
      fr:"Les deux v\u00e9rifications ne sont plus affich\u00e9es. Touchez trois fois la ligne de version en bas de votre fiche et elles apparaissent."},
