@@ -1796,6 +1796,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (state.lang === "fr") return h + "\u00a0h";
     var ap=h<12?"AM":"PM", hh=h%12; if(!hh) hh=12; return hh+":00 "+ap;
   }
+  /* A clocked time, written the same way as a booked hour.
+
+     The workbook puts them side by side — "From 8:00 AM" and "Clocked in
+     8:00 a.m." in the same row — and two styles for the same thing in one
+     row of a report is the kind of thing that makes somebody wonder which
+     of the two numbers to trust. */
+  function clockLong(iso){
+    var t = new Date(iso);
+    if (isNaN(t.getTime())) return "";
+    var h = t.getHours(), m = t.getMinutes(), mm = (m < 10 ? "0" : "") + m;
+    if (state.lang === "fr") return h + "\u00a0h\u00a0" + mm;
+    var ap = h < 12 ? "AM" : "PM", hh = h % 12; if (!hh) hh = 12;
+    return hh + ":" + mm + " " + ap;
+  }
   function hourShort(h){
     if (state.lang === "fr") return h + "h";
     var ap=h<12?"a":"p", hh=h%12; if(!hh) hh=12; return hh+ap;
@@ -1852,7 +1866,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v89";
+  var APP_VERSION = "v90";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2255,8 +2269,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         place: placeOf(j), unit: j.unit || "",
         booked: Math.max(0, (j.to || 0) - (j.from || 0)),
         worked: round2(worked), paused: round2(paused),
-        started: j.clockIn ? F_TIME.format(new Date(j.clockIn)) : "",
-        ended: j.clockOut ? F_TIME.format(new Date(j.clockOut)) : "",
+        started: j.clockIn ? clockLong(j.clockIn) : "",
+        ended: j.clockOut ? clockLong(j.clockOut) : "",
         state: j.clockOut ? tr("Finished")
              : onBreak(j) ? tr("Paused")
              : (j.clockIn ? tr("On site") : tr("Not clocked in")),
@@ -3078,6 +3092,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-11T05:00:00Z", who:"me",
+     en:"Hours worked wrote a clocked time one way and a booked hour another \u2014 \u201c8:00 AM\u201d next to \u201c8:00 a.m.\u201d in the same row of the workbook. One row, one way of writing a time.",
+     fr:"Heures travaill\u00e9es \u00e9crivait l\u2019heure point\u00e9e d\u2019une fa\u00e7on et l\u2019heure r\u00e9serv\u00e9e d\u2019une autre dans la m\u00eame ligne. Une seule fa\u00e7on maintenant."},
     {at:"2026-09-11T04:00:00Z",
      en:"An emergency request now says both halves plainly: what you are asking for in hours, and then which booking of his those hours run into and how much of it you would be taking. Asking for two hours from nine, against a job booked nine to twelve, was showing \u201c9a\u201312p\u201d underneath and reading like a three hour request.",
      fr:"Une demande d\u2019urgence indique maintenant les deux c\u00f4t\u00e9s clairement\u00a0: ce que vous demandez en heures, puis quelle r\u00e9servation est touch\u00e9e et quelle partie vous prendriez."},
