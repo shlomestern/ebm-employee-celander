@@ -1734,7 +1734,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v78";
+  var APP_VERSION = "v79";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2915,6 +2915,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T11:00:00Z", who:"office",
+     en:"Two fixes: Booked by is the office code's alone now, and the notifications kept under System are only the ones sent to whoever is signed in \u2014 a shared phone no longer shows one person the other's.",
+     fr:"Deux correctifs\u00a0: R\u00e9serv\u00e9 par n\u2019appartient plus qu\u2019au code du bureau, et les notifications gard\u00e9es sous Syst\u00e8me sont seulement celles envoy\u00e9es \u00e0 la personne connect\u00e9e."},
     {at:"2026-09-10T10:00:00Z",
      en:"A video call rings now \u2014 a tone for you while it dials and a tone and a buzz at their end. It gives up after 45 seconds if nobody picks up. Both of you have to be on the newest version for a call to reach.",
      fr:"Un appel vid\u00e9o sonne maintenant \u2014 une tonalit\u00e9 pendant que \u00e7a compose et une tonalit\u00e9 avec vibration \u00e0 l\u2019autre bout. Il abandonne apr\u00e8s 45\u00a0secondes sans r\u00e9ponse. Il faut la derni\u00e8re version des deux c\u00f4t\u00e9s."},
@@ -2985,16 +2988,35 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return new Promise(function(ok, no){
       if (!window.indexedDB) return no();
       var req;
-      try { req = indexedDB.open("ebm-crew", 1); } catch(e){ return no(); }
+      try { req = indexedDB.open("ebm-crew", 2); } catch(e){ return no(); }
       req.onupgradeneeded = function(){
         var db = req.result;
         if (!db.objectStoreNames.contains("pushes"))
           db.createObjectStore("pushes", {keyPath: "n", autoIncrement: true});
+        // Who this phone is signed in as. The worker cannot read that from
+        // anywhere else, and it has to stamp each push with the person it was
+        // actually sent to: one tablet the office and a plumber both use is
+        // one device with two people's notifications arriving on it.
+        if (!db.objectStoreNames.contains("meta"))
+          db.createObjectStore("meta", {keyPath: "k"});
       };
       req.onsuccess = function(){ ok(req.result); };
       req.onerror = function(){ no(); };
       req.onblocked = function(){ no(); };
     });
+  }
+  /* Left where the service worker can find it, every time somebody signs in. */
+  function noteWho(){
+    return alertStore().then(function(db){
+      return new Promise(function(ok){
+        var tx;
+        try { tx = db.transaction("meta", "readwrite"); }
+        catch(e){ db.close(); return ok(false); }
+        tx.objectStore("meta").put({k: "who", id: state.me});
+        tx.oncomplete = function(){ db.close(); ok(true); };
+        tx.onerror = function(){ db.close(); ok(false); };
+      });
+    }).catch(function(){});
   }
   function loadAlerts(){
     return alertStore().then(function(db){
@@ -3015,8 +3037,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (chatOpen === SYSTEM) drawChat();
     else if ($("chatDlg").open && !chatOpen) drawContacts();
   }
+  /* Only what was sent to the person looking. Anything recorded before the
+     app started stamping them belongs to nobody in particular, and showing it
+     to whoever signs in next is exactly the thing being fixed. */
+  function myAlerts(){
+    return alertLog.filter(function(r){ return r && r.who === state.me; });
+  }
   function alertMsgs(){
-    return alertLog.slice().sort(function(a, b){
+    return myAlerts().slice().sort(function(a, b){
       return (a.at || "") < (b.at || "") ? -1 : 1;
     }).map(function(r){
       var head = r.title || "", body = r.body || "";
@@ -4905,6 +4933,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     sel.value = pick && ownerChoices().some(function(o){ return o.id === pick; })
       ? pick : state.me;
   }
+  /* The field is only there for the office code; for everybody else the job is
+     their own, whatever a fiddled-with form might say. */
+  function pickedOwner(){
+    if ($("ownerRow").hidden) return state.me;
+    return $("fOwner").value || state.me;
+  }
   function ownerName(id){
     var hit = ownerChoices().filter(function(o){ return o.id === id; })[0];
     return hit ? hit.name : meName();
@@ -4948,10 +4982,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("paneForm").reset();
     fillProjects();
     $("travelWarn").hidden = true;
-    // Booking on somebody else's behalf: the name on it decides whose it is
-    // to edit or cancel afterwards, so it is only offered where there is
-    // somebody else to name.
-    $("ownerRow").hidden = ownerChoices().length < 2;
+    // Booking on somebody else's behalf hands over the right to edit and
+    // cancel it, so it belongs to the master office code alone — an admin
+    // putting a job in a colleague's name is not their call to make.
+    $("ownerRow").hidden = state.me !== "office" || ownerChoices().length < 2;
     fillOwner(editing ? editing.createdById : state.me);
     formShots = editing ? (editing.photos || []).slice() : [];
     drawFormShots();
@@ -5081,7 +5115,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
         photos: formShots,
         tight: !!(clash && travelOff()),
-        createdBy: ownerName($("fOwner").value), createdById: $("fOwner").value || state.me,
+        createdBy: ownerName(pickedOwner()), createdById: pickedOwner(),
         manager:p.manager||"", managerPhone:p.managerPhone||""
       }).then(function(){ editing=null; showDayPane(); })
         .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The changes did not save.")); });
@@ -5099,8 +5133,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       tight: !!(clash && travelOff()),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
       createdAt:new Date().toISOString(),
-      createdBy: ownerName($("fOwner").value), createdById: $("fOwner").value || state.me,
-      bookedBy: state.me === ($("fOwner").value || state.me) ? "" : meName(),
+      createdBy: ownerName(pickedOwner()), createdById: pickedOwner(),
+      bookedBy: state.me === pickedOwner() ? "" : meName(),
       clockIn:null, clockOut:null, breaks:[], notes:[]
     };
     $("formSave").disabled=true;
@@ -5643,7 +5677,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     watchCalls();
     subscribeReqs();
     setupPush();
-    loadAlerts();
+    noteWho().then(loadAlerts);
     // A notification was tapped before anyone had signed in.
     if (pendingTag !== null) setTimeout(function(){ openFromTag(pendingTag); }, 400);
   }

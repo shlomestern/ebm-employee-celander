@@ -1,6 +1,6 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v78";
+var CACHE = "ebm-crew-v79";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
@@ -74,19 +74,38 @@ self.addEventListener("fetch", function(e){
    The browser's own database, because a worker cannot reach localStorage. */
 function openDb(){
   return new Promise(function(ok, no){
-    var req = indexedDB.open("ebm-crew", 1);
+    var req = indexedDB.open("ebm-crew", 2);
     req.onupgradeneeded = function(){
       var db = req.result;
       if (!db.objectStoreNames.contains("pushes"))
         db.createObjectStore("pushes", {keyPath: "n", autoIncrement: true});
+      if (!db.objectStoreNames.contains("meta"))
+        db.createObjectStore("meta", {keyPath: "k"});
     };
     req.onsuccess = function(){ ok(req.result); };
     req.onerror = function(){ no(req.error); };
     req.onblocked = function(){ no(); };
   });
 }
+/* Whoever the app last signed in as on this phone. A token is registered
+ * against one person at a time, so that is who the push was sent to — and one
+ * tablet the office and a plumber both use must not show each other's. */
+function whoIsHere(db){
+  return new Promise(function(ok){
+    var got;
+    try { got = db.transaction("meta", "readonly").objectStore("meta").get("who"); }
+    catch (e){ return ok(""); }
+    got.onsuccess = function(){ ok((got.result && got.result.id) || ""); };
+    got.onerror = function(){ ok(""); };
+  });
+}
 function logPush(rec){
   return openDb().then(function(db){
+    return whoIsHere(db).then(function(who){
+      rec.who = who;
+      return db;
+    });
+  }).then(function(db){
     return new Promise(function(ok){
       var tx = db.transaction("pushes", "readwrite");
       var st = tx.objectStore("pushes");
@@ -119,6 +138,9 @@ self.addEventListener("push", function(e){
     body: n.body || "",
     tag: n.tag || "ebm-job"
   };
+  // A message is kept in its own conversation; logging it again would put a
+  // copy of somebody's private line into the System thread.
+  var keep = rec.tag.indexOf("chat-") !== 0;
   e.waitUntil(Promise.all([
     self.registration.showNotification(rec.title, {
       body: rec.body,
@@ -127,8 +149,8 @@ self.addEventListener("push", function(e){
       tag: rec.tag,
       data: {tag: rec.tag}
     }),
-    logPush(rec),
-    tell({kind: "push", push: rec})
+    keep ? logPush(rec) : Promise.resolve(),
+    keep ? tell({kind: "push", push: rec}) : Promise.resolve()
   ]));
 });
 
