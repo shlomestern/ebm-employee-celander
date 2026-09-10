@@ -1,6 +1,6 @@
 /* EBM Crew Calendar service worker.
    Bump CACHE when the app shell changes so phones pick up the new version. */
-var CACHE = "ebm-crew-v86";
+var CACHE = "ebm-crew-v87";
 var SHELL = [
   "./", "./index.html", "./config.js", "./projects.js",
   "./manifest.webmanifest",
