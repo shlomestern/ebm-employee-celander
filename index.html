@@ -1846,7 +1846,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v85";
+  var APP_VERSION = "v86";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3027,6 +3027,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T23:30:00Z",
+     en:"Answering a video call should now actually connect. The phone answering was throwing away the caller's routes: they arrive while it is still asking for the camera and fetching the call, and a route cannot be used before that has finished \u2014 so each one was noted as seen, refused, and never offered again. They are held now and taken the moment they can be. A call also gives way to the picture as soon as the picture arrives, rather than waiting for a status some phones never report.",
+     fr:"R\u00e9pondre \u00e0 un appel vid\u00e9o devrait maintenant vraiment connecter. Le t\u00e9l\u00e9phone qui r\u00e9pond jetait les routes de l\u2019appelant\u00a0: elles arrivent pendant qu\u2019il demande encore la cam\u00e9ra, et une route ne peut pas servir avant que \u00e7a soit fini. Elles sont gard\u00e9es maintenant. Et l\u2019appel montre l\u2019image d\u00e8s qu\u2019elle arrive."},
     {at:"2026-09-10T22:00:00Z",
      en:"The box at the end of a job now says Parts and materials, with the two columns named, and says plainly that it is not asking for the time. Somebody put the clock-out time in it, which is exactly what the old wording invited.",
      fr:"La bo\u00eete \u00e0 la fin d\u2019un travail dit maintenant Pi\u00e8ces et mat\u00e9riaux, avec les deux colonnes nomm\u00e9es, et dit clairement qu\u2019elle ne demande pas l\u2019heure."},
@@ -3658,6 +3661,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     };
     pc.ontrack = function(ev){
       var far = $("callFar");
+      // The other person's picture is here. That is the thing worth acting
+      // on: connectionState is not reported by every browser, and a call
+      // that had arrived was still sitting behind the ringing screen.
+      stopRing();
+      callLive();
+      callErr("");
+      callState(tr("Connected"));
+      if (call && call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
+      if (call && call.hint){ clearTimeout(call.hint); call.hint = null; }
       if (far.srcObject !== ev.streams[0]){
         far.srcObject = ev.streams[0];
         // The autoplay attribute is not always enough — iOS in particular
@@ -3684,6 +3696,23 @@ dialog#callDlg::backdrop{background:#0b0f12}
                    {a: call.sent || 0, b: call.got || 0}));
         callState(tr("Call failed"));
       } else if (s === "disconnected") callState(tr("Reconnecting…"));
+    };
+    /* Safari has carried iceConnectionState far longer than it has carried
+       connectionState, and a phone that never reports the newer one left the
+       call looking as though it had not connected when it had. */
+    pc.oniceconnectionstatechange = function(){
+      if (!call) return;
+      var st = pc.iceConnectionState;
+      if (st === "connected" || st === "completed"){
+        stopRing(); callLive(); callErr("");
+        callState(tr("Connected"));
+        if (call.giveUp){ clearTimeout(call.giveUp); call.giveUp = null; }
+        if (call.hint){ clearTimeout(call.hint); call.hint = null; }
+      } else if (st === "failed"){
+        callErr(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
+                   {a: call.sent || 0, b: call.got || 0}));
+        callState(tr("Call failed"));
+      }
     };
     return pc;
   }
@@ -3744,10 +3773,32 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function drinkIce(pc, list, seen){
     (list || []).forEach(function(raw){
       if (seen[raw]) return;
+      /* A route cannot be added before the description it belongs to.
+         This is what stopped a picked-up call going through: the man
+         answering is still being asked for his camera and then fetching the
+         offer, while the caller's routes are already arriving. Each one was
+         written down as seen, handed to a connection with no description
+         yet, thrown, swallowed by the catch — and never offered again. The
+         call then had almost nothing to connect over and quietly failed.
+         Held instead, and taken the moment there is a description. */
+      if (!pc.remoteDescription){
+        if (call){
+          call.pending = call.pending || [];
+          if (call.pending.indexOf(raw) < 0) call.pending.push(raw);
+        }
+        return;
+      }
       seen[raw] = 1;
       if (call) call.got = (call.got || 0) + 1;
       try { pc.addIceCandidate(new RTCIceCandidate(JSON.parse(raw))); } catch (e){}
     });
+  }
+  /* The ones that came in too early, now that they can be used. */
+  function flushIce(pc){
+    if (!call) return;
+    var held = call.pending || [];
+    call.pending = [];
+    if (held.length) drinkIce(pc, held, call.seenIce);
   }
 
   function startCall(otherId){
@@ -3806,6 +3857,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
           }
           if (d.answer && !pc.currentRemoteDescription){
             pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(d.answer)))
+              .then(function(){ flushIce(pc); })
               .catch(function(){});
             stopRing();
             callErr("");
@@ -3825,6 +3877,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var c = call;
     if (!c || c.caller || c.pc) return;
     var otherId = c.other, ref = callRef(otherId);
+    // Answering used to be able to hang on "Connecting…" for ever. If no
+    // picture has arrived by now, something is wrong and it says so.
+    c.giveUp = setTimeout(function(){
+      if (!call || call.caller) return;
+      if ($("callFar").srcObject) return;
+      callState(tr("Call failed"));
+      callErr(tr("No route between the two phones. {a} sent, {b} received. Try again on wi-fi.",
+                 {a: call.sent || 0, b: call.got || 0}));
+    }, 30000);
     $("callTake").hidden = true;
     $("callDropLb").textContent = tr("Hang up");
     $("callAnswer").hidden = true;
@@ -3842,7 +3903,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         var d = (snap.exists && snap.data()) || {};
         if (!d.offer) throw new Error("gone");
         return pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(d.offer)))
-          .then(function(){ return pc.createAnswer(); })
+          .then(function(){ flushIce(pc); return pc.createAnswer(); })
           .then(function(ans){
             return pc.setLocalDescription(ans).then(function(){
               return ref.set({answer: JSON.stringify(ans), state: "live"}, {merge: true});
@@ -3850,6 +3911,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
           }).then(function(){
             iceReady(otherId, "calleeIce");
             drinkIce(pc, d.callerIce, call.seenIce);
+            flushIce(pc);
           });
       });
     }).catch(function(e){
@@ -5530,6 +5592,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
              : tr("Connected. Everyone sees the same calendar.");
     $("meConnText").textContent = conn;
 
+    // Maintenance, not something to put in front of the men on the tools.
+    $("meFixSec").hidden = state.me !== "office";
     $("meCrewBtn").hidden = !can("manage");
     $("meRepBtn").hidden = !can("manage");
     $("meVersion").textContent = tr("EBM Crew Calendar") + " " + APP_VERSION;
