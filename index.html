@@ -1736,7 +1736,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v80";
+  var APP_VERSION = "v81";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2917,6 +2917,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-10T16:00:00Z",
+     en:"Messages go up and down between the office and the crew, not sideways. A man on the tools writes to the office and to whoever books his work; he no longer has the other men on his list.",
+     fr:"Les messages circulent entre le bureau et l’équipe, pas entre collègues. Un travailleur écrit au bureau et à la personne qui fait ses réservations ; il n’a plus les autres travailleurs dans sa liste."},
     {at:"2026-09-10T13:00:00Z",
      en:"Video calls should connect now. The app was throwing away its own routing information before it had finished asking for the call.",
      fr:"Les appels vid\u00e9o devraient maintenant se connecter. L\u2019application jetait ses propres informations de connexion avant d\u2019avoir fini de lancer l\u2019appel."},
@@ -3070,20 +3073,27 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var v = t[keyFor(otherId)];
     return Array.isArray(v) ? v : [];
   }
-  /* Who there is to write to. The office writes to the men on the tools, not
-     to a list of other admins; a worker writes to anybody in the office.
-     Anyone who has already written is kept on the list either way. */
+  /* Who there is to write to.
+
+     The office side writes to anybody: the men on the tools, and each other.
+     A man on the tools writes to the office side only — never to another man
+     on the tools. Work is handed out from the office, and two men arranging
+     the day between themselves leaves nobody in the office knowing about it.
+     Anyone already in a thread is kept on the list, but only if this rule
+     would have allowed the thread in the first place. */
+  function mayWriteTo(id){
+    if (!id || id === state.me) return false;
+    if (id === SYSTEM) return true;             // read-only, for everybody
+    if (isOffice()) return true;                // the office writes to anyone
+    return id === "office" || isAdmin(member(id));
+  }
   function contacts(){
     var out = [], seen = {};
     function add(id){
-      if (!id || id === state.me || seen[id]) return;
+      if (!mayWriteTo(id) || seen[id]) return;
       seen[id] = 1; out.push(id);
     }
     add(SYSTEM);                    // everyone keeps their own notifications
-    // Everybody on the roster, in the order the office keeps them: the men on
-    // the tools first, then the office. It was the crew only for a while and
-    // that left one admin unable to write to another, which is not how the
-    // day actually goes.
     add("office");
     state.people.forEach(function(pp){ add(pp.id); });
 
@@ -3489,6 +3499,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   function startCall(otherId){
     if (call) return;
+    if (!mayWriteTo(otherId)) return;   // same rule as writing: not each other
     if (!canCall()){
       alert(tr("This device cannot make video calls."));
       return;
@@ -3681,6 +3692,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   function sendMessage(otherId, text, extra){
     if (otherId === SYSTEM) return Promise.resolve();   // read-only, for everyone
+    // The list already leaves out the men on the tools when one of them is
+    // looking, but a stale screen is still a screen with a Send button on it.
+    if (!mayWriteTo(otherId)) return Promise.resolve();
     var msg = {by: state.me, name: meName(), text: text, at: new Date().toISOString()};
     if (extra && extra.img) msg.img = extra.img;
     if (extra && extra.aud){ msg.aud = extra.aud; msg.secs = extra.secs || 0; }
