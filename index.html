@@ -807,7 +807,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <p class="sub" id="meCallOut" style="margin:6px 0 0"></p>
     </div>
 
-    <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55"></p>
+    <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55; cursor:pointer"></p>
 
     <div class="actions">
       <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
@@ -1846,7 +1846,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v87";
+  var APP_VERSION = "v88";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2539,6 +2539,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
     runReport();
   }
 
+  /* The two checks are for the one morning something is wrong with a phone,
+     and no use to anybody on any other morning. Three taps on the version
+     line brings them out, and only for the office code. Out of the way, and
+     still there when it is needed. */
+  var fixTaps = 0;
+  $("meVersion").addEventListener("click", function(){
+    if (state.me !== "office") return;
+    fixTaps += 1;
+    if (fixTaps < 3) return;
+    fixTaps = 0;
+    $("meFixSec").hidden = !$("meFixSec").hidden;
+  });
+
   $("meRepBtn").addEventListener("click", function(){
     if (state.me !== "office") return;      // a stale screen is still a screen
     $("meDlg").close(); openReport();
@@ -3030,6 +3043,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-09T23:30:00Z", who:"me",
      en:"Crew & codes is one name to a line now. Tap a name to see or change their role, their code and what they may do.",
      fr:"\u00c9quipe et codes affiche un nom par ligne. Touchez un nom pour voir ou changer son r\u00f4le, son code et ce qu\u2019il peut faire."},
+    {at:"2026-09-11T02:00:00Z", who:"me",
+     en:"The two checks are off the sheet now. Tap the version line at the bottom of your own sheet three times and they appear; tap it three times again and they go. Nobody else has them at all.",
+     fr:"Les deux v\u00e9rifications ne sont plus affich\u00e9es. Touchez trois fois la ligne de version en bas de votre fiche et elles apparaissent."},
     {at:"2026-09-11T00:30:00Z", who:"me",
      en:"Hours worked and the workbook behind it belong to the office code alone now. Any admin with manage could open the whole crew's hours.",
      fr:"Heures travaill\u00e9es et le fichier Excel derri\u00e8re n\u2019appartiennent plus qu\u2019au code du bureau."},
@@ -5598,8 +5614,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
              : tr("Connected. Everyone sees the same calendar.");
     $("meConnText").textContent = conn;
 
-    // Maintenance, not something to put in front of the men on the tools.
-    $("meFixSec").hidden = state.me !== "office";
+    // Maintenance. Not on the sheet at all until it is asked for — see the
+    // three taps on the version line below.
+    $("meFixSec").hidden = true;
+    fixTaps = 0;
     $("meCrewBtn").hidden = !can("manage");
     // Hours worked and the workbook behind it are the office code's alone.
     // Every admin with "manage" was getting the whole crew's hours.
