@@ -1409,6 +1409,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "React with {e}": "R\u00e9agir avec {e}",
     "Note or photo": "Note ou photo",
     "Reschedule": "Replanifier", "Move it": "D\u00e9placer",
+    "That one is not yours to move.": "Ce travail n\u2019est pas \u00e0 vous de le d\u00e9placer.",
     "Stock": "Mat\u00e9riel",
     "Is the stock there?": "Le mat\u00e9riel est-il sur place\u00a0?",
     "Yes \u2014 it is at the building": "Oui \u2014 il est au b\u00e2timent",
@@ -1975,7 +1976,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v97";
+  var APP_VERSION = "v98";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3207,9 +3208,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-11T21:00:00Z", who:"all",
      en:"Booking a job now stops to ask one question: is the stock for it already at the building? If it is not, the job carries a line saying so and the notification says it too.",
      fr:"R\u00e9server un travail pose maintenant une question\u00a0: le mat\u00e9riel est-il d\u00e9j\u00e0 sur place\u00a0? Sinon, le travail porte une ligne qui le dit, et la notification aussi."},
-    {at:"2026-09-11T15:00:00Z", who:"all",
-     en:"A job can go to another day. Tap Reschedule on it, pick the day and the hours.",
-     fr:"Un travail peut aller \u00e0 un autre jour. Touchez Replanifier dessus, choisissez le jour et les heures."},
+    {at:"2026-09-11T15:00:00Z", who:"manage",
+     en:"A job can go to another day. Tap Reschedule on it, pick the day and the hours. It is on the jobs you booked, and the office code has it on all of them \u2014 the crew cannot move their own work.",
+     fr:"Un travail peut aller \u00e0 un autre jour. Touchez Replanifier dessus, choisissez le jour et les heures. C\u2019est sur les travaux que vous avez r\u00e9serv\u00e9s\u00a0; le code du bureau l\u2019a sur tous. L\u2019\u00e9quipe ne peut pas d\u00e9placer son propre travail."},
     {at:"2026-09-11T14:00:00Z",
      en:"At six each evening you get the day's tally: how many of the jobs you booked were finished, and one line for each that was not \u2014 never started, started and not finished, or paused and left. The office gets the whole day.",
      fr:"\u00c0 18\u00a0h chaque soir vous recevez le bilan de la journ\u00e9e\u00a0: combien des travaux que vous avez r\u00e9serv\u00e9s ont \u00e9t\u00e9 termin\u00e9s, et une ligne pour chacun qui ne l\u2019a pas \u00e9t\u00e9. Le bureau re\u00e7oit toute la journ\u00e9e."},
@@ -4817,7 +4818,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
        starts "he only got through one of them" happens after the working day
        is over, and that is precisely when the other one needs moving. */
     if (j.date < todayIso) return false;
-    return ownsJob(j) || j.crewId === state.me;
+    /* Rescheduling is the office's call, not the man's. He can say he is
+       running late, and he can write on the job or message about it, but
+       moving work to another day changes somebody else's plan for that day
+       and belongs to whoever booked it. ownsJob already turns everyone
+       without booking rights away. */
+    return ownsJob(j);
   }
   function fillMoveHours(keep){
     var j = mvJob; if (!j) return;
@@ -4882,6 +4888,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return tr("{name} will be told on his phone.", {name: memberOr(j.crewId).name});
   }
   function openMove(j){
+    if (!movable(j)) return;
     mvJob = j;
     $("mvWhat").textContent = rangeShort(j) + " \u00b7 " + j.buildingName +
       (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "") +
@@ -4900,6 +4907,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
   $("mvForm").addEventListener("submit", function(ev){
     ev.preventDefault();
     var j = mvJob; if (!j) return;
+    // The button is only drawn for the people who may. The rule is worth
+    // asking again here rather than trusting a button.
+    if (!movable(j)){ $("mvErr").textContent = tr("That one is not yours to move."); return; }
     var ds = $("mvDate").value;
     var from = parseInt($("mvFrom").value, 10), to = parseInt($("mvTo").value, 10);
     if (!ds || !(to > from)){ $("mvErr").textContent = tr("Pick a day and the hours."); return; }
