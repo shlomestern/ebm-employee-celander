@@ -292,6 +292,8 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .stkpick{display:flex; flex-direction:column; gap:8px; margin:4px 0 2px}
 .stkpick .btn{white-space:normal; text-align:left; padding:12px 14px; font-size:14.5px}
 .stkpick .btn.sel{border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel)}
+/* The fourth answer is a real one, but it is not the one to reach for. */
+.stkpick .btn.quiet{color:var(--ink-3); font-size:13.5px; padding:10px 14px}
 .noteadd{display:flex; gap:6px}
 .noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
@@ -1036,6 +1038,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <button type="button" class="btn stk" data-a="here" data-t>Yes — it is at the building</button>
       <button type="button" class="btn stk" data-a="needed" data-t>No — it still has to be brought</button>
       <button type="button" class="btn stk" data-a="none" data-t>Nothing is needed for this one</button>
+      <button type="button" class="btn stk quiet" data-a="unknown" data-t>I do not know yet</button>
     </div>
     <div class="actions">
       <button type="button" class="btn" id="stkCancel" data-t>Back</button>
@@ -1415,8 +1418,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Yes \u2014 it is at the building": "Oui \u2014 il est au b\u00e2timent",
     "No \u2014 it still has to be brought": "Non \u2014 il faut encore l\u2019apporter",
     "Nothing is needed for this one": "Rien n\u2019est n\u00e9cessaire pour celui-ci",
+    "I do not know yet": "Je ne sais pas encore",
     "Stock still to bring": "Mat\u00e9riel \u00e0 apporter",
     "Stock is there": "Mat\u00e9riel sur place",
+    "Stock not checked": "Mat\u00e9riel non v\u00e9rifi\u00e9",
     "Move this job to another day": "D\u00e9placer ce travail \u00e0 un autre jour",
     "Which day": "Quel jour",
     "No room on that day. Pick another one.":
@@ -1976,7 +1981,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v98";
+  var APP_VERSION = "v99";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4812,12 +4817,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   function movable(j){
     if (!j || j.clockOut) return false;            // finished is finished
-    /* Today still counts, even at six in the evening. dayIsPast() is about
-       whether there are working hours left in a day, which is the right
-       question for booking and the wrong one here: the conversation that
-       starts "he only got through one of them" happens after the working day
-       is over, and that is precisely when the other one needs moving. */
-    if (j.date < todayIso) return false;
+    /* A day that has gone is the whole point. The first cut of this refused
+       to move anything dated before today, on the reasoning that you cannot
+       change the past — but the job that needs moving is exactly the one
+       nobody got to yesterday, and it is looked at the next morning, after
+       the six o'clock tally names it. Nothing is being rewritten: the day it
+       goes to still has to be today or later, which the date box and the
+       move itself both refuse to bend on. */
     /* Rescheduling is the office's call, not the man's. He can say he is
        running late, and he can write on the job or message about it, but
        moving work to another day changes somebody else's plan for that day
@@ -4894,7 +4900,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
       (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "") +
       " \u00b7 " + memberOr(j.crewId).name;
     $("mvDate").min = todayIso;
-    $("mvDate").value = iso(addDays(fromIso(j.date), 1));
+    /* The day after the one it was on, unless that has gone too — a job
+       missed last week opens on today rather than on a day the box will
+       not accept. */
+    var next = iso(addDays(fromIso(j.date), 1));
+    $("mvDate").value = next < todayIso ? todayIso : next;
     $("mvErr").textContent = "";
     $("mvSave").disabled = false;
     fillMoveHours(j.from);
@@ -5350,6 +5360,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var sk2=document.createElement("div"); sk2.className="job-sub";
       sk2.textContent = tr("Stock is there");
       card.appendChild(sk2);
+    } else if (j.stock === "unknown" && !j.clockOut){
+      var sk3=document.createElement("div"); sk3.className="job-sub";
+      sk3.textContent = tr("Stock not checked");
+      card.appendChild(sk3);
     }
     if (j.tight){
       var tg=document.createElement("div"); tg.className="job-sub";
