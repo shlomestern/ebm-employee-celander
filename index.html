@@ -287,6 +287,11 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
   font-family:"Archivo",sans-serif}
 .notebtn:hover{color:var(--sel)}
 .notes.bare{border-top:0; padding-top:0; gap:0}
+/* Three answers, each on its own line and wide enough to hit with a thumb.
+   A row of three would be three cramped buttons and a wrong tap. */
+.stkpick{display:flex; flex-direction:column; gap:8px; margin:4px 0 2px}
+.stkpick .btn{white-space:normal; text-align:left; padding:12px 14px; font-size:14.5px}
+.stkpick .btn.sel{border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel)}
 .noteadd{display:flex; gap:6px}
 .noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
@@ -1022,6 +1027,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
   </form>
 </dialog>
 
+<dialog id="stkDlg">
+  <form method="dialog" class="dlg" id="stkForm">
+    <div class="eyebrow" data-t>Stock</div>
+    <h3 data-t>Is the stock there?</h3>
+    <p class="sub" id="stkWhere"></p>
+    <div class="stkpick">
+      <button type="button" class="btn stk" data-a="here" data-t>Yes — it is at the building</button>
+      <button type="button" class="btn stk" data-a="needed" data-t>No — it still has to be brought</button>
+      <button type="button" class="btn stk" data-a="none" data-t>Nothing is needed for this one</button>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn" id="stkCancel" data-t>Back</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="usedDlg">
   <form method="dialog" class="dlg" id="usedForm">
     <div class="eyebrow" id="usedWho"></div>
@@ -1387,7 +1408,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "on les entend {a} \u00b7 on les voit {b} \u00b7 voix envoy\u00e9e {c} \u00b7 image envoy\u00e9e {d}",
     "React with {e}": "R\u00e9agir avec {e}",
     "Note or photo": "Note ou photo",
-    "Another day": "Un autre jour", "Move it": "D\u00e9placer",
+    "Reschedule": "Replanifier", "Move it": "D\u00e9placer",
+    "Stock": "Mat\u00e9riel",
+    "Is the stock there?": "Le mat\u00e9riel est-il sur place\u00a0?",
+    "Yes \u2014 it is at the building": "Oui \u2014 il est au b\u00e2timent",
+    "No \u2014 it still has to be brought": "Non \u2014 il faut encore l\u2019apporter",
+    "Nothing is needed for this one": "Rien n\u2019est n\u00e9cessaire pour celui-ci",
+    "Stock still to bring": "Mat\u00e9riel \u00e0 apporter",
+    "Stock is there": "Mat\u00e9riel sur place",
     "Move this job to another day": "D\u00e9placer ce travail \u00e0 un autre jour",
     "Which day": "Quel jour",
     "No room on that day. Pick another one.":
@@ -1947,7 +1975,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v96";
+  var APP_VERSION = "v97";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3176,9 +3204,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-11T18:00:00Z", who:"me",
      en:"The System thread was showing everybody every note, including my own working notes about fixing bugs. A note now goes to the office code alone unless it is marked for the crew, and only ten of them are \u2014 the ones that change what a man on the tools actually does, each rewritten to one plain sentence.",
      fr:"Le fil Syst\u00e8me montrait \u00e0 tout le monde chaque note. Une note ne va plus qu\u2019au code du bureau, sauf si elle est marqu\u00e9e pour l\u2019\u00e9quipe."},
+    {at:"2026-09-11T21:00:00Z", who:"all",
+     en:"Booking a job now stops to ask one question: is the stock for it already at the building? If it is not, the job carries a line saying so and the notification says it too.",
+     fr:"R\u00e9server un travail pose maintenant une question\u00a0: le mat\u00e9riel est-il d\u00e9j\u00e0 sur place\u00a0? Sinon, le travail porte une ligne qui le dit, et la notification aussi."},
     {at:"2026-09-11T15:00:00Z", who:"all",
-     en:"A job can go to another day. Tap Another day on it, pick the day and the hours.",
-     fr:"Un travail peut aller \u00e0 un autre jour. Touchez Un autre jour dessus, choisissez le jour et les heures."},
+     en:"A job can go to another day. Tap Reschedule on it, pick the day and the hours.",
+     fr:"Un travail peut aller \u00e0 un autre jour. Touchez Replanifier dessus, choisissez le jour et les heures."},
     {at:"2026-09-11T14:00:00Z",
      en:"At six each evening you get the day's tally: how many of the jobs you booked were finished, and one line for each that was not \u2014 never started, started and not finished, or paused and left. The office gets the whole day.",
      fr:"\u00c0 18\u00a0h chaque soir vous recevez le bilan de la journ\u00e9e\u00a0: combien des travaux que vous avez r\u00e9serv\u00e9s ont \u00e9t\u00e9 termin\u00e9s, et une ligne pour chacun qui ne l\u2019a pas \u00e9t\u00e9. Le bureau re\u00e7oit toute la journ\u00e9e."},
@@ -5300,6 +5331,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
         {d: F_MED.format(fromIso(j.movedFrom)), who: j.movedBy || ""});
       card.appendChild(mvd);
     }
+    /* Only the answer that means somebody has to do something is loud. */
+    if (j.stock === "needed" && !j.clockOut){
+      var sk=document.createElement("div"); sk.className="job-hold";
+      sk.textContent = tr("Stock still to bring");
+      card.appendChild(sk);
+    } else if (j.stock === "here" && !j.clockOut){
+      var sk2=document.createElement("div"); sk2.className="job-sub";
+      sk2.textContent = tr("Stock is there");
+      card.appendChild(sk2);
+    }
     if (j.tight){
       var tg=document.createElement("div"); tg.className="job-sub";
       tg.textContent = tr("Back to back \u2014 no travel time");
@@ -5387,7 +5428,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (grantable(j)) acts.appendChild(grantButton(j));
     if (movable(j)){
       var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
-      mv.textContent=tr("Another day");
+      mv.textContent=tr("Reschedule");
       mv.addEventListener("click", function(){ openMove(j); });
       acts.appendChild(mv);
     }
@@ -5841,6 +5882,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("formWho").textContent = m.name+" \u00b7 "+tradeName(m.trade);
     $("formWhen").textContent = (editing ? tr("Edit \u2014 ") : "") + F_LONG.format(fromIso(ds));
     $("formErr").textContent=""; $("formSave").disabled=false;
+    stockAsk = null;                     // asked afresh on every save
     $("formSave").textContent = editing ? tr("Save changes") : tr("Save job");
     $("paneForm").reset();
     fillProjects();
@@ -5939,8 +5981,42 @@ dialog#callDlg::backdrop{background:#0b0f12}
   });
 
 
+  /* ---------- is the stock there? ----------
+     Asked at the moment of booking, when there is still time to do something
+     about it. Nobody should drive across town and find out on site that the
+     part is still in the shop. There is no default answer: the three buttons
+     are the only way past this, so it cannot be clicked through out of habit.
+     It is asked again on an edit, which is also the way to change the answer
+     later. */
+  var stockAsk = null, stockThen = null;
+
+  function askStock(b, then){
+    stockThen = then;
+    var unit = $("fUnit").value.trim();
+    $("stkWhere").textContent = b.name + (unit ? " \u00b7 " + tr("Unit {u}", {u: unit}) : "");
+    var was = editing ? (editing.stock || "") : "";
+    [].forEach.call($("stkForm").querySelectorAll(".stk"), function(x){
+      x.classList.toggle("sel", !!was && x.dataset.a === was);
+    });
+    $("stkDlg").showModal();
+  }
+  [].forEach.call(document.querySelectorAll("#stkForm .stk"), function(x){
+    x.addEventListener("click", function(){
+      stockAsk = x.dataset.a;
+      $("stkDlg").close();
+      var go = stockThen; stockThen = null;
+      if (go) go();
+    });
+  });
+  $("stkCancel").addEventListener("click", function(){ $("stkDlg").close(); });
+  // Escape closes it too, and either way the form is still there, unsaved.
+  $("stkDlg").addEventListener("close", function(){ stockThen = null; });
+
   $("paneForm").addEventListener("submit", function(ev){
     ev.preventDefault();
+    saveFromForm();
+  });
+  function saveFromForm(){
     var ds=openDate, crewId=editing ? editing.crewId : viewCrewId();
     var pid=$("fProject").value;
     var p=project(pid);
@@ -5969,6 +6045,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       return;
     }
 
+    // Everything about the job is settled; the last question is the stock.
+    if (stockAsk === null){ askStock(b, saveFromForm); return; }
+
     if (editing){
       $("formSave").disabled=true;
       patchJob(editing.id, {
@@ -5977,6 +6056,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         buildingId:b.id, buildingName:b.name,
         unit:$("fUnit").value.trim(), job:$("fJob").value.trim(),
         photos: formShots,
+        stock: stockAsk,
         tight: !!(clash && travelOff()),
         createdBy: ownerName(pickedOwner()), createdById: pickedOwner(),
         manager:p.manager||"", managerPhone:p.managerPhone||""
@@ -5993,6 +6073,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       unit:$("fUnit").value.trim(),
       job:$("fJob").value.trim(),
       photos: formShots,
+      stock: stockAsk,
       tight: !!(clash && travelOff()),
       manager:p.manager||"", managerPhone:p.managerPhone||"",
       createdAt:new Date().toISOString(),
@@ -6003,7 +6084,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("formSave").disabled=true;
     saveJob(job).then(function(){ showDayPane(); })
       .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The job did not save.")); });
-  });
+  }
 
   /* ---------- the account sheet behind the avatar ---------- */
   function roleLabel(){

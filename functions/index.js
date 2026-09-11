@@ -664,8 +664,13 @@ exports.notifyCrewOnNewJob = onDocumentCreated(
 
     const when = job.allDay ? "All day" : `${HOURS(job.from)} – ${HOURS(job.to)}`;
     const where = job.buildingName + (job.unit ? ` · Unit ${job.unit}` : "");
+    // Whoever booked it was asked whether the parts are already on site. If
+    // they are not, that belongs in the notification and not in a line the
+    // man has to open the app to find.
+    const stock = job.stock === "needed" ? " · Stock still to bring"
+                : job.stock === "here"   ? " · Stock is there" : "";
     const sent = await push(db, aud.map, tokens,
-      `New job — ${job.date}`, `${when} · ${where}`, event.params.jobId);
+      `New job — ${job.date}`, `${when} · ${where}${stock}`, event.params.jobId);
 
     const person = aud.people.find((p) => p.id === job.crewId);
     logger.info(`told ${person ? person.name : job.crewId}: ${sent} delivered`);
