@@ -282,6 +282,11 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .note{font-size:13px; color:var(--ink-2)}
 .note b{color:var(--ink); font-weight:600}
 .note .when{color:var(--ink-3); font-size:11.5px}
+.notebtn{align-self:flex-start; border:0; background:none; padding:2px 0; cursor:pointer;
+  font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-3);
+  font-family:"Archivo",sans-serif}
+.notebtn:hover{color:var(--sel)}
+.notes.bare{border-top:0; padding-top:0; gap:0}
 .noteadd{display:flex; gap:6px}
 .noteadd input{flex:1; min-width:0; font:inherit; font-size:14px; color:var(--ink);
   background:var(--surface-2); border:1px solid var(--line-2); border-radius:7px; padding:7px 9px}
@@ -692,7 +697,29 @@ dialog#callDlg::backdrop{background:#0b0f12}
   .crew .person .nm{font-size:13px}
   .wrap{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 }
+/* A day on a phone. Everything above is sized for a screen you are looking
+   at; this is for one held in a hand, in a van, with the other hand full.
+   Two jobs used to fill the whole screen — the padding, the gaps and the
+   note row on every card were doing most of that. */
 @media (max-width:520px){
+  .dlg{padding:14px}
+  .dlg h3{font-size:17.5px}
+  .dlg .sub{margin-bottom:9px}
+  .jobs{gap:8px}
+  .job{padding:9px 10px; gap:5px; border-radius:10px}
+  .job-time{font-size:12.5px}
+  .job-where{font-size:14.5px}
+  .job-sub{font-size:12.5px}
+  .job-desc{font-size:13px}
+  .job-late, .job-hold{font-size:12.5px}
+  .job-actions{gap:6px}
+  .job-actions .btn{padding:8px 12px; font-size:13px}
+  .notes{padding-top:6px; gap:4px}
+  .note{font-size:12.5px}
+  .noteadd input{padding:6px 8px; font-size:13.5px}
+  .usedlist{font-size:12.5px}
+  .pill{padding:2px 6px; font-size:10px}
+
   /* Still clear of the clock and the notch on a narrow screen. */
   .wrap{padding-left:max(10px, env(safe-area-inset-left));
         padding-right:max(10px, env(safe-area-inset-right));
@@ -1359,6 +1386,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "hearing them {a} \u00b7 seeing them {b} \u00b7 sending voice {c} \u00b7 sending picture {d}":
       "on les entend {a} \u00b7 on les voit {b} \u00b7 voix envoy\u00e9e {c} \u00b7 image envoy\u00e9e {d}",
     "React with {e}": "R\u00e9agir avec {e}",
+    "Note or photo": "Note ou photo",
     "Another day": "Un autre jour", "Move it": "D\u00e9placer",
     "Move this job to another day": "D\u00e9placer ce travail \u00e0 un autre jour",
     "Which day": "Quel jour",
@@ -1454,7 +1482,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
     /* a job */
     "On site": "Sur place", "Finished": "Termin\u00e9",
-    "Booked by {name}": "R\u00e9serv\u00e9 par {name}",
+    "Booked by {name}": "R\u00e9serv\u00e9 par {name}", "by {name}": "par {name}",
     "In {t}": "Arriv\u00e9e {t}",
     "In {t} \u00b7 Out {u}": "Arriv\u00e9e {t} \u00b7 D\u00e9part {u}",
     "Clock in": "Pointer l\u2019arriv\u00e9e",
@@ -1919,7 +1947,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v95";
+  var APP_VERSION = "v96";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5234,15 +5262,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     card.appendChild(top);
 
+    /* Who booked it belongs on the line that says what the job is. On a row
+       of its own it cost every card a band of height to say four words. The
+       long form comes back only when the job passed through more than one
+       pair of hands, which is the rare case and the one worth spelling out. */
+    var chain = (j.bookedBy ? " \u00b7 " + tr("put in by {name}", {name: j.bookedBy}) : "") +
+                (j.approvedBy ? " \u00b7 " + tr("agreed by {name}", {name: j.approvedBy}) : "");
+
     var sub = document.createElement("div"); sub.className="job-sub";
-    sub.textContent = j.projectId + " — " + j.projectName + (opts.showCrew ? " · " + m.name : "");
+    sub.textContent = j.projectId + " — " + j.projectName
+      + (opts.showCrew ? " · " + m.name : "")
+      + (j.createdBy && !chain ? " · " + tr("by {name}", {name: j.createdBy}) : "");
     card.appendChild(sub);
 
-    if (j.createdBy){
+    if (j.createdBy && chain){
       var by = document.createElement("div"); by.className="job-sub";
-      by.textContent = tr("Booked by {name}", {name: j.createdBy}) +
-        (j.bookedBy ? " \u00b7 " + tr("put in by {name}", {name: j.bookedBy}) : "") +
-        (j.approvedBy ? " \u00b7 " + tr("agreed by {name}", {name: j.approvedBy}) : "");
+      by.textContent = tr("Booked by {name}", {name: j.createdBy}) + chain;
       card.appendChild(by);
     }
 
@@ -5425,6 +5460,32 @@ dialog#callDlg::backdrop{background:#0b0f12}
       });
       pb.appendChild(pf);
       add.appendChild(pb);
+    }
+    /* Folded away until it is wanted. It sat open on every card, taking a
+       third of the card's height on a phone to offer something nobody is
+       doing most of the time. One small button instead, and the row comes
+       out when it is tapped. */
+    add.hidden = true;
+    var open = document.createElement("button");
+    open.type = "button";
+    open.textContent = tr("Note or photo");
+    open.addEventListener("click", function(){
+      add.hidden = false;
+      open.hidden = true;
+      var box = add.querySelector("input:not([type=file])");
+      if (box) box.focus();
+    });
+    /* With no notes on the card there is nothing for the dividing line to
+       divide, so the button goes in beside Clock in and the notes band
+       leaves the card altogether. */
+    if ((j.notes||[]).length){
+      open.className = "notebtn";
+      notes.appendChild(open);
+    } else {
+      open.className = "btn";
+      notes.className = "notes bare";
+      acts.appendChild(open);
+      if (!acts.parentNode) card.appendChild(acts);
     }
     notes.appendChild(add);
     card.appendChild(notes);
