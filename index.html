@@ -863,6 +863,24 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <div id="crewRows"></div>
     <button type="button" class="btn" id="addPerson" data-t>Add someone</button>
 
+    <div class="mesec" id="crewLost" style="margin-top:18px" hidden>
+      <div class="eyebrow" data-t>Missing from this list</div>
+      <p class="sub" style="margin:6px 0 8px" data-t>These people have work booked on the
+        calendar but are not on the list above. Put them back from here and not with
+        <b>Add someone</b>: this keeps the number the jobs already know them by, so their
+        bookings stay theirs to edit. Added as new people instead, the jobs would still
+        show their name and stop belonging to them.</p>
+      <div id="crewLostRows"></div>
+      <div class="field" style="margin-top:10px">
+        <label for="crewLostId" data-t>Somebody else, by their number</label>
+        <div class="noteadd">
+          <input id="crewLostId" autocomplete="off" maxlength="40" data-tp="Their number" placeholder="Their number">
+          <button type="button" class="btn" id="crewLostAdd" data-t>Put back</button>
+        </div>
+        <span class="hint" data-t>For somebody who booked nothing, so the app cannot find them on its own.</span>
+      </div>
+    </div>
+
     <div class="mesec" style="margin-top:18px">
       <div class="eyebrow" data-t>Phones signed up for notifications</div>
       <p class="sub" style="margin:6px 0 8px" data-t>A person with no phone here cannot be buzzed, however the job is booked. They fix it themselves: open the app on their own phone, sign in with their code, and allow notifications when it asks.</p>
@@ -1412,6 +1430,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "React with {e}": "R\u00e9agir avec {e}",
     "Note or photo": "Note ou photo",
     "Reschedule": "Replanifier", "Move it": "D\u00e9placer",
+    "Missing from this list": "Absents de cette liste",
+    "Somebody else, by their number": "Quelqu\u2019un d\u2019autre, par son num\u00e9ro",
+    "Their number": "Son num\u00e9ro",
+    "Put back": "Remettre",
+    "1 job booked": "1 travail r\u00e9serv\u00e9",
+    "{n} jobs booked": "{n} travaux r\u00e9serv\u00e9s",
+    "Give {name} their code, then Save.": "Donnez son code \u00e0 {name}, puis Enregistrer.",
+    "Give them their name and code, then Save.": "Donnez son nom et son code, puis Enregistrer.",
+    "{name} is already on the list.": "{name} est d\u00e9j\u00e0 sur la liste.",
     "That one is not yours to move.": "Ce travail n\u2019est pas \u00e0 vous de le d\u00e9placer.",
     "Stock": "Mat\u00e9riel",
     "Is the stock there?": "Le mat\u00e9riel est-il sur place\u00a0?",
@@ -1981,7 +2008,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v100";
+  var APP_VERSION = "v101";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6611,11 +6638,70 @@ dialog#callDlg::backdrop{background:#0b0f12}
     syncHead(); setOpen(!!open);
     return row;
   }
+  /* Every id the bookings still point at that nobody on the roster answers to.
+     The job carries the name it was booked under, so they can be offered back
+     by name rather than as a row of characters. */
+  function lostPeople(){
+    var have = {}, out = [], seen = {};
+    state.people.forEach(function(pp){ have[pp.id] = 1; });
+    Object.keys(state.jobs).forEach(function(k){
+      var j = state.jobs[k], id = j && j.createdById;
+      if (!id || id === "office" || have[id] || seen[id]) return;
+      seen[id] = 1;
+      out.push({id: id, name: j.createdBy || "", jobs: 0});
+    });
+    out.forEach(function(o){
+      Object.keys(state.jobs).forEach(function(k){
+        if (state.jobs[k].createdById === o.id) o.jobs++;
+      });
+    });
+    return out;
+  }
+  function drawLost(){
+    var lost = lostPeople(), host = $("crewLostRows");
+    host.innerHTML = "";
+    $("crewLost").hidden = !lost.length;
+    lost.forEach(function(o){
+      var row = document.createElement("div"); row.className = "noteadd";
+      row.style.marginBottom = "6px";
+      var who = document.createElement("span");
+      who.className = "sub"; who.style.flex = "1"; who.style.alignSelf = "center";
+      who.textContent = (o.name || o.id) + " \u00b7 " +
+        (o.jobs === 1 ? tr("1 job booked") : tr("{n} jobs booked", {n: o.jobs}));
+      var go = document.createElement("button");
+      go.type = "button"; go.className = "btn"; go.textContent = tr("Put back");
+      go.addEventListener("click", function(){
+        addRosterRow({id: o.id, name: o.name, trade: "admin", code: "",
+                      can: {book: true, manage: false}}, true);
+        row.remove();
+        if (!$("crewLostRows").children.length) $("crewLost").hidden = true;
+        $("crewErr").textContent = tr("Give {name} their code, then Save.", {name: o.name || o.id});
+      });
+      row.appendChild(who); row.appendChild(go);
+      host.appendChild(row);
+    });
+  }
+  $("crewLostAdd").addEventListener("click", function(){
+    var id = $("crewLostId").value.trim();
+    if (!id) return;
+    for (var i = 0; i < state.people.length; i++){
+      if (state.people[i].id === id){
+        $("crewErr").textContent = tr("{name} is already on the list.", {name: state.people[i].name});
+        return;
+      }
+    }
+    addRosterRow({id: id, name: "", trade: "admin", code: "",
+                  can: {book: true, manage: false}}, true);
+    $("crewLostId").value = "";
+    $("crewErr").textContent = tr("Give them their name and code, then Save.");
+  });
+
   function openCrewEditor(){
     if (state.me !== "office") return;
     var host = $("crewRows");
     host.innerHTML = "";
     state.people.forEach(function(pp){ addRosterRow(pp, false); });
+    drawLost();
     $("fOfficeName").value = state.officeName || "Office";
     $("fOfficeCode").value = state.officeCode || masterOfficeCode();
     $("crewErr").textContent = "";
