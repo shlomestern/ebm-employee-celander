@@ -241,7 +241,23 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 }
 .chip .t{font-family:"Archivo",sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em;
   line-height:1.15; color:var(--pc, var(--sel)); font-variant-numeric:tabular-nums;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  display:flex; align-items:center; gap:4px; min-width:0}
+.chip .t .hh{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+/* How a day is going, without opening it. The colour still says whose job it
+   is; this says where it has got to. One mark, always in the same place, in
+   the same three colours the day sheet already uses for the same three
+   things. A finished job also steps back a shade, so a day that went well
+   reads as quiet rather than as more to do. */
+.chip .st{flex:none; font-size:9px; line-height:1}
+.chip .st.on{color:var(--open)}
+.chip .st.hold{color:var(--mark)}
+.chip .st.fin{color:var(--ink-3); font-size:11px}
+.chip.done{opacity:.55; box-shadow:inset 3px 0 0 var(--ink-3)}
+.chip.done .t{color:var(--ink-2)}
+.legend .dot{font-size:9px; line-height:1}
+.legend .dot.on{color:var(--open)}
+.legend .dot.hold{color:var(--mark)}
+.legend .dot.fin{color:var(--ink-3); font-size:11px}
 .chip .n{font-family:"Archivo",sans-serif; font-size:11px; font-weight:600; letter-spacing:.03em;
   line-height:1.2; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; min-width:0}
@@ -792,6 +808,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         <div class="jobs" id="calList" hidden></div>
         <div class="legend">
           <span><span class="box"></span><span id="legendName"></span></span>
+          <span id="legendMarks"></span>
           <span id="legendHint"></span>
         </div>
         <p class="footnote" id="footnote"></p>
@@ -1430,6 +1447,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "React with {e}": "R\u00e9agir avec {e}",
     "Note or photo": "Note ou photo",
     "Reschedule": "Replanifier", "Move it": "D\u00e9placer",
+    "{n} finished": "{n} termin\u00e9s", "{n} being done now": "{n} en cours",
+    "{n} paused": "{n} en pause",
     "Missing from this list": "Absents de cette liste",
     "Somebody else, by their number": "Quelqu\u2019un d\u2019autre, par son num\u00e9ro",
     "Their number": "Son num\u00e9ro",
@@ -2008,7 +2027,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v101";
+  var APP_VERSION = "v102";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4842,6 +4861,39 @@ dialog#callDlg::backdrop{background:#0b0f12}
      are locked, and an hour is kept free for travelling. */
   var mvJob = null;
 
+  /* The same three states the day sheet puts a pill on, in the one mark a
+     chip has room for. An emergency or a late ask is a different question —
+     what the job is, not how far along it is — and stays off the calendar so
+     the one mark keeps one meaning. */
+  function jobMark(j){
+    if (j.clockOut) return {k:"fin",  g:"\u2713", label: tr("Finished")};
+    if (onBreak(j))  return {k:"hold", g:"\u25cf", label: tr("Paused")};
+    if (j.clockIn)   return {k:"on",   g:"\u25cf", label: tr("On site")};
+    return {k:"", g:"", label:""};
+  }
+  /* Only the states actually on screen are explained. A week with nothing
+     finished in it does not need a line telling you what a tick would mean. */
+  function drawMarkLegend(){
+    var host = $("legendMarks");
+    host.textContent = "";
+    var seen = {};
+    Object.keys(state.jobs).forEach(function(k){
+      var j = state.jobs[k];
+      if (!j || (isOffice() ? j.crewId !== viewCrewId() : j.crewId !== state.me)) return;
+      var mk = jobMark(j);
+      if (mk.k) seen[mk.k] = mk;
+    });
+    ["on","hold","fin"].forEach(function(k){
+      if (!seen[k]) return;
+      var w = document.createElement("span");
+      var d = document.createElement("span"); d.className = "dot " + k;
+      d.textContent = seen[k].g;
+      w.appendChild(d);
+      w.appendChild(document.createTextNode(" " + seen[k].label.toLowerCase()));
+      w.style.marginRight = "14px";
+      host.appendChild(w);
+    });
+  }
   function movable(j){
     if (!j || j.clockOut) return false;            // finished is finished
     /* A day that has gone is the whole point. The first cut of this refused
@@ -5661,6 +5713,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("monthLabel").innerHTML = periodLabel();
     $("legendName").textContent = isOffice()
       ? tr("{name}\u2019s jobs", {name: m.name}) : tr("Your jobs");
+    drawMarkLegend();
     $("legendHint").textContent = can("book")
       ? tr("Click a day to see it or add a job")
       : tr("Click a day to see what you have on");
@@ -5714,13 +5767,31 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var yt = holidayFor(ds);
       if (yt){ cell.className += " off yomtov"; cell.title = yt; }
       var list=jobsOn(ds, viewCrewId());
+      /* Counted off the same marks the chips carry, so what is read out can
+         never drift from what is drawn. Counting "clocked in and not out" as
+         being done now was the first try, and it called a man who had stopped
+         for parts busy. */
+      var marks = list.map(jobMark);
+      function markCount(k){
+        return marks.filter(function(x){ return x.k === k; }).length;
+      }
+      var doneCount = markCount("fin"), goingCount = markCount("on"),
+          heldCount = markCount("hold");
       if (list.length){
         var chips=document.createElement("span"); chips.className="chips";
         var cap = showAll ? list.length : MAX_CHIPS;
         list.slice(0,cap).forEach(function(j){
-          var c=document.createElement("span"); c.className="chip";
+          var mk = jobMark(j);
+          var c=document.createElement("span"); c.className="chip" + (mk.k==="fin" ? " done" : "");
           var t=document.createElement("span"); t.className="t";
-          t.textContent = j.allDay ? "All day" : (hourBare(j.from) + "–" + hourBare(j.to));
+          var hh=document.createElement("span"); hh.className="hh";
+          hh.textContent = j.allDay ? "All day" : (hourBare(j.from) + "–" + hourBare(j.to));
+          t.appendChild(hh);
+          if (mk.g){
+            var sm=document.createElement("span"); sm.className="st "+mk.k;
+            sm.textContent = mk.g; sm.title = mk.label;
+            t.appendChild(sm);
+          }
           var n=document.createElement("span"); n.className="n";
           n.textContent = j.projectId;
           c.appendChild(t); c.appendChild(n); chips.appendChild(c);
@@ -5742,7 +5813,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
         cell.appendChild(fh);
       }
       cell.setAttribute("aria-label", F_LONG.format(d)+", "+m.name+
-        (yt ? ", "+yt : "")+", "+(list.length ? tr("{n} jobs", {n:list.length}) : (isWeekend(ds) ? tr("day off") : tr("free"))));
+        (yt ? ", "+yt : "")+", "+(list.length ? tr("{n} jobs", {n:list.length}) : (isWeekend(ds) ? tr("day off") : tr("free")))
+        + (goingCount ? ", " + tr("{n} being done now", {n: goingCount}) : "")
+        + (heldCount ? ", " + tr("{n} paused", {n: heldCount}) : "")
+        + (doneCount ? ", " + tr("{n} finished", {n: doneCount}) : ""));
       cell.dataset.d = ds;
       (function(dstr){ cell.addEventListener("click", function(){ openDay(dstr); }); })(ds);
       cal.appendChild(cell);
