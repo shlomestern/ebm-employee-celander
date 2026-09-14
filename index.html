@@ -1445,6 +1445,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Le mat\u00e9riel seulement \u2014 l\u2019application a d\u00e9j\u00e0 vos heures. Rien \u00e0 inscrire\u00a0? Touchez Termin\u00e9.",
     "Done": "Termin\u00e9",
     "Not finished": "Pas termin\u00e9", "Open it again?": "Rouvrir\u00a0?",
+    "Not started": "Pas commenc\u00e9", "Clear the clock?": "Effacer le pointage\u00a0?",
+    "Could not clear the clock.": "Impossible d\u2019effacer le pointage.",
+    "Clock cleared by {who}": "Pointage effac\u00e9 par {who}",
     "Could not open it again.": "Impossible de le rouvrir.",
     "Opened again by {who}": "Rouvert par {who}",
     "{n} finished": "{n} termin\u00e9s", "{n} being done now": "{n} en cours",
@@ -2071,7 +2074,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v105";
+  var APP_VERSION = "v106";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4938,6 +4941,35 @@ dialog#callDlg::backdrop{background:#0b0f12}
       host.appendChild(w);
     });
   }
+  /* Putting the clock back. Two steps, never one: a finished job goes back
+     to on site, and an on-site job goes back to not started. Each is asked
+     twice before it happens, and each leaves everything that is not the
+     clock alone — the booking, the notes, the photos all stay. Only going
+     back to not started clears the parts, because a job nobody did used
+     nothing. */
+  function undoClock(j, opts, what){
+    var fin = what === "finish";
+    var label = fin ? tr("Not finished") : tr("Not started");
+    var ask   = fin ? tr("Open it again?") : tr("Clear the clock?");
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn"; b.textContent = label;
+    b.addEventListener("click", function(){
+      if (b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = ask; return; }
+      b.disabled = true;
+      var patch = fin
+        ? {clockOut: null}
+        : {clockIn: null, clockOut: null, breaks: [], used: [], late: null};
+      patch.reopenedBy = meName();
+      patch.reopenedAt = new Date().toISOString();
+      patchJob(j.id, patch).then(opts.after || function(){})
+        .catch(function(e){
+          b.disabled = false; b.dataset.armed = "0"; b.textContent = label;
+          alert(errText(e, fin ? tr("Could not open it again.")
+                               : tr("Could not clear the clock.")));
+        });
+    });
+    return b;
+  }
   function movable(j){
     if (!j || j.clockOut) return false;            // finished is finished
     /* A day that has gone is the whole point. The first cut of this refused
@@ -5481,7 +5513,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     if (j.reopenedAt && !j.clockOut){
       var rp=document.createElement("div"); rp.className="job-sub";
-      rp.textContent = tr("Opened again by {who}", {who: j.reopenedBy || ""});
+      rp.textContent = j.clockIn
+        ? tr("Opened again by {who}", {who: j.reopenedBy || ""})
+        : tr("Clock cleared by {who}", {who: j.reopenedBy || ""});
       card.appendChild(rp);
     }
     if (j.movedFrom){
@@ -5605,19 +5639,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
        clock in and the parts used are left alone, and the job is open again
        from the moment he arrived. */
     if (j.clockOut && ownsJob(j)){
-      var ro=document.createElement("button"); ro.type="button"; ro.className="btn";
-      ro.textContent=tr("Not finished");
-      ro.addEventListener("click", function(){
-        if (ro.dataset.armed!=="1"){ ro.dataset.armed="1"; ro.textContent=tr("Open it again?"); return; }
-        ro.disabled=true;
-        patchJob(j.id, {clockOut:null, reopenedBy:meName(), reopenedAt:new Date().toISOString()})
-          .then(opts.after||function(){})
-          .catch(function(e){
-            ro.disabled=false; ro.dataset.armed="0"; ro.textContent=tr("Not finished");
-            alert(errText(e,tr("Could not open it again.")));
-          });
-      });
-      acts.appendChild(ro);
+      acts.appendChild(undoClock(j, opts, "finish"));
+    } else if (j.clockIn && ownsJob(j)){
+      /* Somebody clocked in who should not have — a test, a wrong job, the
+         right job on the wrong day. Without this the job wore ON SITE until
+         it was cancelled and booked again, which throws away the booking to
+         fix the clock. */
+      acts.appendChild(undoClock(j, opts, "start"));
     }
     if (movable(j)){
       var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
