@@ -1447,6 +1447,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "React with {e}": "R\u00e9agir avec {e}",
     "Note or photo": "Note ou photo",
     "Reschedule": "Replanifier", "Move it": "D\u00e9placer",
+    "Not finished": "Pas termin\u00e9", "Open it again?": "Rouvrir\u00a0?",
+    "Could not open it again.": "Impossible de le rouvrir.",
+    "Opened again by {who}": "Rouvert par {who}",
     "{n} finished": "{n} termin\u00e9s", "{n} being done now": "{n} en cours",
     "{n} paused": "{n} en pause",
     "Missing from this list": "Absents de cette liste",
@@ -1937,12 +1940,56 @@ dialog#callDlg::backdrop{background:#0b0f12}
       b.setAttribute("aria-pressed", b.dataset.l === state.lang ? "true" : "false");
     });
   }
-  function setLang(l){
+  /* A browser forgets. It is cleared on the way out by a company policy, or
+     the app is installed and the installed copy keeps its own storage apart
+     from the browser it was installed from, or the phone is simply a
+     different phone. Then somebody who set French last week is reading
+     English again, and rightly asks why.
+
+     So the choice is kept twice: on the device, which is instant and works
+     with no signal, and against the person in the database, which survives
+     all of that and reaches whatever they sign in on next. The database copy
+     is written per person and merged, so one person choosing French can
+     never touch anybody else's. */
+  function prefsRef(){
+    // Both ways the app talks to the database, the same as the roster does.
+    if (state.mode==="cloud"  && state.fb) return state.fb.collection("config").doc("prefs");
+    if (state.mode==="shared" && state.db) return state.db.doc("config/prefs");
+    return null;
+  }
+  function rememberLang(){
+    var ref = prefsRef();
+    if (!ref || !state.me) return;
+    var one = {};
+    one[state.me] = {lang: state.lang, at: new Date().toISOString()};
+    ref.set(one, {merge: true}).catch(function(){});
+  }
+  function loadLangFor(id, tries){
+    if (!id) return;
+    var ref = prefsRef();
+    /* Signing in happens before the connection finishes opening, so the first
+       ask lands on nothing. Asking once and giving up left a phone that had
+       forgotten its choice sitting in English with the answer a second away. */
+    if (!ref){
+      tries = (tries || 0) + 1;
+      if (tries <= 20) setTimeout(function(){ loadLangFor(id, tries); }, 400);
+      return;
+    }
+    ref.get().then(function(snap){
+      var d = (snap.exists && snap.data()) || {};
+      var mine = d[id];
+      if (!mine || (mine.lang !== "fr" && mine.lang !== "en")) return;
+      if (mine.lang === state.lang) return;
+      setLang(mine.lang, true);          // true: came from the database
+    }).catch(function(){});
+  }
+  function setLang(l, fromCloud){
     state.lang = l === "fr" ? "fr" : "en";
     try{ localStorage.setItem(LS_LANG, state.lang); }catch(e){}
     buildFormats();
     applyStaticText();
     if (state.opened) render();
+    if (!fromCloud) rememberLang();
   }
   function nbsp(x){ return String(x).replace(/ /g, "\u00a0"); }
 
@@ -2027,7 +2074,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v102";
+  var APP_VERSION = "v104";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5424,6 +5471,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }).join(", ")));
       card.appendChild(uw);
     }
+    if (j.reopenedAt && !j.clockOut){
+      var rp=document.createElement("div"); rp.className="job-sub";
+      rp.textContent = tr("Opened again by {who}", {who: j.reopenedBy || ""});
+      card.appendChild(rp);
+    }
     if (j.movedFrom){
       var mvd=document.createElement("div"); mvd.className="job-sub";
       mvd.textContent = tr("Moved from {d} by {who}",
@@ -5500,7 +5552,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
           pb.addEventListener("click", function(){ openPause(j); });
           acts.appendChild(pb);
         }
-        var bo=document.createElement("button"); bo.type="button"; bo.className="btn"; bo.textContent=tr("Clock out");
+        /* Finishing is the main thing a man opens the app to do, and it was
+           dressed the same as everything beside it. In English you still find
+           it, because "Clock out" is short among long neighbours. In French
+           it is "Pointer le d\u00e9part" in a row of phrases the same length and
+           it disappears — which is how a button that is plainly there gets
+           reported missing. So it carries the weight it should, except while
+           he is on a break, when getting back on the job is the main thing
+           and already wears the green. */
+        var bo=document.createElement("button"); bo.type="button";
+        bo.className = held ? "btn" : "btn btn-primary";
+        bo.textContent=tr("Clock out");
         bo.addEventListener("click", function(){ openUsed(j); });
         acts.appendChild(bo);
 
@@ -5529,6 +5591,26 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }
     }
     if (grantable(j)) acts.appendChild(grantButton(j));
+    /* Clocked out by mistake, or it turned out not to be finished after all.
+       Only the people who could have cancelled it can undo that, and the
+       hours already recorded stay recorded: the clock out is lifted, the
+       clock in and the parts used are left alone, and the job is open again
+       from the moment he arrived. */
+    if (j.clockOut && ownsJob(j)){
+      var ro=document.createElement("button"); ro.type="button"; ro.className="btn";
+      ro.textContent=tr("Not finished");
+      ro.addEventListener("click", function(){
+        if (ro.dataset.armed!=="1"){ ro.dataset.armed="1"; ro.textContent=tr("Open it again?"); return; }
+        ro.disabled=true;
+        patchJob(j.id, {clockOut:null, reopenedBy:meName(), reopenedAt:new Date().toISOString()})
+          .then(opts.after||function(){})
+          .catch(function(e){
+            ro.disabled=false; ro.dataset.armed="0"; ro.textContent=tr("Not finished");
+            alert(errText(e,tr("Could not open it again.")));
+          });
+      });
+      acts.appendChild(ro);
+    }
     if (movable(j)){
       var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
       mv.textContent=tr("Reschedule");
@@ -6942,6 +7024,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     watchCalls();
     subscribeReqs();
     setupPush();
+    loadLangFor(id);
     noteWho().then(loadAlerts);
     // A notification was tapped before anyone had signed in.
     if (pendingTag !== null) setTimeout(function(){ openFromTag(pendingTag); }, 400);
