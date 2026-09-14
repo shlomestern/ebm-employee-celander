@@ -1981,7 +1981,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v99";
+  var APP_VERSION = "v100";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2006,7 +2006,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     db: null, fb: null, unsubs: [], seen: {},
     people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
     officeCode: "", officeName: "Office",
-    rosterReady: false, rosterUnsub: null, opened: false,
+    rosterReady: false, rosterUnsub: null, opened: false, rosterSeen: false,
     chats: null, chatUnsubs: [],
     lang: "en"
   };
@@ -6461,13 +6461,33 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (d && d.officeName) state.officeName = String(d.officeName).trim();
     cacheRoster();
   }
+  /* A roster that comes back missing is a fresh database exactly once, on the
+     very first run. Every other time it is a phone telling itself a lie —
+     a snapshot served out of an empty local cache with no signal behind it —
+     and writing the starting roster on top of a real one destroys every name,
+     code and permission in it at a stroke, for everybody, because the write
+     goes to the shared database.
+
+     That is not a hypothetical. It happened on 12 September 2026 at 21:10 UTC:
+     one phone opened the app and nine seconds later eight people were gone.
+     Four separate things now have to agree that this database really is empty
+     before a single default is written. */
+  function safeToSeedRoster(snap){
+    if (snap && snap.metadata && snap.metadata.fromCache) return false;  // no server behind it
+    if (state.rosterSeen) return false;                       // we have seen a real one
+    var c = lsRead(LS_ROSTER, null);
+    if (c && c.people && c.people.length) return false;       // this phone remembers one
+    for (var k in state.jobs){ if (state.jobs.hasOwnProperty(k)) return false; }  // work exists
+    return true;
+  }
   function subscribeRoster(){
     var ref = rosterRef();
     if (!ref){ rosterSettled(); return; }
     state.rosterUnsub = ref.onSnapshot(function(snap){
       if (snap.exists){
+        state.rosterSeen = true;
         applyRoster(snap.data());
-      } else {
+      } else if (safeToSeedRoster(snap)){
         // First run on a fresh database: write the starting roster.
         ref.set({people: DEFAULT_PEOPLE, officeCode: masterOfficeCode(), officeName: state.officeName}).catch(function(){});
       }
@@ -6486,12 +6506,21 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!state.opened) tryAutoOpen();
   }
   function saveRoster(people, officeCode, officeName){
+    /* Whatever is being replaced is kept first. One wrong save used to be the
+       end of a roster; now the one before it is always a document away. */
+    var was = {people: state.people.slice(), officeCode: state.officeCode,
+               officeName: state.officeName, at: new Date().toISOString(), by: meName()};
     state.people = people;
     state.officeCode = officeCode;
     state.officeName = officeName || "Office";
     cacheRoster();
     var ref = rosterRef();
-    if (ref) return ref.set({people: people, officeCode: officeCode, officeName: state.officeName});
+    if (ref){
+      if (was.people.length && state.fb){
+        state.fb.collection("config").doc("crew-prev").set(was).catch(function(){});
+      }
+      return ref.set({people: people, officeCode: officeCode, officeName: state.officeName});
+    }
     render();
     return Promise.resolve();
   }
