@@ -1214,6 +1214,23 @@ dialog#callDlg::backdrop{background:#0b0f12}
   </form>
 </dialog>
 
+<!-- The phone says he is not where the job is. He is told, and then it is
+     his word that decides it — a man in a basement with no signal must never
+     be locked out of his own job by a map. -->
+<dialog id="awayDlg">
+  <form method="dialog" class="dlg" id="awayForm">
+    <div class="eyebrow" data-t>Where you are</div>
+    <h3 data-t>This does not look like the address</h3>
+    <p class="sub" id="awayWhat"></p>
+    <p class="hint" data-t>If the phone has it wrong, carry on — the office will see what it said.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="awayGo" data-t>Clock in anyway</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="awayStop" data-t>Not yet</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="stkDlg">
   <form method="dialog" class="dlg" id="stkForm">
     <div class="eyebrow" data-t>Stock</div>
@@ -2182,6 +2199,34 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "מערכת ההתראות לא הצליחה להגיע למכשיר הזה: {why}",
     "Could not ask the notifier: {why}":
       "לא התאפשר לפנות למערכת ההתראות: {why}",
+    "Where you are":
+      "המיקום שלכם",
+    "This does not look like the address":
+      "זה לא נראה כמו הכתובת",
+    "If the phone has it wrong, carry on — the office will see what it said.":
+      "אם הטלפון טועה, המשיכו — המשרד יראה מה הוא אמר.",
+    "Clock in anyway":
+      "בכל זאת להחתים כניסה",
+    "Not yet":
+      "עדיין לא",
+    "{where} says you are about {d} away. Your phone may simply be wrong indoors.":
+      "{where} — לפי הטלפון אתם כ-{d} משם. ייתכן שהטלפון פשוט טועה בתוך מבנה.",
+    "One moment…":
+      "רגע אחד…",
+    "{km} km":
+      "{km} ק״מ",
+    "{m} m":
+      "{m} מ׳",
+    "Clocked in at the address":
+      "החתים כניסה בכתובת",
+    "Clocked in {d} from the address":
+      "החתים כניסה מ-{d} מהכתובת",
+    "Clocked in {d} from the address — said so anyway":
+      "החתים כניסה מ-{d} מהכתובת — ואישר בכל זאת",
+    "Location not shared":
+      "לא שותף מיקום",
+    "Arrived — phone said {d} from the address":
+      "הגיע — הטלפון אמר {d} מהכתובת",
     "Somewhere else — type it in":
       "מקום אחר — הקלידו אותו",
     "Whose property":
@@ -3026,6 +3071,24 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Le service de notifications n\u2019a pas pu joindre cet appareil\u00a0: {why}",
     "Could not ask the notifier: {why}":
       "Impossible de s\u2019adresser au service de notifications\u00a0: {why}",
+    "Where you are": "O\u00f9 vous \u00eates",
+    "This does not look like the address": "\u00c7a ne ressemble pas \u00e0 l\u2019adresse",
+    "If the phone has it wrong, carry on \u2014 the office will see what it said.":
+      "Si le t\u00e9l\u00e9phone se trompe, continuez \u2014 le bureau verra ce qu\u2019il a dit.",
+    "Clock in anyway": "Pointer quand m\u00eame",
+    "Not yet": "Pas encore",
+    "{where} says you are about {d} away. Your phone may simply be wrong indoors.":
+      "{where}\u00a0: le t\u00e9l\u00e9phone vous place \u00e0 environ {d}. Il se trompe peut-\u00eatre, \u00e0 l\u2019int\u00e9rieur.",
+    "One moment\u2026": "Un instant\u2026",
+    "{km} km": "{km}\u00a0km",
+    "{m} m": "{m}\u00a0m",
+    "Clocked in at the address": "Point\u00e9 \u00e0 l\u2019adresse",
+    "Clocked in {d} from the address": "Point\u00e9 \u00e0 {d} de l\u2019adresse",
+    "Clocked in {d} from the address \u2014 said so anyway":
+      "Point\u00e9 \u00e0 {d} de l\u2019adresse \u2014 confirm\u00e9 quand m\u00eame",
+    "Location not shared": "Position non partag\u00e9e",
+    "Arrived \u2014 phone said {d} from the address":
+      "Arriv\u00e9 \u2014 le t\u00e9l\u00e9phone indiquait {d} de l\u2019adresse",
     "Somewhere else \u2014 type it in": "Ailleurs \u2014 \u00e0 \u00e9crire",
     "Whose property": "Propri\u00e9t\u00e9 de qui",
     "Address": "Adresse",
@@ -3492,7 +3555,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v117";
+  var APP_VERSION = "v118";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -7371,6 +7434,29 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var away = pausedMs(j, Date.parse(j.clockOut) || Date.now());
       if (away >= 60000) cs.textContent += " \u00b7 " + tr("paused {d}", {d: awayFor(away)});
       card.appendChild(cs);
+      /* Where the phone said he was standing when he started. Said only when
+         there is something to say: a building that has not learned its own
+         spot yet cannot vouch for anybody, and silence is better than a line
+         that means nothing. */
+      var at = j.inAt;
+      if (at && typeof at.away === "number"){
+        var gp = document.createElement("div");
+        if (at.away > TOO_FAR){
+          gp.className = "job-hold";
+          gp.textContent = at.saidAnyway
+            ? tr("Clocked in {d} from the address \u2014 said so anyway",
+                 {d: farText(at.away)})
+            : tr("Clocked in {d} from the address", {d: farText(at.away)});
+        } else {
+          gp.className = "job-sub";
+          gp.textContent = tr("Clocked in at the address");
+        }
+        card.appendChild(gp);
+      } else if (at && at.no === "denied"){
+        var gd = document.createElement("div"); gd.className = "job-sub";
+        gd.textContent = tr("Location not shared");
+        card.appendChild(gd);
+      }
     }
     var held = onBreak(j);
     if (held && !j.clockOut){
@@ -7385,8 +7471,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (!j.clockIn){
         var bi=document.createElement("button"); bi.type="button"; bi.className="btn btn-go"; bi.textContent=tr("Clock in");
         bi.addEventListener("click", function(){
-          bi.disabled=true;
-          patchJob(j.id, {clockIn:new Date().toISOString()}).catch(function(e){ bi.disabled=false; alert(errText(e,tr("Could not clock in."))); });
+          bi.disabled=true; bi.textContent=tr("One moment\u2026");
+          startClock(j).catch(function(e){
+            bi.disabled=false; bi.textContent=tr("Clock in");
+            if (e !== "__stopped__") alert(errText(e, tr("Could not clock in.")));
+          });
         });
         acts.appendChild(bi);
       } else if (!j.clockOut){
@@ -8664,7 +8753,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
                 {d: j.movedFrom ? F_MED.format(fromIso(j.movedFrom)) : "?"}), j);
       ev(j.reopenedAt, j.reopenedBy, "change",
          j.clockIn ? tr("Opened again") : tr("Clock cleared"), j);
-      ev(j.clockIn, man, "clock", tr("Arrived"), j);
+      ev(j.clockIn, man, "clock",
+         (j.inAt && typeof j.inAt.away === "number" && j.inAt.away > TOO_FAR)
+           ? tr("Arrived \u2014 phone said {d} from the address",
+                {d: farText(j.inAt.away)})
+           : tr("Arrived"), j);
       (j.breaks || []).forEach(function(br){
         ev(br.from, man, "clock", tr("Paused \u2014 {why}", {why: whyLine(br)}), j);
         ev(br.to,   man, "clock", tr("Back on the job"), j);
@@ -9230,6 +9323,165 @@ dialog#callDlg::backdrop{background:#0b0f12}
     // The page has to be able to reach the storage layer before it can check a
     // code against the live roster, so get that going even while locked.
     connect();
+  }
+
+  /* ---------- where he was standing ----------
+
+     Nobody ever geocoded these addresses and nothing here is going to start
+     asking a map service for them — that is a bill, a key to look after, and
+     one more thing to be down on a Tuesday morning.
+
+     So a building learns where it is from the phones that turn up at it. Each
+     clock-in leaves its fix, and the building's spot is the middle of them.
+     The middle and not the average, because one man clocking in from his own
+     kitchen should not drag the whole building three streets east.
+
+     Until a building has a few fixes nobody is judged by it. A phone that
+     cannot see the sky is not evidence of anything either, so a fix that is
+     itself vague is kept out of the reckoning. */
+  var FIX_KEEP   = 9;     // fixes remembered per building
+  var FIX_ENOUGH = 3;     // before the spot is worth measuring anyone against
+  var FIX_VAGUE  = 150;   // metres of slop past which a fix says nothing
+  var TOO_FAR    = 250;   // metres from the building before it is worth saying
+
+  function placesRef(){
+    return state.fb ? state.fb.collection("config").doc("places") : null;
+  }
+  function getFix(){
+    return new Promise(function(ok){
+      if (!navigator.geolocation) return ok({no: "unsupported"});
+      /* Six seconds and no longer. A fix is worth having, but not worth a man
+         standing in a doorway watching a button. Usually it answers in one;
+         a recent one is taken as it stands rather than asked for again. */
+      var done = false;
+      var give = setTimeout(function(){
+        if (!done){ done = true; ok({no: "timeout"}); }
+      }, 6500);
+      navigator.geolocation.getCurrentPosition(function(pos){
+        if (done) return;
+        done = true; clearTimeout(give);
+        ok({lat: pos.coords.latitude, lng: pos.coords.longitude,
+            acc: Math.round(pos.coords.accuracy || 0)});
+      }, function(err){
+        if (done) return;
+        done = true; clearTimeout(give);
+        ok({no: (err && err.code === 1) ? "denied" : "failed"});
+      }, {enableHighAccuracy: true, timeout: 6000, maximumAge: 120000});
+    });
+  }
+  function distM(a, b){
+    var R = 6371000, t = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * t, dLng = (b.lng - a.lng) * t;
+    var h = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(a.lat*t) * Math.cos(b.lat*t) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(h))));
+  }
+  function midOf(list, k){
+    var v = list.map(function(x){ return x[k]; })
+                .sort(function(a, b){ return a - b; });
+    var n = v.length;
+    if (!n) return null;
+    return n % 2 ? v[(n - 1) / 2] : (v[n/2 - 1] + v[n/2]) / 2;
+  }
+  function spotOf(all, bid){
+    var l = (all[bid] || []).filter(function(f){
+      return typeof f.lat === "number" && f.acc <= FIX_VAGUE;
+    });
+    if (l.length < FIX_ENOUGH) return null;
+    return {lat: midOf(l, "lat"), lng: midOf(l, "lng"), n: l.length};
+  }
+  function readPlaces(){
+    var ref = placesRef();
+    if (!ref) return Promise.resolve({});
+    return ref.get().then(function(snap){
+      return (snap.exists && snap.data().places) || {};
+    }).catch(function(){ return {}; });
+  }
+  /* Only fixes taken where the man was supposed to be. One that has already
+     been called out as somewhere else must not then teach the building that
+     somewhere else is where it is. */
+  function learnFix(bid, fix, all){
+    var ref = placesRef();
+    if (!ref || !bid) return Promise.resolve();
+    var list = (all[bid] || []).slice();
+    list.push({lat: fix.lat, lng: fix.lng, acc: fix.acc,
+               at: new Date().toISOString()});
+    while (list.length > FIX_KEEP) list.shift();
+    var one = {}; one[bid] = list;
+    return ref.set({places: one}, {merge: true}).catch(function(){});
+  }
+  function farText(m){
+    return m >= 1000 ? tr("{km} km", {km: (m / 1000).toFixed(1)})
+                     : tr("{m} m", {m: m});
+  }
+
+  /* Clocking in, with the phone asked where it is on the way past.
+
+     The fix is never allowed to stop the job. It is slow, it is refused, it
+     is wrong in a stairwell — none of which is the man's fault, and all of
+     which used to be somebody standing outside a building unable to start
+     work. So: it is asked for, it is written down, and where it plainly
+     disagrees with the address he is told once and decides for himself. */
+  var awayThen = null;
+  function whereLine(j){
+    return j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "");
+  }
+  function askAway(j, metres){
+    return new Promise(function(ok){
+      $("awayWhat").textContent = tr(
+        "{where} says you are about {d} away. Your phone may simply be wrong indoors.",
+        {where: whereLine(j), d: farText(metres)});
+      awayThen = ok;
+      $("awayDlg").showModal();
+    });
+  }
+  function settleAway(yes){
+    $("awayDlg").close();
+    var go = awayThen; awayThen = null;
+    if (go) go(yes);
+  }
+  $("awayGo").addEventListener("click", function(){ settleAway(true); });
+  $("awayStop").addEventListener("click", function(){ settleAway(false); });
+  // Closed with escape or the backdrop: nothing was agreed to.
+  $("awayDlg").addEventListener("close", function(){ settleAway(false); });
+
+  function startClock(j){
+    var patch = {clockIn: new Date().toISOString()};
+    return getFix().then(function(fix){
+      // No fix at all is written down as plainly as a fix is. "Nothing here"
+      // and "he would not say" are not the same thing to whoever reads it.
+      if (fix.no){ patch.inAt = {no: fix.no}; return patchJob(j.id, patch); }
+      patch.inAt = {lat: fix.lat, lng: fix.lng, acc: fix.acc};
+      if (fix.acc > FIX_VAGUE){
+        // Too vague to place him, and too vague to teach the building anything.
+        return patchJob(j.id, patch);
+      }
+      return readPlaces().then(function(all){
+        var spot = spotOf(all, j.buildingId);
+        if (!spot){
+          // Nothing known about this address yet. He is the one teaching it.
+          return patchJob(j.id, patch).then(function(){
+            return learnFix(j.buildingId, fix, all);
+          });
+        }
+        var d = distM(fix, spot);
+        patch.inAt.away = d;
+        patch.inAt.n = spot.n;
+        if (d <= TOO_FAR + fix.acc){
+          return patchJob(j.id, patch).then(function(){
+            return learnFix(j.buildingId, fix, all);
+          });
+        }
+        // Somewhere else, on the phone's word. His word settles it — and
+        // whatever he says, this fix teaches the building nothing.
+        return askAway(j, d).then(function(yes){
+          if (!yes) return Promise.reject("__stopped__");
+          patch.inAt.saidAnyway = true;
+          return patchJob(j.id, patch);
+        });
+      });
+    });
   }
 
   /* ---------- phone notifications ---------- */

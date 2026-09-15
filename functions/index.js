@@ -543,12 +543,20 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     // job is suddenly on today — it is said outright.
     const notItsDay = endedNow && after.movedWhy === "finished" && after.movedFrom
       ? ` · was booked for ${after.movedFrom}` : "";
+    /* Where the phone put him when he started. Only when it disagrees with
+       the address: "he was where he was supposed to be" is not news, and a
+       notification that says it every time is one nobody reads. */
+    const at = after.inAt || {};
+    const off = typeof at.away === "number" && at.away > 250
+      ? ` · ${at.away >= 1000 ? `${(at.away / 1000).toFixed(1)} km` : `${at.away} m`}` +
+        " from the address"
+      : "";
     const title = endedNow ? `${who} finished` : `${who} clocked in`;
     const body = endedNow
       ? `${where} · left ${AT(after.clockOut)}` +
         ` · ${used ? `used ${used}` : "nothing used"}` + notItsDay
       : `${where} · started ${AT(after.clockIn)}` +
-        ` · booked ${HOURS(after.from)}`;
+        ` · booked ${HOURS(after.from)}` + off;
 
     const sent = await push(db, aud.map, theirs, title, body,
       `${event.params.jobId}-${endedNow ? "out" : "in"}`);
