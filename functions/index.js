@@ -25,6 +25,18 @@ const HOURS = (h) => {
   const hh = h % 12 === 0 ? 12 : h % 12;
   return `${hh}:00 ${ap}`;
 };
+/** A real moment, to the minute, where the crew are. HOURS() is for the
+ *  hours a job is booked for, which are whole hours by construction; this is
+ *  for the times things actually happened, which are not. Printing a booked
+ *  hour and calling it the arrival is how a man who turned up at 1:03 was
+ *  reported as having started at 2:00. */
+const CLOCK_IN_ZONE = new Intl.DateTimeFormat("en-US", {
+  timeZone: ZONE, hour: "numeric", minute: "2-digit", hour12: true,
+});
+const AT = (iso) => {
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? "" : CLOCK_IN_ZONE.format(new Date(t));
+};
 
 /** Everyone registered in config/tokens, split into crew and office. */
 async function audience(db) {
@@ -514,8 +526,10 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
       .join(", ");
     const title = endedNow ? `${who} finished` : `${who} clocked in`;
     const body = endedNow
-      ? `${where} · ${used ? `used ${used}` : "nothing used"}`
-      : `${where} · started ${HOURS(after.from)}`;
+      ? `${where} · left ${AT(after.clockOut)}` +
+        ` · ${used ? `used ${used}` : "nothing used"}`
+      : `${where} · started ${AT(after.clockIn)}` +
+        ` · booked ${HOURS(after.from)}`;
 
     const sent = await push(db, aud.map, theirs, title, body,
       `${event.params.jobId}-${endedNow ? "out" : "in"}`);
