@@ -438,6 +438,17 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 #shotDlg{border:none; background:transparent; padding:0; max-width:none}
 .filebtn{position:relative; overflow:hidden; align-self:flex-start}
 .filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer; font-size:0}
+.logday{font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  margin:14px 0 5px; padding-top:9px; border-top:1px solid var(--line)}
+.logday:first-child{margin-top:6px; padding-top:0; border-top:0}
+.logrow{display:flex; gap:9px; align-items:baseline; padding:3px 0; font-size:13px}
+.logrow .lt{flex:none; width:58px; color:var(--ink-3); font-size:11.5px;
+  font-variant-numeric:tabular-nums}
+.logrow .lw{min-width:0}
+.logrow .lw b{font-weight:600; color:var(--ink)}
+.logrow .lw .lwh{color:var(--ink-3)}
+#logRows{max-height:56vh; overflow-y:auto; margin-top:4px}
 .usedrow{display:grid; grid-template-columns:minmax(0,1fr) 78px 34px; gap:7px; margin-bottom:7px}
 .usedrow input{margin:0}
 .usedrow .rm{border:1px solid var(--line); background:var(--surface-2); border-radius:8px;
@@ -877,6 +888,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55; cursor:pointer"></p>
 
     <div class="actions">
+      <button type="button" class="btn" id="meLogBtn" hidden data-t>What happened</button>
       <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
       <button type="button" class="btn" id="meCrewBtn" hidden data-t>Crew &amp; codes</button>
       <span class="spacer"></span>
@@ -1074,6 +1086,26 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <button type="button" class="btn" id="mvCancel" data-t>Back</button>
       <span class="spacer"></span>
       <button type="submit" class="btn btn-primary" id="mvSave" data-t>Move it</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="logDlg">
+  <form method="dialog" class="dlg" id="logForm">
+    <div class="eyebrow" data-t>Office only</div>
+    <h3 data-t>What has been happening</h3>
+    <p class="sub" data-t>Newest first. Who booked what, who changed it, who arrived and left, and what was written on a job.</p>
+    <div class="seg" id="logSeg" role="group">
+      <button type="button" data-f="all" data-t>Everything</button>
+      <button type="button" data-f="book" data-t>Bookings</button>
+      <button type="button" data-f="clock" data-t>Clock</button>
+      <button type="button" data-f="change" data-t>Changes</button>
+    </div>
+    <div id="logRows"></div>
+    <p class="sub" id="logNone" hidden data-t>Nothing to show.</p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="logClose" data-t>Close</button>
     </div>
   </form>
 </dialog>
@@ -1457,6 +1489,29 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "React with {e}": "R\u00e9agir avec {e}",
     "Note or photo": "Note ou photo",
     "Reschedule": "Replanifier", "Move it": "D\u00e9placer",
+    "What happened": "Ce qui s\u2019est pass\u00e9",
+    "What has been happening": "Ce qui s\u2019est pass\u00e9",
+    "Newest first. Who booked what, who changed it, who arrived and left, and what was written on a job.":
+      "Le plus r\u00e9cent en premier. Qui a r\u00e9serv\u00e9 quoi, qui l\u2019a chang\u00e9, qui est arriv\u00e9 et reparti, et ce qui a \u00e9t\u00e9 \u00e9crit sur un travail.",
+    "Everything": "Tout", "Bookings": "R\u00e9servations", "Clock": "Pointage",
+    "Changes": "Changements", "Nothing to show.": "Rien \u00e0 montrer.",
+    "Somebody": "Quelqu\u2019un", "The office": "Le bureau",
+    "Booked for {man}": "R\u00e9serv\u00e9 pour {man}",
+    "Booked for {man}, put in by {who}": "R\u00e9serv\u00e9 pour {man}, saisi par {who}",
+    "Emergency let in": "Urgence accept\u00e9e",
+    "Moved here from {d}": "D\u00e9plac\u00e9 ici du {d}",
+    "Opened again": "Rouvert", "Clock cleared": "Pointage effac\u00e9",
+    "Arrived": "Arriv\u00e9", "Left": "Reparti",
+    "Paused \u2014 {why}": "En pause \u2014 {why}",
+    "Note: {t}": "Note\u00a0: {t}",
+    "Edited": "Modifi\u00e9", "Edited \u2014 {what}": "Modifi\u00e9 \u2014 {what}",
+    "the hours": "les heures", "the address": "l\u2019adresse", "the unit": "le logement",
+    "what needs doing": "le travail \u00e0 faire",
+    "whose booking it is": "\u00e0 qui appartient la r\u00e9servation",
+    "Cancelled \u2014 {what}": "Annul\u00e9 \u2014 {what}",
+    "Crew changed \u2014 {what}": "\u00c9quipe chang\u00e9e \u2014 {what}",
+    "added {who}": "ajout\u00e9 {who}", "removed {who}": "retir\u00e9 {who}",
+    "Crew and codes saved": "\u00c9quipe et codes enregistr\u00e9s",
     "Anything used?": "Du mat\u00e9riel\u00a0?",
     "Parts only \u2014 the app already has your hours. Nothing to put down? Tap Done.":
       "Le mat\u00e9riel seulement \u2014 l\u2019application a d\u00e9j\u00e0 vos heures. Rien \u00e0 inscrire\u00a0? Touchez Termin\u00e9.",
@@ -2091,7 +2146,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v108";
+  var APP_VERSION = "v109";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5683,6 +5738,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       del.addEventListener("click", function(){
         if (del.dataset.armed!=="1"){ del.dataset.armed="1"; del.textContent=tr("Sure?"); return; }
         del.disabled=true;
+        noteDown("cancel", tr("Cancelled \u2014 {what}",
+          {what: rangeShort(j) + " \u00b7 " + j.buildingName +
+                 (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "") +
+                 " \u00b7 " + memberOr(j.crewId).name}), j.id);
         removeJob(j.id).then(opts.after||function(){}).catch(function(e){
           del.disabled=false; del.dataset.armed="0"; del.textContent=tr("Cancel job");
           alert(errText(e,tr("Could not cancel.")));
@@ -6312,6 +6371,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
     if (editing){
       $("formSave").disabled=true;
+      var was = editing, changed = [];
+      if (was.from !== from || was.to !== to || !!was.allDay !== allDay)
+        changed.push(tr("the hours"));
+      if (was.projectId !== p.id || was.buildingId !== b.id) changed.push(tr("the address"));
+      if ((was.unit||"") !== $("fUnit").value.trim()) changed.push(tr("the unit"));
+      if ((was.job||"") !== $("fJob").value.trim()) changed.push(tr("what needs doing"));
+      if ((was.createdById||"") !== pickedOwner()) changed.push(tr("whose booking it is"));
+      noteDown("edit", changed.length
+        ? tr("Edited \u2014 {what}", {what: changed.join(", ")})
+        : tr("Edited"), editing.id);
       patchJob(editing.id, {
         from:from, to:to, allDay:allDay,
         projectId:p.id, projectName:p.name,
@@ -6403,6 +6472,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("meCrewBtn").hidden = state.me !== "office";
     // Hours worked and the workbook behind it are the office code's alone.
     // Every admin with "manage" was getting the whole crew's hours.
+    $("meLogBtn").hidden = state.me !== "office";
     $("meRepBtn").hidden = state.me !== "office";
     $("meVersion").textContent = tr("EBM Crew Calendar") + " " + APP_VERSION;
     $("meDlg").showModal();
@@ -6674,6 +6744,151 @@ dialog#callDlg::backdrop{background:#0b0f12}
     });
   });
 
+  /* ---------- what has been happening ----------
+     Most of it needs no recording. A job already remembers who booked it and
+     when, who arrived, who left, who moved it, who paused and why, and every
+     note written on it. Reading that back is a true account by construction:
+     it cannot drift from what the jobs actually say, and it covers everything
+     booked before any of this was written.
+
+     Two things leave no trace in the job itself — an edit, which overwrites
+     what it changed, and a cancellation, which takes the job away — and one
+     happens outside jobs altogether: a change to the crew and their codes.
+     Those three are written down as they happen, into one document a month,
+     appended rather than rewritten so two phones can never lose each other's
+     entries. */
+  function logDocId(when){
+    var d = when ? new Date(when) : new Date();
+    var m = d.getMonth() + 1;
+    return "log-" + d.getFullYear() + "-" + (m < 10 ? "0" : "") + m;
+  }
+  function logRef(when){
+    var id = logDocId(when);
+    if (state.mode === "cloud"  && state.fb) return state.fb.collection("config").doc(id);
+    if (state.mode === "shared" && state.db) return state.db.doc("config/" + id);
+    return null;
+  }
+  function noteDown(kind, text, jobId){
+    var e = {at: new Date().toISOString(), by: meName(), byId: state.me,
+             kind: kind, text: text || "", jobId: jobId || ""};
+    state.logSoon = (state.logSoon || []).concat([e]);   // shown before it lands
+    var ref = logRef();
+    if (ref) ref.set({list: FV().arrayUnion(e)}, {merge: true}).catch(function(){});
+  }
+  function readWritten(){
+    var refs = [logRef(), logRef(addDays(new Date(), -32))].filter(Boolean);
+    if (!refs.length) return Promise.resolve(state.logSoon || []);
+    return Promise.all(refs.map(function(r){
+      return r.get().then(function(s){
+        var d = (s.exists && s.data()) || {};
+        return Array.isArray(d.list) ? d.list : [];
+      }).catch(function(){ return []; });
+    })).then(function(sets){
+      var all = [];
+      sets.forEach(function(x){ all = all.concat(x); });
+      (state.logSoon || []).forEach(function(e){
+        if (!all.some(function(x){ return x.at === e.at && x.kind === e.kind; })) all.push(e);
+      });
+      return all;
+    });
+  }
+
+  /* Everything the jobs themselves can tell us, in the app's own words. */
+  function derivedLog(){
+    var out = [];
+    function where(j){
+      return j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "");
+    }
+    function ev(at, who, kind, text, j){
+      if (!at) return;
+      out.push({at: at, by: who || "", kind: kind, text: text,
+                where: j ? where(j) : "", jobId: j ? j.id : ""});
+    }
+    Object.keys(state.jobs).forEach(function(k){
+      var j = state.jobs[k]; if (!j) return;
+      var man = memberOr(j.crewId).name;
+      ev(j.createdAt, j.createdBy || tr("The office"), "book",
+         j.bookedBy ? tr("Booked for {man}, put in by {who}", {man: man, who: j.bookedBy})
+                    : tr("Booked for {man}", {man: man}), j);
+      if (j.approvedBy) ev(j.createdAt, j.approvedBy, "book", tr("Emergency let in"), j);
+      ev(j.movedAt, j.movedBy, "change",
+         tr("Moved here from {d}", {d: j.movedFrom ? F_MED.format(fromIso(j.movedFrom)) : "?"}), j);
+      ev(j.reopenedAt, j.reopenedBy, "change",
+         j.clockIn ? tr("Opened again") : tr("Clock cleared"), j);
+      ev(j.clockIn, man, "clock", tr("Arrived"), j);
+      (j.breaks || []).forEach(function(br){
+        ev(br.from, man, "clock", tr("Paused \u2014 {why}", {why: whyLine(br)}), j);
+        ev(br.to,   man, "clock", tr("Back on the job"), j);
+      });
+      ev(j.clockOut, man, "clock", tr("Left"), j);
+      (j.notes || []).forEach(function(n){
+        ev(n.at, n.by, "change", tr("Note: {t}", {t: n.text}), j);
+      });
+    });
+    return out;
+  }
+
+  var logFilter = "all";
+  function drawLog(rows){
+    var host = $("logRows"); host.innerHTML = "";
+    var list = rows.filter(function(r){ return logFilter === "all" || r.kind === logFilter; });
+    list.sort(function(a, b){ return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+    $("logNone").hidden = !!list.length;
+    var day = "";
+    list.slice(0, 400).forEach(function(r){
+      var d = new Date(r.at), ds = iso(d);
+      if (ds !== day){
+        day = ds;
+        var h = document.createElement("div"); h.className = "logday";
+        h.textContent = ds === todayIso ? tr("Today") : F_LONG.format(d);
+        host.appendChild(h);
+      }
+      var row = document.createElement("div"); row.className = "logrow";
+      var t = document.createElement("span"); t.className = "lt";
+      t.textContent = F_TIME.format(d);
+      var w = document.createElement("span"); w.className = "lw";
+      var who = document.createElement("b"); who.textContent = r.by || tr("Somebody");
+      w.appendChild(who);
+      w.appendChild(document.createTextNode(" \u2014 " + r.text));
+      if (r.where){
+        var wh = document.createElement("span"); wh.className = "lwh";
+        wh.textContent = " \u00b7 " + r.where;
+        w.appendChild(wh);
+      }
+      row.appendChild(t); row.appendChild(w);
+      host.appendChild(row);
+    });
+  }
+  function openLog(){
+    if (state.me !== "office") return;
+    $("logRows").innerHTML = "";
+    $("logNone").hidden = true;
+    drawLogSeg();
+    $("logDlg").showModal();
+    readWritten().then(function(written){
+      var rows = derivedLog().concat(written.map(function(e){
+        var j = state.jobs[e.jobId];
+        return {at: e.at, by: e.by, kind: e.kind === "crew" ? "change" : e.kind,
+                text: e.text, jobId: e.jobId,
+                where: j ? (j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "")) : ""};
+      }));
+      state.logRows = rows;
+      drawLog(rows);
+    });
+  }
+  function drawLogSeg(){
+    Array.prototype.forEach.call($("logSeg").children, function(b){
+      b.setAttribute("aria-pressed", b.dataset.f === logFilter ? "true" : "false");
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#logSeg button"), function(b){
+    b.addEventListener("click", function(){
+      logFilter = b.dataset.f; drawLogSeg(); drawLog(state.logRows || []);
+    });
+  });
+  $("logClose").addEventListener("click", function(){ $("logDlg").close(); });
+  $("meLogBtn").addEventListener("click", function(){ $("meDlg").close(); openLog(); });
+
   /* ---------- the roster: who exists, and their codes ---------- */
   function rosterRef(){
     if (state.mode==="cloud" && state.fb) return state.fb.collection("config").doc("crew");
@@ -6744,6 +6959,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!state.opened) tryAutoOpen();
   }
   function saveRoster(people, officeCode, officeName){
+    var before = state.people.map(function(x){ return x.name; });
+    var after  = people.map(function(x){ return x.name; });
+    var gone   = before.filter(function(n){ return after.indexOf(n) < 0; });
+    var came   = after.filter(function(n){ return before.indexOf(n) < 0; });
+    noteDown("crew", came.length || gone.length
+      ? tr("Crew changed \u2014 {what}", {what:
+          (came.length ? tr("added {who}", {who: came.join(", ")}) : "") +
+          (came.length && gone.length ? " \u00b7 " : "") +
+          (gone.length ? tr("removed {who}", {who: gone.join(", ")}) : "")})
+      : tr("Crew and codes saved"), "");
     /* Whatever is being replaced is kept first. One wrong save used to be the
        end of a roster; now the one before it is always a document away. */
     var was = {people: state.people.slice(), officeCode: state.officeCode,
