@@ -3555,7 +3555,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v118";
+  var APP_VERSION = "v119";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -9327,20 +9327,21 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   /* ---------- where he was standing ----------
 
-     Nobody ever geocoded these addresses and nothing here is going to start
-     asking a map service for them — that is a bill, a key to look after, and
-     one more thing to be down on a Tuesday morning.
+     Every one of our addresses carries its own coordinates, looked up once
+     and kept in projects.js beside the street name. The app knows where
+     2350 Mariette is before anybody has ever been there.
 
-     So a building learns where it is from the phones that turn up at it. Each
-     clock-in leaves its fix, and the building's spot is the middle of them.
-     The middle and not the average, because one man clocking in from his own
-     kitchen should not drag the whole building three streets east.
+     A place typed in by hand under "somewhere else" is the one exception —
+     nobody can know that in advance — so those learn from the phones that
+     turn up at them: each clock-in leaves its fix and the spot is the middle
+     of them. The middle and not the average, because one man clocking in
+     from his own kitchen should not drag the whole address three streets
+     east. Until such a place has a few fixes, nobody is judged by it.
 
-     Until a building has a few fixes nobody is judged by it. A phone that
-     cannot see the sky is not evidence of anything either, so a fix that is
-     itself vague is kept out of the reckoning. */
-  var FIX_KEEP   = 9;     // fixes remembered per building
-  var FIX_ENOUGH = 3;     // before the spot is worth measuring anyone against
+     A phone that cannot see the sky is not evidence of anything either, so
+     a fix that is itself vague is kept out of the reckoning. */
+  var FIX_KEEP   = 9;     // fixes remembered per typed-in address
+  var FIX_ENOUGH = 3;     // before that spot is worth measuring anyone against
   var FIX_VAGUE  = 150;   // metres of slop past which a fix says nothing
   var TOO_FAR    = 250;   // metres from the building before it is worth saying
 
@@ -9384,8 +9385,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!n) return null;
     return n % 2 ? v[(n - 1) / 2] : (v[n/2 - 1] + v[n/2]) / 2;
   }
-  function spotOf(all, bid){
-    var l = (all[bid] || []).filter(function(f){
+  /* One of ours: the answer is on the building itself. */
+  function knownSpot(j){
+    var b = buildingOf(j.projectId, j.buildingId);
+    return (b && typeof b.lat === "number") ? {lat: b.lat, lng: b.lng, known: true} : null;
+  }
+  function spotOf(all, j){
+    var known = knownSpot(j);
+    if (known) return known;
+    var l = (all[j.buildingId] || []).filter(function(f){
       return typeof f.lat === "number" && f.acc <= FIX_VAGUE;
     });
     if (l.length < FIX_ENOUGH) return null;
@@ -9457,8 +9465,21 @@ dialog#callDlg::backdrop{background:#0b0f12}
         // Too vague to place him, and too vague to teach the building anything.
         return patchJob(j.id, patch);
       }
+      var here = knownSpot(j);
+      if (here){
+        var dk = distM(fix, here);
+        patch.inAt.away = dk;
+        if (dk <= TOO_FAR + fix.acc) return patchJob(j.id, patch);
+        return askAway(j, dk).then(function(yes){
+          if (!yes) return Promise.reject("__stopped__");
+          patch.inAt.saidAnyway = true;
+          return patchJob(j.id, patch);
+        });
+      }
+      // Somewhere typed in by hand. Nobody knows where it is but the phones
+      // that go there.
       return readPlaces().then(function(all){
-        var spot = spotOf(all, j.buildingId);
+        var spot = spotOf(all, j);
         if (!spot){
           // Nothing known about this address yet. He is the one teaching it.
           return patchJob(j.id, patch).then(function(){
