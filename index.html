@@ -1341,9 +1341,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
 <dialog id="pauseDlg">
   <form method="dialog" class="dlg" id="pauseForm">
     <div class="eyebrow" id="pauseWho"></div>
-    <h3 data-t>Pausing this job</h3>
-    <p class="sub" data-t>The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.</p>
+    <h3 id="pauseTitle" data-t>Pausing this job</h3>
+    <p class="sub" id="pauseSub" data-t>The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.</p>
     <div class="whyrow" id="pauseWhy"></div>
+    <p class="sub" id="pauseWhen" hidden style="font-weight:600; margin:10px 0 0"></p>
     <div class="field">
       <label for="pauseNote" data-t>Anything to add</label>
       <input id="pauseNote" maxlength="60" autocomplete="off" data-tp="Optional" placeholder="Optional">
@@ -1351,27 +1352,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="err" id="pauseErr"></p>
     <div class="actions">
       <button type="button" class="btn" id="pauseCancel" data-t>Back</button>
-      <button type="button" class="btn" id="pauseCarry" data-t>Done for today</button>
       <span class="spacer"></span>
       <button type="submit" class="btn btn-primary" id="pauseGo" data-t>Pause the job</button>
-    </div>
-  </form>
-</dialog>
-
-<!-- Not finished, and not being finished today either. Today's hours are
-     closed off where they stand and the rest of the work goes on another
-     day, as its own job, so neither day's timesheet borrows from the other. -->
-<dialog id="carryDlg">
-  <form method="dialog" class="dlg" id="carryForm">
-    <div class="eyebrow" id="carryWho"></div>
-    <h3 data-t>Finishing this another day</h3>
-    <p class="sub" data-t>Your hours today are closed off now. The rest of the job is put back on the calendar for you.</p>
-    <p class="sub" id="carryWhen" style="font-weight:600"></p>
-    <p class="err" id="carryErr"></p>
-    <div class="actions">
-      <button type="button" class="btn" id="carryCancel" data-t>Back</button>
-      <span class="spacer"></span>
-      <button type="submit" class="btn btn-primary" id="carryGo" data-t>Finish for today</button>
     </div>
   </form>
 </dialog>
@@ -3609,7 +3591,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v121";
+  var APP_VERSION = "v122";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -7043,19 +7025,59 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return br.note ? head + " \u00b7 " + br.note : head;
   }
 
-  var pauseJob = null, pauseWhy = PAUSE_WHY[0];
+  /* Not a reason for pausing at all, but it belongs beside them: it is the
+     same question — why are you stopping — and going home is one of the
+     answers. A man reading that row should find it there rather than hunting
+     for a button somewhere else on the sheet. */
+  var DONE_TODAY = "__done";
+  var pauseJob = null, pauseWhy = PAUSE_WHY[0], pausePlan = null;
+  function goingHome(){ return pauseWhy === DONE_TODAY; }
   function drawPauseWhy(){
     var host = $("pauseWhy"); host.innerHTML = "";
-    PAUSE_WHY.forEach(function(w){
+    PAUSE_WHY.concat([DONE_TODAY]).forEach(function(w){
       var b = document.createElement("button");
-      b.type = "button"; b.textContent = tr(w);
+      b.type = "button";
+      b.textContent = w === DONE_TODAY ? tr("Done for today") : tr(w);
       b.setAttribute("aria-pressed", w === pauseWhy ? "true" : "false");
-      b.addEventListener("click", function(){ pauseWhy = w; drawPauseWhy(); });
+      b.addEventListener("click", function(){
+        pauseWhy = w; drawPauseWhy(); refreshPauseMode();
+      });
       host.appendChild(b);
     });
   }
+  /* Everything the sheet says has to change with it, or it reads as though
+     it is still about to pause the job. */
+  function refreshPauseMode(){
+    var j = pauseJob;
+    if (!goingHome()){
+      pausePlan = null;
+      $("pauseTitle").textContent = tr("Pausing this job");
+      $("pauseSub").textContent = tr("The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.");
+      $("pauseWhen").hidden = true;
+      $("pauseGo").textContent = tr("Pause the job");
+      $("pauseGo").disabled = false;
+      $("pauseErr").textContent = "";
+      return;
+    }
+    pausePlan = j ? findRoom(j) : null;
+    $("pauseTitle").textContent = tr("Finishing this another day");
+    $("pauseSub").textContent = tr("Your hours today are closed off now. The rest of the job is put back on the calendar for you.");
+    $("pauseGo").textContent = tr("Finish for today");
+    if (!pausePlan){
+      $("pauseWhen").hidden = true;
+      $("pauseErr").textContent = tr("There is no room for the rest of it in the next three weeks. Tell the office.");
+      $("pauseGo").disabled = true;
+      return;
+    }
+    $("pauseErr").textContent = "";
+    $("pauseWhen").hidden = false;
+    $("pauseWhen").textContent = tr("Back on {d}, {a}\u2013{b}", {
+      d: F_MED.format(fromIso(pausePlan.date)),
+      a: hourLong(pausePlan.from), b: hourLong(pausePlan.to)});
+    $("pauseGo").disabled = false;
+  }
   function openPause(j){
-    pauseJob = j; pauseWhy = PAUSE_WHY[0];
+    pauseJob = j; pauseWhy = PAUSE_WHY[0]; pausePlan = null;
     var m = memberOr(j.crewId);
     $("pauseWho").textContent = m.name + " \u00b7 " + j.buildingName +
       (j.unit ? " \u00b7 " + tr("Unit {u}", {u:j.unit}) : "");
@@ -7063,12 +7085,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("pauseErr").textContent = "";
     $("pauseGo").disabled = false;
     drawPauseWhy();
+    refreshPauseMode();
     $("pauseDlg").showModal();
   }
   function startBreak(){
     var j = pauseJob; if (!j) return;
     var note = $("pauseNote").value.trim();
     $("pauseGo").disabled = true;
+    if (goingHome()) return finishForToday(j, note);
     patchJob(j.id, {breaks: (j.breaks || []).concat([
       {from: new Date().toISOString(), to: null, why: pauseWhy, note: note}
     ])}).then(function(){ $("pauseDlg").close(); pauseJob = null; })
@@ -7123,44 +7147,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     return null;
   }
-  function openCarry(j){
-    carryJob = j;
-    carryPlan = findRoom(j);
-    var m = memberOr(j.crewId);
-    $("carryWho").textContent = m.name + " \u00b7 " + whereLine(j);
-    $("carryErr").textContent = "";
-    if (!carryPlan){
-      $("carryWhen").textContent = "";
-      $("carryErr").textContent = tr("There is no room for the rest of it in the next three weeks. Tell the office.");
-      $("carryGo").disabled = true;
-    } else {
-      $("carryWhen").textContent = tr("Back on {d}, {a}\u2013{b}", {
-        d: F_MED.format(fromIso(carryPlan.date)),
-        a: hourLong(carryPlan.from), b: hourLong(carryPlan.to)});
-      $("carryGo").disabled = false;
+  function finishForToday(j, note){
+    var plan = pausePlan;
+    if (!plan){
+      $("pauseGo").disabled = false;
+      $("pauseErr").textContent = tr("There is no room for the rest of it in the next three weeks. Tell the office.");
+      return;
     }
-    $("carryDlg").showModal();
-  }
-  $("carryCancel").addEventListener("click", function(){
-    $("carryDlg").close(); carryJob = null; carryPlan = null;
-  });
-  $("pauseCarry").addEventListener("click", function(){
-    var j = pauseJob;
-    $("pauseDlg").close(); pauseJob = null;
-    if (j) openCarry(j);
-  });
-  $("carryForm").addEventListener("submit", function(ev){
-    ev.preventDefault();
-    var j = carryJob, plan = carryPlan;
-    if (!j || !plan) return;
-    $("carryGo").disabled = true;
     var now = new Date().toISOString();
     var rest = {
       v: 2, id: newId(), date: plan.date, crewId: j.crewId,
       from: plan.from, to: plan.to, allDay: false,
       projectId: j.projectId, projectName: j.projectName,
       buildingId: j.buildingId, buildingName: j.buildingName,
-      unit: j.unit || "", job: j.job,
+      unit: j.unit || "", job: note ? j.job + " \u2014 " + note : j.job,
       photos: [], stock: j.stock || "", tight: false,
       manager: j.manager || "", managerPhone: j.managerPhone || "",
       carriedFrom: j.id, carriedDate: j.date,
@@ -7181,12 +7181,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }).then(function(){
       noteDown("clock", tr("Stopped for the day \u2014 coming back {d}",
         {d: F_MED.format(fromIso(plan.date))}), j.id);
-      $("carryDlg").close(); carryJob = null; carryPlan = null; render();
+      $("pauseDlg").close(); pauseJob = null; pausePlan = null; render();
     }).catch(function(e){
-      $("carryGo").disabled = false;
-      $("carryErr").textContent = errText(e, tr("Could not set that up."));
+      $("pauseGo").disabled = false;
+      $("pauseErr").textContent = errText(e, tr("Could not set that up."));
     });
-  });
+  }
 
   function openUsed(j){
     usedJob = j;
