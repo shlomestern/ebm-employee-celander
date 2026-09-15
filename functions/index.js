@@ -25,18 +25,6 @@ const HOURS = (h) => {
   const hh = h % 12 === 0 ? 12 : h % 12;
   return `${hh}:00 ${ap}`;
 };
-/** A real moment, to the minute, where the crew are. HOURS() is for the
- *  hours a job is booked for, which are whole hours by construction; this is
- *  for the times things actually happened, which are not. Printing a booked
- *  hour and calling it the arrival is how a man who turned up at 1:03 was
- *  reported as having started at 2:00. */
-const CLOCK_IN_ZONE = new Intl.DateTimeFormat("en-US", {
-  timeZone: ZONE, hour: "numeric", minute: "2-digit", hour12: true,
-});
-const AT = (iso) => {
-  const t = Date.parse(iso);
-  return Number.isNaN(t) ? "" : CLOCK_IN_ZONE.format(new Date(t));
-};
 
 /** Everyone registered in config/tokens, split into crew and office. */
 async function audience(db) {
@@ -97,6 +85,18 @@ const DATE_IN_ZONE = new Intl.DateTimeFormat("en-CA", {
 const TIME_IN_ZONE = new Intl.DateTimeFormat("en-GB", {
   timeZone: ZONE, hour: "2-digit", minute: "2-digit", hour12: false,
 });
+/** A real moment, to the minute, where the crew are. HOURS() is for the
+ *  hours a job is booked for, which are whole hours by construction; this is
+ *  for the times things actually happened, which are not. Printing a booked
+ *  hour and calling it the arrival is how a man who turned up at 1:03 was
+ *  reported as having started at 2:00. */
+const CLOCK_IN_ZONE = new Intl.DateTimeFormat("en-US", {
+  timeZone: ZONE, hour: "numeric", minute: "2-digit", hour12: true,
+});
+const AT = (iso) => {
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? "" : CLOCK_IN_ZONE.format(new Date(t));
+};
 /** Minutes since midnight, where the crew are. */
 function minutesNow() {
   const [h, m] = TIME_IN_ZONE.format(new Date()).split(":").map(Number);
