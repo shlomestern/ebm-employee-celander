@@ -2167,6 +2167,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "מערכת ההתראות לא הצליחה להגיע למכשיר הזה: {why}",
     "Could not ask the notifier: {why}":
       "לא התאפשר לפנות למערכת ההתראות: {why}",
+    "Was booked for {d} — done on this day":
+      "הוזמן ל-{d} — בוצע ביום זה",
+    "Booked for {d}, done on this day":
+      "הוזמן ל-{d}, בוצע ביום זה",
     "Someone new":
       "מישהו חדש",
     "Connection":
@@ -2995,6 +2999,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Le service de notifications n\u2019a pas pu joindre cet appareil\u00a0: {why}",
     "Could not ask the notifier: {why}":
       "Impossible de s\u2019adresser au service de notifications\u00a0: {why}",
+    "Was booked for {d} \u2014 done on this day":
+      "Pr\u00e9vu le {d} \u2014 fait ce jour-ci",
+    "Booked for {d}, done on this day":
+      "Pr\u00e9vu le {d}, fait ce jour-ci",
     "Someone new": "Quelqu\u2019un de nouveau",
     "Connection": "Connexion",
     "Crew & codes": "\u00c9quipe et codes",
@@ -3442,7 +3450,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v115";
+  var APP_VERSION = "v116";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6920,11 +6928,32 @@ dialog#callDlg::backdrop{background:#0b0f12}
     });
     return out;
   }
+  /* The day a job was actually worked, not the day it was booked for.
+     Anchored on the clock-in rather than the clock-out: a man who starts at
+     half eleven at night and finishes after midnight did the work on the day
+     he started, and nothing should slide it onto the next one. */
+  function workedOn(j, now){
+    var t = new Date(j.clockIn || now);
+    return isNaN(t.getTime()) ? null : iso(t);
+  }
   function finishJob(list){
     var j = usedJob; if (!j) return;
     $("usedSave").disabled = true;
     var now = new Date().toISOString();
     var patch = {used: list, clockOut: now};
+    /* Tomorrow's job, done today. The calendar has to show the day it
+       happened or the record is wrong from the moment it is finished —
+       the hours, the workbook and anyone looking back all read the date.
+       The booked hours are left alone: what was promised is worth keeping
+       beside what was done. */
+    var day = workedOn(j, now);
+    if (day && day !== j.date){
+      patch.date = day;
+      patch.movedFrom = j.date;
+      patch.movedAt = now;
+      patch.movedBy = meName();
+      patch.movedWhy = "finished";
+    }
     // Finishing while still away closes the break at the same moment, so no
     // job is left with the clock stopped for ever.
     if (onBreak(j)) patch.breaks = closedBreaks(j, now);
@@ -7247,8 +7276,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     if (j.movedFrom){
       var mvd=document.createElement("div"); mvd.className="job-sub";
-      mvd.textContent = tr("Moved from {d} by {who}",
-        {d: F_MED.format(fromIso(j.movedFrom)), who: j.movedBy || ""});
+      mvd.textContent = j.movedWhy === "finished"
+        ? tr("Was booked for {d} \u2014 done on this day", 
+             {d: F_MED.format(fromIso(j.movedFrom))})
+        : tr("Moved from {d} by {who}",
+             {d: F_MED.format(fromIso(j.movedFrom)), who: j.movedBy || ""});
       card.appendChild(mvd);
     }
     /* Only the answer that means somebody has to do something is loud. */
@@ -8546,7 +8578,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
                     : tr("Booked for {man}", {man: man}), j);
       if (j.approvedBy) ev(j.createdAt, j.approvedBy, "book", tr("Emergency let in"), j);
       ev(j.movedAt, j.movedBy, "change",
-         tr("Moved here from {d}", {d: j.movedFrom ? F_MED.format(fromIso(j.movedFrom)) : "?"}), j);
+         j.movedWhy === "finished"
+           ? tr("Booked for {d}, done on this day",
+                {d: j.movedFrom ? F_MED.format(fromIso(j.movedFrom)) : "?"})
+           : tr("Moved here from {d}",
+                {d: j.movedFrom ? F_MED.format(fromIso(j.movedFrom)) : "?"}), j);
       ev(j.reopenedAt, j.reopenedBy, "change",
          j.clockIn ? tr("Opened again") : tr("Clock cleared"), j);
       ev(j.clockIn, man, "clock", tr("Arrived"), j);

@@ -505,7 +505,7 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
 
     // Where he has gone, and for how long he was away — to whoever booked the
     // job, since it is their afternoon that may need moving.
-    if (movedNow) {
+    if (movedNow && !endedNow) {
       // Both sides of it: the man who is now expected on a different day, and
       // whoever booked the work. Whoever moved it already knows.
       const ids = new Set(["office", after.crewId]);
@@ -538,10 +538,15 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     const used = (after.used || [])
       .map((u) => (u.qty ? `${u.qty} × ${u.item}` : u.item))
       .join(", ");
+    // A job done on a day it was not booked for moves to the day it was
+    // actually worked. The office should not have to work out why yesterday's
+    // job is suddenly on today — it is said outright.
+    const notItsDay = endedNow && after.movedWhy === "finished" && after.movedFrom
+      ? ` · was booked for ${after.movedFrom}` : "";
     const title = endedNow ? `${who} finished` : `${who} clocked in`;
     const body = endedNow
       ? `${where} · left ${AT(after.clockOut)}` +
-        ` · ${used ? `used ${used}` : "nothing used"}`
+        ` · ${used ? `used ${used}` : "nothing used"}` + notItsDay
       : `${where} · started ${AT(after.clockIn)}` +
         ` · booked ${HOURS(after.from)}`;
 
