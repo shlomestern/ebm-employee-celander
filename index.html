@@ -90,9 +90,9 @@ button{font:inherit; color:inherit; cursor:pointer}
    the company name sits underneath them. The sides matter in landscape. */
 .wrap{max-width:1180px; margin:0 auto;
   padding-top:calc(18px + env(safe-area-inset-top));
-  padding-right:max(16px, env(safe-area-inset-right));
+  padding-inline-end:max(16px, env(safe-area-inset-right));
   padding-bottom:calc(56px + env(safe-area-inset-bottom));
-  padding-left:max(16px, env(safe-area-inset-left));
+  padding-inline-start:max(16px, env(safe-area-inset-left));
 }
 
 .topbar{
@@ -160,7 +160,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .crew{display:flex; flex-direction:column; gap:7px}
 .person{
-  display:flex; align-items:center; gap:11px; text-align:left; width:100%;
+  display:flex; align-items:center; gap:11px; text-align:start; width:100%;
   padding:11px 12px; border-radius:10px; border:1px solid var(--line);
   background:var(--surface); transition:border-color .13s ease, background .13s ease;
 }
@@ -196,24 +196,24 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .calbar{flex-wrap:wrap}
 .seg{display:inline-flex; border:1px solid var(--line-2); border-radius:8px; overflow:hidden; background:var(--surface)}
 .seg button{border:none; background:transparent; padding:7px 12px; font-size:13px; font-weight:500;
-  border-left:1px solid var(--line); color:var(--ink-2)}
-.seg button:first-child{border-left:none}
+  border-inline-start:1px solid var(--line); color:var(--ink-2)}
+.seg button:first-child{border-inline-start:none}
 .seg button[aria-pressed="true"]{background:var(--sel); color:#fff; font-weight:600}
 .seg button:not([aria-pressed="true"]):hover{background:var(--surface-2)}
 .cal.week .cell{min-height:190px}
 .cal.week .chips{gap:4px}
 .daygroup{margin-bottom:20px}
 .daygroup h3{margin:0 0 8px; font-size:16px; font-weight:600; letter-spacing:-.015em}
-.daygroup h3 span{color:var(--ink-3); font-weight:500; font-size:13.5px; margin-left:7px}
+.daygroup h3 span{color:var(--ink-3); font-weight:500; font-size:13.5px; margin-inline-start:7px}
 .cal{
   border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--line);
   box-shadow:var(--shadow); display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:1px;
 }
-.dow{background:var(--surface-2); padding:8px 9px; text-align:left;
+.dow{background:var(--surface-2); padding:8px 9px; text-align:start;
   font-family:"Archivo",sans-serif; font-size:10.5px; font-weight:600;
   letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
 .cell{
-  background:var(--surface); border:none; text-align:left; padding:6px 7px 7px;
+  background:var(--surface); border:none; text-align:start; padding:6px 7px 7px;
   min-height:98px; display:flex; flex-direction:column; gap:3px; align-items:stretch;
   transition:background .12s ease;
 }
@@ -236,7 +236,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .chips{display:flex; flex-direction:column; gap:3px; min-width:0}
 .chip{
   position:relative;
-  display:flex; flex-direction:column; gap:1px; min-width:0; text-align:left;
+  display:flex; flex-direction:column; gap:1px; min-width:0; text-align:start;
   background:var(--pc-soft, var(--sel-soft)); border-radius:6px; padding:4px 7px;
   box-shadow:inset 3px 0 0 var(--pc, var(--sel));
 }
@@ -260,7 +260,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .chip .st.fin{color:var(--ink-3); font-size:12px; font-weight:700}
 .chip.done{opacity:.55; box-shadow:inset 3px 0 0 var(--ink-3)}
 .chip.done .t{color:var(--ink-2)}
-.legend .keyitem{display:inline-flex; align-items:center; gap:5px; margin-right:15px;
+.legend .keyitem{display:inline-flex; align-items:center; gap:5px; margin-inline-end:15px;
   white-space:nowrap}
 .legend .dot{display:inline-block; line-height:1}
 .legend .dot.on, .legend .dot.hold{width:8px; height:8px; border-radius:50%}
@@ -270,11 +270,11 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .chip .n{font-family:"Archivo",sans-serif; font-size:11px; font-weight:600; letter-spacing:.03em;
   line-height:1.2; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; min-width:0}
-.more{font-size:11px; color:var(--ink-3); padding-left:6px}
+.more{font-size:11px; color:var(--ink-3); padding-inline-start:6px}
 .freehint{font-size:11.5px; color:var(--ink-3); margin-top:auto}
 .legend{margin-top:13px; display:flex; flex-wrap:wrap; gap:7px 18px; font-size:12.5px; color:var(--ink-3)}
 .legend .box{width:11px; height:11px; border-radius:3px; background:var(--pc, var(--sel)); flex:none;
-  display:inline-block; vertical-align:-1px; margin-right:6px}
+  display:inline-block; vertical-align:-1px; margin-inline-end:6px}
 .footnote{margin-top:11px; font-size:12.5px; color:var(--ink-3); max-width:64ch}
 .footnote strong{color:var(--ink-2); font-weight:600}
 
@@ -315,7 +315,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 /* Three answers, each on its own line and wide enough to hit with a thumb.
    A row of three would be three cramped buttons and a wrong tap. */
 .stkpick{display:flex; flex-direction:column; gap:8px; margin:4px 0 2px}
-.stkpick .btn{white-space:normal; text-align:left; padding:12px 14px; font-size:14.5px}
+.stkpick .btn{white-space:normal; text-align:start; padding:12px 14px; font-size:14.5px}
 .stkpick .btn.sel{border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel)}
 /* The fourth answer is a real one, but it is not the one to reach for. */
 .stkpick .btn.quiet{color:var(--ink-3); font-size:13.5px; padding:10px 14px}
@@ -327,11 +327,11 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .prow{border:1px solid var(--line); border-radius:11px; background:var(--surface);
   margin-bottom:6px}
 .prow.open{border-color:var(--line-2); background:var(--surface-2)}
-.phdr{display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+.phdr{display:flex; align-items:center; gap:10px; width:100%; text-align:start;
   padding:9px 10px; margin:0; background:none; border:0; border-radius:11px;
   font:inherit; color:var(--ink); cursor:pointer}
 .phdr:hover{background:var(--surface-2)}
-.prow.open .phdr{border-bottom-left-radius:0; border-bottom-right-radius:0}
+.prow.open .phdr{border-end-start-radius:0; border-end-end-radius:0}
 .phdr .pav{width:28px; height:28px; flex:none; border-radius:9px; display:grid;
   place-items:center; font-family:"Archivo",sans-serif; font-size:12.5px; font-weight:700;
   background:var(--pc-soft); color:var(--pc)}
@@ -359,7 +359,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 @media (max-width:540px){
   .pgrid{grid-template-columns:1fr}
 }
-.steps{margin:0 0 4px; padding-left:22px; display:flex; flex-direction:column; gap:9px}
+.steps{margin:0 0 4px; padding-inline-start:22px; display:flex; flex-direction:column; gap:9px}
 .steps li{font-size:14px; color:var(--ink); line-height:1.45}
 .steps b{font-weight:600}
 .empty{padding:22px 14px; text-align:center; color:var(--ink-3); font-size:13.5px;
@@ -368,7 +368,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 /* ---------- worker view ---------- */
 .daygroup{margin-bottom:22px}
 .daygroup h3{margin:0 0 9px; font-size:16px; font-weight:600; letter-spacing:-.015em}
-.daygroup h3 span{color:var(--ink-3); font-weight:500; font-size:13.5px; margin-left:7px}
+.daygroup h3 span{color:var(--ink-3); font-weight:500; font-size:13.5px; margin-inline-start:7px}
 
 /* ---------- dialogs & forms ---------- */
 dialog{
@@ -388,7 +388,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 }
 .field select{appearance:none; background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
   background-position:calc(100% - 17px) 55%, calc(100% - 12px) 55%; background-size:5px 5px,5px 5px;
-  background-repeat:no-repeat; padding-right:32px}
+  background-repeat:no-repeat; padding-inline-end:32px}
 .field textarea{resize:vertical; min-height:56px}
 .field .hint{font-size:12px; color:var(--ink-3)}
 .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
@@ -406,7 +406,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .shots img{width:66px; height:66px; object-fit:cover; border-radius:8px;
   border:1px solid var(--line); cursor:zoom-in; display:block; background:var(--surface-2)}
 .shot{position:relative}
-.shot .x{position:absolute; top:-6px; right:-6px; width:21px; height:21px; border-radius:50%;
+.shot .x{position:absolute; top:-6px; inset-inline-end:-6px; width:21px; height:21px; border-radius:50%;
   border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2);
   font-size:13px; line-height:1; cursor:pointer; padding:0}
 .shotwrap{display:flex; flex-direction:column; gap:10px; align-items:center}
@@ -414,7 +414,7 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .shotbar{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
 .shotbar .btn{background:var(--surface); border-color:var(--line-2)}
 /* What is being answered, kept short and pinned above the message itself. */
-.quote{display:block; border-left:3px solid currentColor; padding:2px 0 2px 8px;
+.quote{display:block; border-inline-start:3px solid currentColor; padding:2px 0 2px 8px;
   margin-bottom:5px; opacity:.72; font-size:12.5px; line-height:1.3}
 .quote b{display:block; font-family:"Archivo",sans-serif; font-weight:700; font-size:11.5px}
 .bub .fwd{display:block; font-size:11px; opacity:.7; font-style:italic; margin-bottom:3px}
@@ -422,11 +422,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
    the corner does — not the row of buttons that made the thread look like a
    form the last time. */
 .bub{position:relative}
-.bub .dots{position:absolute; top:2px; right:4px; width:22px; height:20px; padding:0;
+.bub .dots{position:absolute; top:2px; inset-inline-end:4px; width:22px; height:20px; padding:0;
   border:0; background:none; color:currentColor; opacity:.42; cursor:pointer;
   font:inherit; font-size:15px; line-height:1; letter-spacing:1px}
 .bub .dots:hover{opacity:1}
-.bub.hasdots{padding-right:26px}
+.bub.hasdots{padding-inline-end:26px}
 .replybar{display:flex; gap:8px; align-items:center; margin-bottom:7px; font-size:12.5px;
   padding:7px 9px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px}
 .replybar .who{font-family:"Archivo",sans-serif; font-weight:700; flex:none}
@@ -457,18 +457,18 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .usedlist b{color:var(--ink); font-weight:600}
 
 /* Floats over the calendar on the right, clear of the crew bar below it. */
-.fab{position:fixed; right:18px; bottom:calc(20px + env(safe-area-inset-bottom));
+.fab{position:fixed; inset-inline-end:18px; bottom:calc(20px + env(safe-area-inset-bottom));
   z-index:45; width:54px; height:54px; border-radius:50%; border:none; cursor:pointer;
   display:grid; place-items:center; background:var(--sel); color:#fff;
   box-shadow:0 3px 10px rgba(19,26,32,.22), 0 12px 28px -10px rgba(19,26,32,.4)}
 .fab:hover{filter:brightness(1.08)}
 .fab svg{width:23px; height:23px; display:block}
-.fab .cnt{position:absolute; top:-2px; right:-2px; min-width:21px; height:21px;
+.fab .cnt{position:absolute; top:-2px; inset-inline-end:-2px; min-width:21px; height:21px;
   border-radius:11px; background:var(--danger); color:#fff; font-size:11.5px; font-weight:700;
   font-family:"Archivo",sans-serif; display:grid; place-items:center; padding:0 5px;
   border:2px solid var(--ground)}
 .threads{display:flex; flex-direction:column; gap:7px; margin:4px 0 2px}
-.thread{display:flex; gap:11px; align-items:center; text-align:left; width:100%;
+.thread{display:flex; gap:11px; align-items:center; text-align:start; width:100%;
   padding:11px 12px; border:1px solid var(--line); border-radius:10px;
   background:var(--surface); cursor:pointer; font:inherit}
 .thread:hover{border-color:var(--ink-3)}
@@ -494,13 +494,13 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .bub{max-width:78%; padding:8px 11px; border-radius:12px; font-size:13.5px; line-height:1.35}
 .bub .nm{display:block; font-size:11px; font-weight:700; letter-spacing:.02em;
   font-family:"Archivo",sans-serif; opacity:.75; margin-bottom:2px}
-.bub .tm{font-size:10.5px; opacity:.65; margin-left:7px}
+.bub .tm{font-size:10.5px; opacity:.65; margin-inline-start:7px}
 /* One tick sent, two read — the shorthand everybody already knows. */
-.bub .rd{font-size:11px; margin-left:4px; opacity:.55; letter-spacing:-1px}
+.bub .rd{font-size:11px; margin-inline-start:4px; opacity:.55; letter-spacing:-1px}
 .bub .rd.on{opacity:1}
-.bub.mine{align-self:flex-end; background:var(--sel); color:#fff; border-bottom-right-radius:4px}
+.bub.mine{align-self:flex-end; background:var(--sel); color:#fff; border-end-end-radius:4px}
 .bub.theirs{align-self:flex-start; background:var(--surface-2); border:1px solid var(--line);
-  border-bottom-left-radius:4px}
+  border-end-start-radius:4px}
 .chatsend{display:flex; gap:6px; align-items:center}
 .chatsend > input{
   margin:0; flex:1; min-width:0; font:inherit; font-size:16px; line-height:1.3;
@@ -515,11 +515,11 @@ dialog::backdrop{background:rgba(10,18,22,.5)}
 .sysnote{font-size:12.5px; color:var(--ink-3); margin:8px 0 0}
 dialog.repwide{width:min(calc(100vw - 24px), 860px)}
 .reptable{width:100%; border-collapse:collapse; font-size:13px; margin-top:4px}
-.reptable th{text-align:left; font-family:"Archivo",sans-serif; font-size:10.5px;
+.reptable th{text-align:start; font-family:"Archivo",sans-serif; font-size:10.5px;
   font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
   border-bottom:1px solid var(--line); padding:6px 8px 5px}
 .reptable td{padding:6px 8px; border-bottom:1px solid var(--line)}
-.reptable td.n, .reptable th.n{text-align:right; font-variant-numeric:tabular-nums}
+.reptable td.n, .reptable th.n{text-align:end; font-variant-numeric:tabular-nums}
 .reptable tr.who td{font-family:"Archivo",sans-serif; font-weight:700; font-size:13.5px;
   background:var(--surface-2); color:var(--pc, var(--ink))}
 .reptable tr.tot td{font-weight:700}
@@ -532,7 +532,7 @@ dialog.repwide{width:min(calc(100vw - 24px), 860px)}
   margin:1px 0 3px}
 .bub audio{display:block; width:min(240px,60vw); margin:2px 0 3px; height:34px}
 .bub .cap{display:block}
-.updbar{position:fixed; left:0; right:0; top:0; z-index:60; display:flex; gap:10px;
+.updbar{position:fixed; inset-inline-start:0; inset-inline-end:0; top:0; z-index:60; display:flex; gap:10px;
   align-items:center; justify-content:center;
   padding:calc(11px + env(safe-area-inset-top)) 14px 11px;
   background:var(--sel); color:#fff; font-family:"Archivo",sans-serif; font-weight:600;
@@ -561,7 +561,7 @@ body.hasupd .wrap{padding-top:calc(52px + env(safe-area-inset-top))}
 .pending{display:flex; gap:8px; align-items:center; margin-bottom:7px; font-size:12.5px;
   color:var(--ink-2)}
 .pending img{width:46px; height:46px; object-fit:cover; border-radius:8px; border:1px solid var(--line)}
-.pending .x{margin-left:auto; border:1px solid var(--line-2); background:var(--surface);
+.pending .x{margin-inline-start:auto; border:1px solid var(--line-2); background:var(--surface);
   border-radius:8px; cursor:pointer; font-size:13px; padding:5px 9px; color:var(--ink-2)}
 .thread.sys{--pc:var(--accent); --pc-soft:var(--accent-soft)}
 .alert{display:flex; gap:11px; align-items:center; flex-wrap:wrap;
@@ -590,16 +590,16 @@ dialog#callDlg{border:none; background:#0b0f12; padding:0; max-width:none; width
 dialog#callDlg::backdrop{background:#0b0f12}
 .callwrap{position:relative; width:100%; height:100%; overflow:hidden}
 .callfar{width:100%; height:100%; object-fit:cover; background:#141a1f; display:block}
-.callnear{position:absolute; right:14px; width:104px; height:139px; object-fit:cover;
+.callnear{position:absolute; inset-inline-end:14px; width:104px; height:139px; object-fit:cover;
   border-radius:12px; border:2px solid rgba(255,255,255,.5); background:#1b2228;
   transform:scaleX(-1);
   top:calc(14px + env(safe-area-inset-top))}
-.callhead{position:absolute; left:16px; right:130px; display:flex; flex-direction:column; gap:2px;
+.callhead{position:absolute; inset-inline-start:16px; inset-inline-end:130px; display:flex; flex-direction:column; gap:2px;
   top:calc(16px + env(safe-area-inset-top)); text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .callhead .who{font-family:"Archivo",sans-serif; font-weight:700; font-size:19px}
 .callhead .st{font-size:13px; opacity:.82}
 #callFlow{font-size:11.5px; opacity:.72; font-variant-numeric:tabular-nums}
-.callbar{position:absolute; left:0; right:0; display:flex; gap:12px; justify-content:center;
+.callbar{position:absolute; inset-inline-start:0; inset-inline-end:0; display:flex; gap:12px; justify-content:center;
   align-items:center; bottom:calc(26px + env(safe-area-inset-bottom))}
 .cbtn{width:56px; height:56px; border-radius:50%; border:0; cursor:pointer; display:grid;
   place-items:center; background:rgba(255,255,255,.19); color:#fff; font:inherit;
@@ -651,12 +651,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
   cursor:pointer}
 .bub.mine .reacts .chip{background:rgba(255,255,255,.92); border-color:rgba(255,255,255,.5)}
 .bub .reacts .chip.mine{border-color:var(--sel); box-shadow:inset 0 0 0 1px var(--sel)}
-.callerr{position:absolute; left:16px; right:16px; text-align:center; color:#ffb4a8; z-index:3;
+.callerr{position:absolute; inset-inline-start:16px; inset-inline-end:16px; text-align:center; color:#ffb4a8; z-index:3;
   font-size:13px; bottom:calc(96px + env(safe-area-inset-bottom))}
 .callerr.note{color:rgba(255,255,255,.78)}
 .callbtn{width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--line);
   background:var(--surface-2); color:var(--ink-2); cursor:pointer; display:grid;
-  place-items:center; padding:0; margin-left:auto}
+  place-items:center; padding:0; margin-inline-start:auto}
 .callbtn:hover{border-color:var(--ink-3); color:var(--ink)}
 #chatDlg .dlg > h3{display:inline-block}
 .chattop{display:flex; align-items:center; gap:10px}
@@ -682,7 +682,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   /* On anything held in the hands — phone or tablet — whose calendar you are
      looking at becomes a bottom bar, where the thumb already is. */
   .crew{
-    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    position:fixed; inset-inline-start:0; inset-inline-end:0; bottom:0; z-index:40;
     flex-direction:row; gap:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
     background:var(--surface); border-top:1px solid var(--line);
     box-shadow:0 -2px 16px rgba(19,26,32,.07);
@@ -761,8 +761,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
   .pill{padding:2px 6px; font-size:10px}
 
   /* Still clear of the clock and the notch on a narrow screen. */
-  .wrap{padding-left:max(10px, env(safe-area-inset-left));
-        padding-right:max(10px, env(safe-area-inset-right));
+  .wrap{padding-inline-start:max(10px, env(safe-area-inset-left));
+        padding-inline-end:max(10px, env(safe-area-inset-right));
         padding-top:calc(14px + env(safe-area-inset-top))}
   .topbar h1{font-size:22px}
   .dow{padding:6px 4px; font-size:9.5px; letter-spacing:.05em}
@@ -775,12 +775,49 @@ dialog#callDlg::backdrop{background:#0b0f12}
      exactly where it was. */
   .chip{padding:3px 5px}
   .chip .t{gap:0}
-  .chip .st{position:absolute; right:5px; bottom:4px}
+  /* Explicit rather than logical: the corner it has to keep out of is the
+     one the project number sits in, and that swaps with the direction. */
+  .chip .st{position:absolute; right:5px; left:auto; bottom:4px}
+  [dir="rtl"] .chip .st{right:auto; left:5px}
   .chip .t{font-size:12px}
   .freehint{display:none}
   .cell .freehint.yt{display:block; font-size:9.5px}
   .row2{grid-template-columns:1fr}
 }
+/* Right to left, for Hebrew.
+   Nearly all of it mirrors by itself: the physical left/right properties were
+   changed to the logical ones, which mean start and end and follow whatever
+   direction the page is in. Four things have no logical form and have to be
+   turned round by hand — the coloured bar down the side of a card, which is
+   an inset shadow, and the message bubbles, whose tail is a corner radius. */
+[dir="rtl"] .person[aria-pressed="true"]{box-shadow:inset -3px 0 0 var(--pc)}
+[dir="rtl"] .cell.yomtov{box-shadow:inset -3px 0 0 var(--mark)}
+[dir="rtl"] .chip{box-shadow:inset -3px 0 0 var(--pc, var(--sel))}
+[dir="rtl"] .chip.done{box-shadow:inset -3px 0 0 var(--ink-3)}
+[dir="rtl"] .job{box-shadow:inset -3px 0 0 var(--pc, var(--sel))}
+[dir="rtl"] .alert{box-shadow:inset -4px 0 0 var(--mark)}
+/* Anything carrying real data — an address, a project name, a note somebody
+   typed — takes its direction from its own first letter rather than from the
+   page. "2350 Mariette" begins with a digit, and in a right-to-left line a
+   leading number is pushed to the far end: it was reading "Mariette · Unit 4
+   2350". A note written in Hebrew still reads right to left, a street in
+   Montreal still reads left to right, and neither needs to be marked up. */
+[dir="rtl"] .job-where, [dir="rtl"] .job-sub, [dir="rtl"] .job-desc,
+[dir="rtl"] .note, [dir="rtl"] .usedlist, [dir="rtl"] .chip .n,
+[dir="rtl"] .bub, [dir="rtl"] .thread .who, [dir="rtl"] .thread .last,
+[dir="rtl"] .logrow .lw, [dir="rtl"] .alert .dt, [dir="rtl"] .alert .hd,
+[dir="rtl"] .eyebrow, [dir="rtl"] .whoshow, [dir="rtl"] .pnm,
+[dir="rtl"] .freehint, [dir="rtl"] .job-late, [dir="rtl"] .job-hold,
+[dir="rtl"] #stkWhere, [dir="rtl"] #mvWhat, [dir="rtl"] #dayWho,
+[dir="rtl"] #formWho, [dir="rtl"] #usedWho, [dir="rtl"] .hint,
+[dir="rtl"] option, [dir="rtl"] .sub{unicode-bidi:plaintext}
+
+/* Numbers, times and codes stay left to right inside a right-to-left line,
+   or "8–12" is read as "12–8" and a phone number comes out backwards. */
+[dir="rtl"] .chip .t, [dir="rtl"] .job-time, [dir="rtl"] .logrow .lt,
+[dir="rtl"] .dnum, [dir="rtl"] .hourcell, [dir="rtl"] input[type="date"],
+[dir="rtl"] .usedrow .qt{direction:ltr; text-align:end}
+[dir="rtl"] .seg button{direction:rtl}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 
@@ -795,6 +832,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <div class="seg" id="gateLangSeg" role="group" style="margin-top:14px">
       <button type="button" data-l="en">English</button>
       <button type="button" data-l="fr">Français</button>
+      <button type="button" data-l="he">עברית</button>
     </div>
   </form>
 </div>
@@ -865,6 +903,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <div class="seg" id="langSeg" role="group" style="margin-top:8px">
         <button type="button" data-l="en">English</button>
         <button type="button" data-l="fr">Français</button>
+        <button type="button" data-l="he">עברית</button>
       </div>
     </div>
 
@@ -1529,6 +1568,1111 @@ dialog#callDlg::backdrop{background:#0b0f12}
      Braces mark the parts filled in afterwards, because French seldom wants
      them in the same order as English. */
   var LS_LANG = "ebm-crew:lang:v1";
+  var HE = {
+    "Crew Calendar":
+      "לוח העבודה של הצוות",
+    "My Schedule":
+      "הלוח שלי",
+    "Enter your own code. Everyone has a different one.":
+      "הזינו את הקוד האישי שלכם. לכל אחד יש קוד משלו.",
+    "Your code":
+      "הקוד שלכם",
+    "Starting…":
+      "מתחיל…",
+    "Open":
+      "כניסה",
+    "That code does not match. Check with the office.":
+      "הקוד לא מתאים. בדקו מול המשרד.",
+    "Still starting up — try again in a second.":
+      "עדיין עולה — נסו שוב עוד רגע.",
+    "Install app":
+      "התקנת האפליקציה",
+    "You are asking for":
+      "אתם מבקשים",
+    "His booking that is in the way":
+      "השיבוץ שלו שחוסם",
+    "{name}, {a} to {b}":
+      "{name}, מ־{a} עד {b}",
+    "{a} to {b} of it":
+      "מ־{a} עד {b} מתוכו",
+    "all of it":
+      "את כולו",
+    "Parts and materials":
+      "חלקים וחומרים",
+    "What parts did you put into this job? Not the time — the app\n      already has your hours. Tap <b>Nothing used</b> if you did not use anything.":
+      "אילו חלקים השתמשתם בעבודה הזו? לא את הזמן — השעות שלכם כבר רשומות. אם לא השתמשתם בכלום, לחצו <b>לא השתמשתי בכלום</b>.",
+    "What it was":
+      "מה זה היה",
+    "How many":
+      "כמה",
+    "Incoming video call":
+      "שיחת וידאו נכנסת",
+    "hearing them {a} · seeing them {b} · sending voice {c} · sending picture {d}":
+      "שומעים אותם {a} · רואים אותם {b} · קול נשלח {c} · תמונה נשלחת {d}",
+    "React with {e}":
+      "להגיב עם {e}",
+    "Note or photo":
+      "הערה או תמונה",
+    "Reschedule":
+      "שינוי תאריך",
+    "Move it":
+      "להעביר",
+    "What happened":
+      "מה קרה",
+    "What has been happening":
+      "מה קרה כאן",
+    "Newest first. Who booked what, who changed it, who arrived and left, and what was written on a job.":
+      "החדש ביותר ראשון. מי שיבץ מה, מי שינה, מי הגיע ומי יצא, ומה נכתב על עבודה.",
+    "Everything":
+      "הכול",
+    "Bookings":
+      "שיבוצים",
+    "Clock":
+      "נוכחות",
+    "Changes":
+      "שינויים",
+    "Nothing to show.":
+      "אין מה להציג.",
+    "Somebody":
+      "מישהו",
+    "The office":
+      "המשרד",
+    "Booked for {man}":
+      "שובץ עבור {man}",
+    "Booked for {man}, put in by {who}":
+      "שובץ עבור {man}, הוזן על ידי {who}",
+    "Emergency let in":
+      "קריאת חירום אושרה",
+    "Moved here from {d}":
+      "הועבר לכאן מ־{d}",
+    "Opened again":
+      "נפתח מחדש",
+    "Clock cleared":
+      "הנוכחות נמחקה",
+    "Arrived":
+      "הגיע",
+    "Left":
+      "יצא",
+    "Paused — {why}":
+      "בהפסקה — {why}",
+    "Note: {t}":
+      "הערה: {t}",
+    "Edited":
+      "נערך",
+    "Edited — {what}":
+      "נערך — {what}",
+    "the hours":
+      "השעות",
+    "the address":
+      "הכתובת",
+    "the unit":
+      "היחידה",
+    "what needs doing":
+      "מה צריך לעשות",
+    "whose booking it is":
+      "של מי השיבוץ",
+    "Cancelled — {what}":
+      "בוטל — {what}",
+    "Crew changed — {what}":
+      "הצוות שונה — {what}",
+    "added {who}":
+      "נוסף {who}",
+    "removed {who}":
+      "הוסר {who}",
+    "Crew and codes saved":
+      "הצוות והקודים נשמרו",
+    "Time off":
+      "חופשה",
+    "Day off":
+      "יום חופש",
+    "Ask for a day off":
+      "בקשת יום חופש",
+    "Ask for this day off":
+      "בקשת חופש ליום הזה",
+    "You have this day off":
+      "יש לכם חופש ביום הזה",
+    "Already asked for":
+      "כבר ביקשתם",
+    "The office says yes or no, and your phone is told either way. Nothing is booked off until they agree.":
+      "המשרד מאשר או דוחה, ובכל מקרה תקבלו הודעה לטלפון. שום דבר לא נרשם כחופש עד שהם מאשרים.",
+    "First day":
+      "יום ראשון",
+    "Last day":
+      "יום אחרון",
+    "Why (optional)":
+      "סיבה (לא חובה)",
+    "e.g. family":
+      "למשל משפחה",
+    "Ask":
+      "לשלוח בקשה",
+    "Got it":
+      "הבנתי",
+    "What you have asked for":
+      "מה ביקשתם",
+    "{a} to {b}":
+      "מ־{a} עד {b}",
+    "given by {who}":
+      "אושר על ידי {who}",
+    "refused by {who}":
+      "נדחה על ידי {who}",
+    "waiting for an answer":
+      "ממתין לתשובה",
+    "You have 1 job booked in those days. The office will see that.":
+      "יש לכם עבודה אחת משובצת בימים האלה. המשרד יראה את זה.",
+    "You have {n} jobs booked in those days. The office will see that.":
+      "יש לכם {n} עבודות משובצות בימים האלה. המשרד יראה את זה.",
+    "Pick a day.":
+      "בחרו יום.",
+    "The last day is before the first one.":
+      "היום האחרון לפני היום הראשון.",
+    "You have already asked about one of those days.":
+      "כבר ביקשתם על אחד מהימים האלה.",
+    "{who} is asking for a day off":
+      "{who} מבקש יום חופש",
+    "1 job booked in it":
+      "עבודה אחת משובצת בתוכו",
+    "{n} jobs booked in it":
+      "{n} עבודות משובצות בתוכו",
+    "1 job is booked in those days and will stay booked. Reschedule it yourself if the day is given.":
+      "עבודה אחת משובצת בימים האלה ותישאר משובצת. אם החופש יאושר, העבירו אותה בעצמכם.",
+    "{n} jobs are booked in those days and will stay booked. Reschedule them yourself if the days are given.":
+      "{n} עבודות משובצות בימים האלה ויישארו משובצות. אם החופש יאושר, העבירו אותן בעצמכם.",
+    "Give the day off":
+      "לאשר את החופש",
+    "Say no":
+      "לדחות",
+    "Whole days":
+      "ימים שלמים",
+    "A few hours":
+      "כמה שעות",
+    "Which day":
+      "איזה יום",
+    "Off {a}–{b}":
+      "חופש {a}–{b}",
+    "{h} — time off":
+      "{h} — חופשה",
+    "You have 1 job booked in that time. The office will see that.":
+      "יש לכם עבודה אחת משובצת בזמן הזה. המשרד יראה את זה.",
+    "You have {n} jobs booked in that time. The office will see that.":
+      "יש לכם {n} עבודות משובצות בזמן הזה. המשרד יראה את זה.",
+    "You have already asked about that time.":
+      "כבר ביקשתם על הזמן הזה.",
+    "{name} is off {a}–{b} that day, given by {who}. Tick the box to book it anyway.":
+      "ל{name} יש חופש {a}–{b} ביום הזה, שאושר על ידי {who}. סמנו את התיבה כדי לשבץ בכל זאת.",
+    "You have the day off":
+      "אושר לכם החופש",
+    "No to the day off":
+      "החופש נדחה",
+    "Asked for {when} off":
+      "ביקש חופש ל{when}",
+    "Gave {who} {when} off":
+      "אישר ל{who} חופש ל{when}",
+    "Said no to {who} for {when}":
+      "דחה את {who} ל{when}",
+    "That did not save.":
+      "זה לא נשמר.",
+    "the office":
+      "המשרד",
+    "{name} has this day off, given by {who}. Tick the box to book it anyway.":
+      "ל{name} יש חופש ביום הזה, שאושר על ידי {who}. סמנו את התיבה כדי לשבץ בכל זאת.",
+    "<b>Book it anyway</b>This person was given this day off.":
+      "<b>לשבץ בכל זאת</b>לאדם הזה אושר חופש ביום הזה.",
+    "Asked for {man} on {d}, {h}":
+      "ביקש את {man} ב{d}, {h}",
+    "Let it in — {how}":
+      "אושר — {how}",
+    "pushed the other work later":
+      "העבודה האחרת נדחתה",
+    "dropped the other work":
+      "העבודה האחרת בוטלה",
+    "Said no to it":
+      "נדחה",
+    "This phone cannot reach the calendar, so that reached nobody. It is not waiting to send — get a signal, reload, and do it again.":
+      "הטלפון הזה לא מצליח להתחבר ללוח, ולכן זה לא הגיע לאף אחד. זה לא ממתין לשליחה — מצאו קליטה, טענו מחדש, ועשו זאת שוב.",
+    "Anything used?":
+      "השתמשתם בציוד?",
+    "Parts only — the app already has your hours. Nothing to put down? Tap Done.":
+      "רק חלקים — השעות שלכם כבר רשומות. אין מה לרשום? לחצו סיום.",
+    "Done":
+      "סיום",
+    "Not finished":
+      "לא הסתיים",
+    "Open it again?":
+      "לפתוח מחדש?",
+    "Not started":
+      "לא התחיל",
+    "Clear the clock?":
+      "למחוק את הנוכחות?",
+    "Could not clear the clock.":
+      "לא הצלחנו למחוק את הנוכחות.",
+    "Clock cleared by {who}":
+      "הנוכחות נמחקה על ידי {who}",
+    "Could not open it again.":
+      "לא הצלחנו לפתוח מחדש.",
+    "Opened again by {who}":
+      "נפתח מחדש על ידי {who}",
+    "{n} finished":
+      "{n} הסתיימו",
+    "{n} being done now":
+      "{n} מתבצעות עכשיו",
+    "{n} paused":
+      "{n} בהפסקה",
+    "Missing from this list":
+      "חסרים ברשימה הזו",
+    "Somebody else, by their number":
+      "מישהו אחר, לפי המספר שלו",
+    "Their number":
+      "המספר שלו",
+    "Put back":
+      "להחזיר",
+    "1 job booked":
+      "עבודה אחת משובצת",
+    "{n} jobs booked":
+      "{n} עבודות משובצות",
+    "Give {name} their code, then Save.":
+      "תנו ל{name} את הקוד, ואז שמרו.",
+    "Give them their name and code, then Save.":
+      "מלאו שם וקוד, ואז שמרו.",
+    "{name} is already on the list.":
+      "{name} כבר ברשימה.",
+    "That one is not yours to move.":
+      "העבודה הזו אינה שלכם להעביר.",
+    "Stock":
+      "ציוד",
+    "Is the stock there?":
+      "הציוד נמצא במקום?",
+    "Yes — it is at the building":
+      "כן — הוא בבניין",
+    "No — it still has to be brought":
+      "לא — צריך להביא אותו",
+    "Nothing is needed for this one":
+      "לא צריך כלום לעבודה הזו",
+    "I do not know yet":
+      "עוד לא יודע",
+    "Stock still to bring":
+      "צריך להביא ציוד",
+    "Stock is there":
+      "הציוד במקום",
+    "Stock not checked":
+      "הציוד לא נבדק",
+    "Move this job to another day":
+      "העברת העבודה ליום אחר",
+    "Which day":
+      "איזה יום",
+    "No room on that day. Pick another one.":
+      "אין מקום ביום הזה. בחרו יום אחר.",
+    "Pick a day and the hours.":
+      "בחרו יום ושעות.",
+    "That day has gone.":
+      "היום הזה כבר עבר.",
+    "Could not move it.":
+      "ההעברה נכשלה.",
+    "{name} will be told that you moved it.":
+      "{name} יקבל הודעה שהעברתם.",
+    "{name} will be told on his phone.":
+      "{name} יקבל הודעה לטלפון.",
+    "The office":
+      "המשרד",
+    "Moved from {d} by {who}":
+      "הועבר מ־{d} על ידי {who}",
+    "Close":
+      "סגירה",
+    "If something is not working":
+      "אם משהו לא עובד",
+    "Two checks. The first throws away\n        everything this phone has saved of the app and fetches it again — use it\n        if you were told about a change you cannot see. The second says whether\n        this phone and this network can carry a video call.":
+      "שתי בדיקות. הראשונה מוחקת כל מה שהטלפון הזה שמר מהאפליקציה ומורידה אותה מחדש — השתמשו בה אם סיפרו לכם על שינוי שאתם לא רואים. השנייה בודקת אם הטלפון והרשת הזו יכולים לקיים שיחת וידאו.",
+    "Get the newest version":
+      "הורדת הגרסה החדשה",
+    "Test video calling":
+      "בדיקת שיחות וידאו",
+    "Throwing it away and fetching it again…":
+      "מוחקים ומורידים מחדש…",
+    "It would not let go. Close the app fully and open it again.":
+      "זה לא הצליח. סגרו את האפליקציה לגמרי ופתחו אותה מחדש.",
+    "Checking…":
+      "בודקים…",
+    "Camera and microphone: working.":
+      "מצלמה ומיקרופון: תקינים.",
+    "Camera and microphone: {why}":
+      "מצלמה ומיקרופון: {why}",
+    "Your address on the internet: found.":
+      "הכתובת שלכם באינטרנט: נמצאה.",
+    "Your address on the internet: not found. This network is blocking it.":
+      "הכתובת שלכם באינטרנט: לא נמצאה. הרשת הזו חוסמת אותה.",
+    "Relay: working. Calls should connect anywhere.":
+      "ממסר: תקין. שיחות אמורות להתחבר מכל מקום.",
+    "Relay: set up, but it did not answer.":
+      "ממסר: מוגדר, אבל לא הגיב.",
+    "No connection right now, so a call cannot be set up.":
+      "אין חיבור כרגע, ולכן אי אפשר ליצור שיחה.",
+    "Connection to the calendar: none. A call needs it to reach the other phone.":
+      "חיבור ללוח: אין. שיחה זקוקה לו כדי להגיע לטלפון השני.",
+    "This device cannot make video calls at all.":
+      "המכשיר הזה לא יכול לבצע שיחות וידאו כלל.",
+    "Relay: none set up. Calls work on wi-fi and most networks, but not on one that hides both phones.":
+      "ממסר: לא מוגדר. שיחות עובדות ב־wi-fi וברוב הרשתות, אבל לא ברשת שמסתירה את שני הטלפונים.",
+    "Decline":
+      "דחייה",
+    "Your account":
+      "החשבון שלכם",
+    "Crew":
+      "צוות",
+    "Previous month":
+      "החודש הקודם",
+    "Next month":
+      "החודש הבא",
+    "Today":
+      "היום",
+    "Calendar layout":
+      "תצוגת הלוח",
+    "Month":
+      "חודש",
+    "Week":
+      "שבוע",
+    "List":
+      "רשימה",
+    "Plumbing":
+      "אינסטלציה",
+    "Electrical":
+      "חשמל",
+    "Admin":
+      "משרד",
+    "Admin (office)":
+      "משרד (הנהלה)",
+    "Office":
+      "משרד",
+    "{name}’s jobs":
+      "העבודות של {name}",
+    "Your jobs":
+      "העבודות שלכם",
+    "Click a day to see it or add a job":
+      "לחצו על יום כדי לראות אותו או להוסיף עבודה",
+    "Click a day to see what you have on":
+      "לחצו על יום כדי לראות מה יש לכם",
+    "Jobs save straight away and every open calendar updates within seconds.":
+      "עבודות נשמרות מיד וכל לוח פתוח מתעדכן תוך שניות.",
+    "off":
+      "חופש",
+    "New job — {when}":
+      "עבודה חדשה — {when}",
+    "today":
+      "היום",
+    "Free":
+      "פנוי",
+    "free":
+      "פנוי",
+    "Off":
+      "חופש",
+    "day off":
+      "יום חופש",
+    "Edit":
+      "עריכה",
+    "Sure?":
+      "בטוחים?",
+    "Add":
+      "הוספה",
+    "EBM Crew Calendar":
+      "לוח העבודה של צוות EBM",
+    "Checking…":
+      "בודקים…",
+    "Full":
+      "מלא",
+    "All day":
+      "יום שלם",
+    "all day":
+      "יום שלם",
+    "+{n} more":
+      "+{n} נוספות",
+    "Everything coming up":
+      "כל מה שמתקרב",
+    "Checking the calendar…":
+      "בודקים את הלוח…",
+    "Nothing booked from today onwards.":
+      "אין שיבוצים מהיום והלאה.",
+    "No crew yet. Add someone under Crew & codes.":
+      "אין עדיין צוות. הוסיפו מישהו תחת צוות וקודים.",
+    "no jobs":
+      "אין עבודות",
+    "{n} job":
+      "עבודה {n}",
+    "{n} jobs":
+      "{n} עבודות",
+    "Nothing booked for you this day.":
+      "אין לכם שיבוצים ביום הזה.",
+    "Nothing booked this day.":
+      "אין שיבוצים ביום הזה.",
+    "Checking this day…":
+      "בודקים את היום הזה…",
+    "One job.":
+      "עבודה אחת.",
+    "{n} jobs.":
+      "{n} עבודות.",
+    "{holiday} — normally a day off. ":
+      "{holiday} — בדרך כלל יום חופש. ",
+    "Rosh Hashana": "ראש השנה",
+    "Yom Kippur": "יום כיפור",
+    "Sukkos": "סוכות",
+    "Shmini Atzeres": "שמיני עצרת",
+    "Simchas Torah": "שמחת תורה",
+    "Pesach": "פסח",
+    "Shavuos": "שבועות",
+    "Normally a day off. ":
+      "בדרך כלל יום חופש. ",
+    "This day has passed.":
+      "היום הזה כבר עבר.",
+    "Fully booked.":
+      "מלא לגמרי.",
+    "Add a job":
+      "הוספת עבודה",
+    "Close":
+      "סגירה",
+    "On site":
+      "בשטח",
+    "Finished":
+      "הסתיים",
+    "Booked by {name}":
+      "שובץ על ידי {name}",
+    "by {name}":
+      "על ידי {name}",
+    "In {t}":
+      "הגיע {t}",
+    "In {t} · Out {u}":
+      "הגיע {t} · יצא {u}",
+    "Clock in":
+      "הגעתי",
+    "Clock out":
+      "סיימתי",
+    "Could not clock in.":
+      "לא הצלחנו לרשום הגעה.",
+    "Could not clock out.":
+      "לא הצלחנו לרשום סיום.",
+    "Cancel job":
+      "ביטול העבודה",
+    "Could not cancel.":
+      "הביטול נכשל.",
+    "Add a note…":
+      "הוספת הערה…",
+    "Note not saved.":
+      "ההערה לא נשמרה.",
+    "Unit {u}":
+      "יחידה {u}",
+    "Pick the property, then the time.":
+      "בחרו את הנכס, ואז את השעה.",
+    "Project":
+      "פרויקט",
+    "Building (optional)":
+      "בניין (לא חובה)",
+    "Whole project":
+      "כל הפרויקט",
+    "Unit":
+      "יחידה",
+    "Choose a project…":
+      "בחרו פרויקט…",
+    "No projects loaded":
+      "לא נטענו פרויקטים",
+    "Pick a project first":
+      "בחרו קודם פרויקט",
+    "Manager: ":
+      "מנהל: ",
+    "e.g. 3, or Basement":
+      "למשל 3, או מרתף",
+    "{h} — taken":
+      "{h} — תפוס",
+    "{h} — travelling from {where}":
+      "{h} — בדרך מ{where}",
+    "{h} — due at {where}":
+      "{h} — מצופה ב{where}",
+    "<b>Book back to back anyway</b>There is no hour left to travel between the two addresses.":
+      "<b>לשבץ ברצף בכל זאת</b>לא נשארה שעה לנסיעה בין שתי הכתובות.",
+    "No travel time — another job at {where} runs right up against this one.":
+      "אין זמן נסיעה — עבודה אחרת ב{where} צמודה לזו.",
+    "No time to get there — {name} has a job at {where} right against this one. Tick the box to book it anyway.":
+      "אין זמן להגיע — ל{name} יש עבודה ב{where} צמודה לזו. סמנו את התיבה כדי לשבץ בכל זאת.",
+    "Back to back — no travel time":
+      "ברצף — אין זמן נסיעה",
+    "Running late":
+      "מתעכב",
+    "Running late — needs until {h}":
+      "מתעכב — צריך עד {h}",
+    "+{n} hour":
+      "+{n} שעה",
+    "+{n} hours":
+      "+{n} שעות",
+    "Could not send that.":
+      "השליחה נכשלה.",
+    "Give him until {h}":
+      "לתת לו עד {h}",
+    "{name} is running late":
+      "{name} מתעכב",
+    "booked to {h}":
+      "משובץ עד {h}",
+    "Open the day":
+      "פתיחת היום",
+    "Also move the next job later?":
+      "להעביר גם את העבודה הבאה?",
+    "Also move {n} later jobs?":
+      "להעביר גם {n} עבודות נוספות?",
+    "There is no room left in the day. {where} at {h} would run past {end}.":
+      "לא נשאר מקום ביום. {where} ב{h} יחרוג מעבר ל{end}.",
+    "His next job was booked by {name}. Ask them to move it, or change it yourself if it is yours.":
+      "העבודה הבאה שלו שובצה על ידי {name}. בקשו ממנו להעביר אותה, או שנו בעצמכם אם היא שלכם.",
+    "somebody else":
+      "מישהו אחר",
+    "From":
+      "משעה",
+    "To":
+      "עד שעה",
+    "Work to do":
+      "מה צריך לעשות",
+    "e.g. Kitchen sink leaking under the cabinet":
+      "למשל כיור מטבח דולף מתחת לארון",
+    "Back":
+      "חזרה",
+    "Save job":
+      "שמירת העבודה",
+    "Save changes":
+      "שמירת השינויים",
+    "Edit — ":
+      "עריכה — ",
+    "Pick a project first.":
+      "בחרו קודם פרויקט.",
+    "The end time has to be after the start time.":
+      "שעת הסיום חייבת להיות אחרי שעת ההתחלה.",
+    "{name} already has a job in those hours. Pick another time.":
+      "ל{name} כבר יש עבודה בשעות האלה. בחרו זמן אחר.",
+    "The changes did not save.":
+      "השינויים לא נשמרו.",
+    "The job did not save.":
+      "העבודה לא נשמרה.",
+    "<b>All day</b>{a} to {b}.":
+      "<b>יום שלם</b>מ־{a} עד {b}.",
+    "<b>All day</b>Not available — part of this day is already booked.":
+      "<b>יום שלם</b>לא זמין — חלק מהיום כבר משובץ.",
+    "Notifications":
+      "התראות",
+    "Turn on notifications":
+      "הפעלת התראות",
+    "Send a test buzz":
+      "שליחת התראת בדיקה",
+    "Sending…":
+      "שולחים…",
+    "Sent — check your notifications":
+      "נשלח — בדקו את ההתראות",
+    "This phone would not show it":
+      "הטלפון הזה לא הציג אותה",
+    "EBM Crew — test":
+      "צוות EBM — בדיקה",
+    "If you can see this, this phone can buzz for {name}.":
+      "אם אתם רואים את זה, הטלפון הזה יכול להתריע עבור {name}.",
+    "Connection":
+      "חיבור",
+    "Crew & codes":
+      "צוות וקודים",
+    "Sign out":
+      "התנתקות",
+    "Language":
+      "שפה",
+    "Not switched on yet — the setup still has to be finished.":
+      "עוד לא הופעלו — ההגדרה טרם הושלמה.",
+    "Not switched on yet. The office still has to finish setting these up.":
+      "עוד לא הופעלו. המשרד צריך לסיים את ההגדרה.",
+    "This phone cannot show notifications.":
+      "הטלפון הזה לא יכול להציג התראות.",
+    "Blocked. Allow notifications for this app in your phone's settings, then reopen it.":
+      "חסום. אשרו התראות לאפליקציה הזו בהגדרות הטלפון, ואז פתחו אותה מחדש.",
+    "On. You'll hear when the crew clock in, clock out and finish a job.":
+      "פעיל. תקבלו התראה כשהצוות מגיע, יוצא ומסיים עבודה.",
+    "On. You'll get a buzz when a job is booked for you.":
+      "פעיל. תקבלו התראה כששובצה לכם עבודה.",
+    " This phone is registered as {name}.":
+      " הטלפון הזה רשום בשם {name}.",
+    "Allowed, but this phone has not registered yet. Reopen the app if it stays like this.":
+      "מאושר, אבל הטלפון עוד לא נרשם. פתחו את האפליקציה מחדש אם זה נשאר כך.",
+    "Off. Turn them on to hear when the crew clock in and out.":
+      "כבוי. הפעילו כדי לדעת מתי הצוות מגיע ויוצא.",
+    "Off. Turn them on to hear about a new job without opening the app.":
+      "כבוי. הפעילו כדי לשמוע על עבודה חדשה בלי לפתוח את האפליקציה.",
+    "No connection — showing what was last saved on this phone.":
+      "אין חיבור — מוצג מה שנשמר לאחרונה בטלפון הזה.",
+    "Saved on this device only — nobody else sees these jobs.":
+      "נשמר במכשיר הזה בלבד — אף אחד אחר לא רואה את העבודות האלה.",
+    "Connected. Everyone sees the same calendar.":
+      "מחובר. כולם רואים את אותו לוח.",
+    "Office only":
+      "למשרד בלבד",
+    "Give each person their own code and tell them what it is. A plumber or electrician signs in and sees only their own jobs. Set someone to <b>Admin (office)</b> and they get the calendar too — then tick exactly what they may do.":
+      "תנו לכל אדם קוד משלו וספרו לו מהו. אינסטלטור או חשמלאי נכנס ורואה רק את העבודות שלו. הגדירו מישהו כ<b>משרד (הנהלה)</b> והוא יקבל גם את הלוח — ואז סמנו בדיוק מה מותר לו.",
+    "Add someone":
+      "הוספת אדם",
+    "Name":
+      "שם",
+    "Role":
+      "תפקיד",
+    "Code":
+      "קוד",
+    "Remove":
+      "הסרה",
+    "Photos":
+      "תמונות",
+    "Photo":
+      "תמונה",
+    "Add photos":
+      "הוספת תמונות",
+    "Finishing up":
+      "סיום העבודה",
+    "What did you use on this job? Leave it empty if nothing.":
+      "במה השתמשתם בעבודה הזו? השאירו ריק אם בכלום.",
+    "e.g. 1/2 copper elbow":
+      "למשל ברך נחושת 1/2",
+    "Qty":
+      "כמות",
+    "Another line":
+      "שורה נוספת",
+    "Nothing used":
+      "לא השתמשתי בכלום",
+    "Save and finish":
+      "לשמור ולסיים",
+    "Used: ":
+      "בשימוש: ",
+    "Hours worked":
+      "שעות עבודה",
+    "Hours booked":
+      "שעות משובצות",
+    "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
+      "מה כל אחד באמת דיווח, ואיפה. השעות המשובצות מוצגות לצידן כדי לראות את ההפרש.",
+    "What changed in the app, and what this phone was told.":
+      "מה השתנה באפליקציה, ומה הטלפון הזה קיבל.",
+    "Every notification this phone was sent.":
+      "כל ההתראות שנשלחו לטלפון הזה.",
+    "Person":
+      "אדם",
+    "Everyone":
+      "כולם",
+    "Show":
+      "הצגה",
+    "Download Excel":
+      "הורדת אקסל",
+    "Hours":
+      "שעות",
+    "Every job":
+      "כל העבודות",
+    "All projects":
+      "כל הפרויקטים",
+    "Could not build the file.":
+      "לא הצלחנו ליצור את הקובץ.",
+    "Place":
+      "מקום",
+    "Jobs":
+      "עבודות",
+    "Booked":
+      "משובץ",
+    "Worked":
+      "עבד",
+    "Total":
+      "סך הכול",
+    "State":
+      "מצב",
+    "Materials":
+      "חומרים",
+    "Clocked in":
+      "שעת הגעה",
+    "Clocked out":
+      "שעת יציאה",
+    "Booked by":
+      "שובץ על ידי",
+    "Not clocked in":
+      "לא דיווח",
+    "Date":
+      "תאריך",
+    "hours":
+      "שעות",
+    "jobs":
+      "עבודות",
+    "Nothing was booked in those dates.":
+      "לא היו שיבוצים בתאריכים האלה.",
+    "Pick both dates.":
+      "בחרו את שני התאריכים.",
+    "The second date is before the first.":
+      "התאריך השני לפני הראשון.",
+    "Could not read those dates.":
+      "לא הצלחנו לקרוא את התאריכים.",
+    "Messages":
+      "הודעות",
+    "Send":
+      "שליחה",
+    "Just the two of you.":
+      "רק שניכם.",
+    "Write a message":
+      "כתבו הודעה",
+    "No messages yet":
+      "אין עדיין הודעות",
+    "Pick who to write to.":
+      "בחרו למי לכתוב.",
+    "All messages":
+      "כל השיחות",
+    "System":
+      "מערכת",
+    "The app writes here itself. There is nothing to reply to.":
+      "האפליקציה כותבת כאן בעצמה. אין למה להשיב.",
+    "The message did not send.":
+      "ההודעה לא נשלחה.",
+    "Emoji":
+      "אמוג׳י",
+    "Send a photo":
+      "שליחת תמונה",
+    "A newer version is ready.":
+      "גרסה חדשה מוכנה.",
+    "Load it":
+      "לטעון אותה",
+    "Voice note":
+      "הודעה קולית",
+    "Photo ready to send":
+      "תמונה מוכנה לשליחה",
+    "No answer":
+      "אין מענה",
+    "No route between the two phones. {a} sent, {b} received. Try again on wi-fi.":
+      "אין נתיב בין שני הטלפונים. {a} נשלחו, {b} התקבלו. נסו שוב ב־wi-fi.",
+    "Still ringing. They have to have the app open, or notifications turned on.":
+      "עדיין מצלצל. צריך שהאפליקציה תהיה פתוחה אצלם, או שההתראות יהיו פעילות.",
+    "Video call":
+      "שיחת וידאו",
+    "Answer":
+      "מענה",
+    "Hang up":
+      "ניתוק",
+    "Mute":
+      "השתקה",
+    "Camera off":
+      "כיבוי מצלמה",
+    "Ringing…":
+      "מצלצל…",
+    "Calling you…":
+      "מתקשר אליכם…",
+    "Connecting…":
+      "מתחבר…",
+    "Reconnecting…":
+      "מתחבר מחדש…",
+    "Connected":
+      "מחובר",
+    "Call ended":
+      "השיחה הסתיימה",
+    "Call failed":
+      "השיחה נכשלה",
+    "Could not start":
+      "לא הצלחנו להתחיל",
+    "Could not answer":
+      "לא הצלחנו לענות",
+    "The two phones could not reach each other. Try again on wi-fi.":
+      "שני הטלפונים לא הצליחו להגיע זה לזה. נסו שוב ב־wi-fi.",
+    "This device cannot make video calls.":
+      "המכשיר הזה לא יכול לבצע שיחות וידאו.",
+    "The camera and microphone are blocked. Allow them for this app in your phone’s settings.":
+      "המצלמה והמיקרופון חסומים. אשרו אותם לאפליקציה הזו בהגדרות הטלפון.",
+    "No camera or microphone on this device.":
+      "אין מצלמה או מיקרופון במכשיר הזה.",
+    "The camera is being used by something else.":
+      "המצלמה בשימוש של משהו אחר.",
+    "The call could not start.":
+      "השיחה לא הצליחה להתחיל.",
+    "Read":
+      "נקרא",
+    "Sent":
+      "נשלח",
+    "Today":
+      "היום",
+    "Download":
+      "הורדה",
+    "Download the photo":
+      "הורדת התמונה",
+    "What to do with this message":
+      "מה לעשות עם ההודעה הזו",
+    "Reply to this":
+      "להשיב",
+    "Forward it":
+      "להעביר",
+    "Forward":
+      "העברה",
+    "Send it on to":
+      "להעביר אל",
+    "Replying to {name}":
+      "תשובה ל{name}",
+    "Forwarded from {name}":
+      "הועבר מ{name}",
+    "You":
+      "אתם",
+    "Booked by":
+      "שובץ על ידי",
+    "Put it in somebody else’s name and it becomes theirs to edit or cancel. Leave it as you and it stays yours.":
+      "רשמו את זה על שם מישהו אחר וזה יהיה שלו לערוך או לבטל. השאירו על שמכם וזה נשאר שלכם.",
+    "{name} (you)":
+      "{name} (אתם)",
+    "put in by {name}":
+      "הוזן על ידי {name}",
+    "{n} hour still free: {when}.":
+      "נותרה {n} שעה פנויה: {when}.",
+    "{n} hours still free: {when}.":
+      "נותרו {n} שעות פנויות: {when}.",
+    "Emergency":
+      "חירום",
+    "Emergency request":
+      "בקשת חירום",
+    "Nobody is booked by anyone else that day":
+      "אף אחד לא משובץ על ידי מישהו אחר ביום הזה",
+    "Nobody is booked by anyone else that day.":
+      "אף אחד לא משובץ על ידי מישהו אחר ביום הזה.",
+    "They are booked. Say what you need them for and for how long, and whoever booked them decides — they can push the other work later or drop it.":
+      "האדם הזה משובץ. כתבו למה אתם צריכים אותו ולכמה זמן, ומי ששיבץ אותו יחליט — הוא יכול לדחות את העבודה האחרת או לבטל אותה.",
+    "Who you need":
+      "את מי אתם צריכים",
+    "Day":
+      "יום",
+    "For how long":
+      "לכמה זמן",
+    "What the emergency is":
+      "מה החירום",
+    "e.g. Water coming through the ceiling in 4":
+      "למשל מים יורדים מהתקרה ב־4",
+    "Send the request":
+      "שליחת הבקשה",
+    "The request did not send.":
+      "הבקשה לא נשלחה.",
+    "1 hour":
+      "שעה אחת",
+    "{n} hours":
+      "{n} שעות",
+    "Pick a day.":
+      "בחרו יום.",
+    "Say what the emergency is.":
+      "כתבו מה החירום.",
+    "Nothing is in the way — book it yourself.":
+      "שום דבר לא חוסם — שבצו בעצמכם.",
+    "{name} has nothing booked in those hours — book it yourself instead of asking.":
+      "ל{name} אין שום דבר משובץ בשעות האלה — שבצו בעצמכם במקום לבקש.",
+    "In the way":
+      "מה שחוסם",
+    "{name} is booked {a}–{b} at {where}, by {who}.":
+      "{name} משובץ {a}–{b} ב{where}, על ידי {who}.",
+    "{n} more that day.":
+      "{n} נוספות ביום הזה.",
+    "someone else":
+      "מישהו אחר",
+    "A request for one of your bookings":
+      "בקשה לאחד מהשיבוצים שלכם",
+    "{name} is asking":
+      "{name} מבקש",
+    "{name} for {n}, {when}.":
+      "{name} ל{n}, {when}.",
+    "What is in the way":
+      "מה חוסם",
+    "If you agree":
+      "אם תסכימו",
+    "Push the other work later":
+      "לדחות את העבודה האחרת",
+    "Drop the other work":
+      "לבטל את העבודה האחרת",
+    "{where} moves to {a}–{b}":
+      "{where} עובר ל־{a}–{b}",
+    "{where} {a}–{b} is cancelled":
+      "{where} {a}–{b} מבוטל",
+    "Nothing has to move.":
+      "שום דבר לא צריך לזוז.",
+    "It will not fit — {where} would run past the end of the day.":
+      "זה לא ייכנס — {where} יחרוג מעבר לסוף היום.",
+    "It will not fit in the day.":
+      "זה לא ייכנס ליום.",
+    "Nothing any more — those hours are free now.":
+      "כבר כלום — השעות האלה פנויות עכשיו.",
+    "Agree":
+      "לאשר",
+    "Refuse":
+      "לדחות",
+    "Look at it":
+      "לצפות בבקשה",
+    "That did not go through.":
+      "זה לא עבר.",
+    "{who} is asking for {name}":
+      "{who} מבקש את {name}",
+    "{who} agreed — {name} is yours":
+      "{who} אישר — {name} שלכם",
+    "{who} said no to {name}":
+      "{who} דחה את הבקשה ל{name}",
+    "the other work was dropped":
+      "העבודה האחרת בוטלה",
+    "the other work moved later":
+      "העבודה האחרת נדחתה",
+    "Got it":
+      "הבנתי",
+    "agreed by {name}":
+      "אושר על ידי {name}",
+    "Pause":
+      "הפסקה",
+    "Paused":
+      "בהפסקה",
+    "Break":
+      "הפסקה",
+    "Getting materials":
+      "הבאת ציוד",
+    "On another job":
+      "בעבודה אחרת",
+    "Pausing this job":
+      "הפסקה בעבודה הזו",
+    "The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.":
+      "השעון נעצר עד שתחזרו, כך שזמן ההיעדרות לא נספר כעבודה. המשרד מקבל הודעה לאן הלכתם.",
+    "Anything to add":
+      "משהו להוסיף",
+    "Optional":
+      "לא חובה",
+    "Pause the job":
+      "להפסיק את העבודה",
+    "Could not pause the job.":
+      "לא הצלחנו להפסיק.",
+    "Back on the job":
+      "חזרה לעבודה",
+    "Could not start again.":
+      "לא הצלחנו לחזור.",
+    "Paused since {t} · {why}":
+      "בהפסקה מ{t} · {why}",
+    "paused {d}":
+      "הפסקה {d}",
+    "{n} min":
+      "{n} דק׳",
+    "{h} h {m} min":
+      "{h} ש׳ {m} דק׳",
+    "{h} h":
+      "{h} ש׳",
+    "Hours paused":
+      "שעות הפסקה",
+    "Voice note, {n}s":
+      "הודעה קולית, {n} שנ׳",
+    "{n}s — tap to stop":
+      "{n} שנ׳ — לחצו לעצירה",
+    "That picture could not be read.":
+      "לא הצלחנו לקרוא את התמונה.",
+    "This device cannot record.":
+      "המכשיר הזה לא יכול להקליט.",
+    "The microphone was not allowed.":
+      "המיקרופון לא אושר.",
+    "That note is too long. Keep it under a minute.":
+      "ההודעה ארוכה מדי. שמרו על פחות מדקה.",
+    "Up to four. Taken with the phone's camera or picked from it.":
+      "עד ארבע. מצולמות במצלמת הטלפון או נבחרות ממנו.",
+    "The photo did not save.":
+      "התמונה לא נשמרה.",
+    "Can book and cancel jobs":
+      "יכול לשבץ ולבטל עבודות",
+    "Can add people and change codes":
+      "יכול להוסיף אנשים ולשנות קודים",
+    "Phones signed up for notifications":
+      "טלפונים רשומים להתראות",
+    "A person with no phone here cannot be buzzed, however the job is booked. They fix it themselves: open the app on their own phone, sign in with their code, and allow notifications when it asks.":
+      "אדם שאין לו טלפון ברשימה הזו לא יקבל התראה, לא משנה איך העבודה שובצה. הוא מסדר זאת בעצמו: פותח את האפליקציה בטלפון שלו, נכנס עם הקוד שלו, ומאשר התראות כשנשאל.",
+    " — no phone yet":
+      " — אין עדיין טלפון",
+    "a device":
+      "מכשיר",
+    " and ":
+      " ו־",
+    "Only shown when the app is connected.":
+      "מוצג רק כשהאפליקציה מחוברת.",
+    "Could not read the list just now.":
+      "לא הצלחנו לקרוא את הרשימה כרגע.",
+    "Your name":
+      "השם שלכם",
+    "Shown at the top of the app when you are signed in with the office code.":
+      "מוצג בראש האפליקציה כשאתם מחוברים עם קוד המשרד.",
+    "Office code":
+      "קוד המשרד",
+    "Opens the whole calendar. Keep this one to yourself.":
+      "פותח את כל הלוח. שמרו אותו לעצמכם.",
+    "Cancel":
+      "ביטול",
+    "Save":
+      "שמירה",
+    "The office needs a code.":
+      "המשרד צריך קוד.",
+    "the office":
+      "המשרד",
+    "Every person needs a name.":
+      "לכל אדם צריך שם.",
+    "{name} needs a code, or nobody can sign in as them.":
+      "ל{name} צריך קוד, אחרת אף אחד לא יוכל להיכנס בשמו.",
+    "Two people cannot share a code — {code} is already used by {name}.":
+      "שני אנשים לא יכולים לחלוק קוד — {code} כבר בשימוש של {name}.",
+    "Keep at least one person on the crew.":
+      "השאירו לפחות אדם אחד בצוות.",
+    "The crew list did not save.":
+      "רשימת הצוות לא נשמרה.",
+    "No connection":
+      "אין חיבור",
+    "<strong>Can't reach the calendar right now.</strong> You are seeing what was last saved on this device. Anything you change here will not reach anyone else — check your signal and reload.":
+      "<strong>אי אפשר להגיע ללוח כרגע.</strong> אתם רואים את מה שנשמר לאחרונה במכשיר הזה. שום דבר שתשנו כאן לא יגיע לאחרים — בדקו קליטה וטענו מחדש.",
+    "Saved on this device only":
+      "נשמר במכשיר הזה בלבד",
+    "<strong>Heads up:</strong> this copy keeps jobs in this browser only — nobody else sees them.":
+      "<strong>לתשומת לבכם:</strong> העותק הזה שומר עבודות בדפדפן הזה בלבד — אף אחד אחר לא רואה אותן.",
+    "You no longer have access. Reload the page.":
+      "אין לכם יותר גישה. טענו את הדף מחדש.",
+    "Too many changes at once. Wait a moment and try again.":
+      "יותר מדי שינויים בבת אחת. המתינו רגע ונסו שוב.",
+    "The calendar is full. Delete some old jobs first.":
+      "הלוח מלא. מחקו קודם עבודות ישנות.",
+    "No connection right now. Try again in a moment.":
+      "אין חיבור כרגע. נסו שוב עוד רגע.",
+    "This calendar is not accepting changes. Check the Firebase rules.":
+      "הלוח הזה לא מקבל שינויים. בדקו את כללי Firebase.",
+    "Put it on your phone":
+      "על הטלפון שלכם",
+    "Install the app":
+      "התקנת האפליקציה",
+    "Got it":
+      "הבנתי",
+    "Add to your iPhone":
+      "הוספה ל־iPhone",
+    "Safari does not have an install button, so it takes three taps. Make sure you are in Safari, not Chrome.":
+      "ב־Safari אין כפתור התקנה, ולכן צריך שלוש לחיצות. ודאו שאתם ב־Safari ולא ב־Chrome.",
+    "Tap the <b>Share</b> button — the square with an arrow pointing up, at the bottom of the screen.":
+      "לחצו על כפתור <b>שיתוף</b> — הריבוע עם החץ כלפי מעלה, בתחתית המסך.",
+    "Scroll down the list and tap <b>Add to Home Screen</b>.":
+      "גללו ברשימה ולחצו <b>הוספה למסך הבית</b>.",
+    "Tap <b>Add</b> in the top right.":
+      "לחצו <b>הוספה</b> בפינה הימנית העליונה.",
+    "Add to your phone":
+      "הוספה לטלפון",
+    "Chrome can install this like a normal app. If it is already on your home screen, you are done — Chrome will not offer to install it a second time.":
+      "Chrome יכול להתקין את זה כמו אפליקציה רגילה. אם זה כבר במסך הבית שלכם, סיימתם — Chrome לא יציע להתקין פעם שנייה.",
+    "Tap the <b>⋮</b> menu in the top right of Chrome.":
+      "לחצו על תפריט <b>⋮</b> בפינה הימנית העליונה של Chrome.",
+    "Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see it.":
+      "לחצו <b>התקנת אפליקציה</b>, או <b>הוספה למסך הבית</b> אם אינכם רואים את זה.",
+    "Tap <b>Install</b>.":
+      "לחצו <b>התקנה</b>.",
+    "Already have it, but the icon looks old? Remove it from the home screen and add it again — Android keeps the icon it was installed with.":
+      "כבר התקנתם, אבל הסמל נראה ישן? הסירו אותו ממסך הבית והוסיפו שוב — אנדרואיד שומר את הסמל שאיתו הותקן.",
+    "Install on this computer":
+      "התקנה במחשב הזה",
+    "Chrome and Edge can install this as a desktop app.":
+      "Chrome ו־Edge יכולים להתקין את זה כאפליקציית מחשב.",
+    "Look for the <b>install icon</b> at the right-hand end of the address bar — a screen with a downward arrow.":
+      "חפשו את <b>סמל ההתקנה</b> בקצה שורת הכתובת — מסך עם חץ כלפי מטה.",
+    "Click it, then click <b>Install</b>.":
+      "לחצו עליו, ואז לחצו <b>התקנה</b>.",
+    "No icon there? Open the browser menu and look for <b>Install</b> or <b>Apps</b>.":
+      "אין שם סמל? פתחו את תפריט הדפדפן וחפשו <b>התקנה</b> או <b>אפליקציות</b>.",
+    "Android phone":
+      "טלפון אנדרואיד",
+    "Android tablet":
+      "טאבלט אנדרואיד",
+    "iPhone":
+      "iPhone",
+    "iPad":
+      "iPad",
+    "Windows computer":
+      "מחשב Windows",
+    "Mac":
+      "Mac",
+    "Computer":
+      "מחשב",
+  };
   var FR = {
     /* the shell */
     "Crew Calendar": "Calendrier de l\u2019\u00e9quipe",
@@ -2109,13 +3253,21 @@ dialog#callDlg::backdrop{background:#0b0f12}
   };
 
   function tr(str, vars){
-    var out = (state.lang === "fr" && FR[str]) || str;
+    var book = state.lang === "fr" ? FR : state.lang === "he" ? HE : null;
+    var out = (book && book[str]) || str;
     if (vars) out = out.replace(/\{(\w+)\}/g, function(all, k){
       return vars[k] === undefined ? all : vars[k];
     });
     return out;
   }
-  function locale(){ return state.lang === "fr" ? "fr-CA" : "en-CA"; }
+  function locale(){
+    return state.lang === "fr" ? "fr-CA" : state.lang === "he" ? "he-IL" : "en-CA";
+  }
+  /* Hebrew is written right to left, so the whole app is laid out the other
+     way round in it — not the words in an English shape, which is what a
+     dictionary on its own gives you and what anybody who reads Hebrew can
+     see at a glance. */
+  function rtl(){ return state.lang === "he"; }
 
   /* Static text keeps its English in a data attribute the first time round,
      so switching back and forth never translates a translation. */
@@ -2135,7 +3287,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     Array.prototype.forEach.call(document.querySelectorAll("[data-ta]"), function(el){
       el.setAttribute("aria-label", tr(el.dataset.ta));
     });
-    document.documentElement.lang = state.lang === "fr" ? "fr-CA" : "en";
+    document.documentElement.lang =
+      state.lang === "fr" ? "fr-CA" : state.lang === "he" ? "he" : "en";
+    document.documentElement.dir = rtl() ? "rtl" : "ltr";
     Array.prototype.forEach.call(document.querySelectorAll("[data-l]"), function(b){
       b.setAttribute("aria-pressed", b.dataset.l === state.lang ? "true" : "false");
     });
@@ -2178,13 +3332,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
     ref.get().then(function(snap){
       var d = (snap.exists && snap.data()) || {};
       var mine = d[id];
-      if (!mine || (mine.lang !== "fr" && mine.lang !== "en")) return;
+      if (!mine || ["fr", "en", "he"].indexOf(mine.lang) < 0) return;
       if (mine.lang === state.lang) return;
       setLang(mine.lang, true);          // true: came from the database
     }).catch(function(){});
   }
   function setLang(l, fromCloud){
-    state.lang = l === "fr" ? "fr" : "en";
+    state.lang = (l === "fr" || l === "he") ? l : "en";
     try{ localStorage.setItem(LS_LANG, state.lang); }catch(e){}
     buildFormats();
     applyStaticText();
@@ -2202,6 +3356,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function addDays(d,n){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
   function hourLong(h){
     if (state.lang === "fr") return h + "\u00a0h";
+    if (state.lang === "he") return h + ":00";
     var ap=h<12?"AM":"PM", hh=h%12; if(!hh) hh=12; return hh+":00 "+ap;
   }
   /* A clocked time, written the same way as a booked hour.
@@ -2215,15 +3370,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (isNaN(t.getTime())) return "";
     var h = t.getHours(), m = t.getMinutes(), mm = (m < 10 ? "0" : "") + m;
     if (state.lang === "fr") return h + "\u00a0h\u00a0" + mm;
+    if (state.lang === "he") return h + ":" + mm;
     var ap = h < 12 ? "AM" : "PM", hh = h % 12; if (!hh) hh = 12;
     return hh + ":" + mm + " " + ap;
   }
   function hourShort(h){
     if (state.lang === "fr") return h + "h";
+    if (state.lang === "he") return String(h);
     var ap=h<12?"a":"p", hh=h%12; if(!hh) hh=12; return hh+ap;
   }
   function hourBare(h){
-    if (state.lang === "fr") return h;
+    if (state.lang === "fr" || state.lang === "he") return h;
     var hh=h%12; return hh===0 ? 12 : hh;
   }
   function rangeLabel(j){
@@ -2248,7 +3405,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   var holidayCache = {};
   function holidayFor(ds){
     if (!hebFmt) return null;
-    if (holidayCache.hasOwnProperty(ds)) return holidayCache[ds];
+    if (holidayCache.hasOwnProperty(ds)) return holidayCache[ds] ? tr(holidayCache[ds]) : holidayCache[ds];
     var out = null;
     try {
       var d = fromIso(ds); d.setHours(12,0,0,0);   // midday, so no timezone edge
@@ -2261,7 +3418,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (month && month[dy]) out = month[dy];
     } catch(e){}
     holidayCache[ds] = out;
-    return out;
+    return out ? tr(out) : out;
   }
   function isWeekend(ds){
     var wd = fromIso(ds).getDay();
@@ -2274,7 +3431,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v113";
+  var APP_VERSION = "v114";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -7799,8 +8956,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
   (function loadLang(){
     var stored = null;
     try{ stored = localStorage.getItem(LS_LANG); }catch(e){}
-    state.lang = stored === "fr" || stored === "en" ? stored
-               : (/^fr/i.test(navigator.language || "") ? "fr" : "en");
+    state.lang = (stored === "fr" || stored === "en" || stored === "he") ? stored
+               : /^he/i.test(navigator.language || "") ? "he"
+               : /^fr/i.test(navigator.language || "") ? "fr" : "en";
     buildFormats();
     applyStaticText();
   })();
