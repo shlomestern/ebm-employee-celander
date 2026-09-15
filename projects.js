@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------
    EBM properties — generated from EBM  All Projects Info 10.xlsx
 
-   23 projects, 59 buildings.
+   24 projects, 60 buildings.
    To add a building, copy a line inside that project's buildings list.
    To add a project, copy a whole block. Keep every id unique.
    --------------------------------------------------------------- */
@@ -111,5 +111,10 @@ window.EBM_PROJECTS = [
       { id: "50-1035-rue-chomedey", name: "1035 Rue Chomedey", city: "Laval", postal: "H7V 3R9" },
       { id: "50-3290-rue-monod", name: "3290 Rue Monod", city: "Laval", postal: "H7V 3S1" },
       { id: "50-3300-rue-monod", name: "3300 Rue Monod", city: "Laval", postal: "H7V 3S1" },
+  ]},
+  /* Not a property — our own office. Last in the list, so it sits under the
+     buildings rather than among them. */
+  { id: "EBM", name: "Empire Building Management", manager: "", managerPhone: "", buildings: [
+      { id: "ebm-6750-parc", name: "6750 Parc Ave.", city: "Montreal", postal: "H3N 1W7" },
   ]},
 ];

@@ -1469,10 +1469,25 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <label for="fProject" data-t>Project</label>
       <select id="fProject" required></select>
     </div>
-    <div class="field">
+    <div class="field" id="fBuildingRow">
       <label for="fBuilding" data-t>Building (optional)</label>
       <select id="fBuilding"></select>
       <span class="hint" id="managerHint"></span>
+    </div>
+    <!-- A place that is not on the list. Typed once, onto the job itself —
+         it does not join the list, because a list everyone can add to is a
+         list with four spellings of the same street on it. -->
+    <div id="fOtherRow" hidden>
+      <div class="field">
+        <label for="fOtherProject" data-t>Whose property</label>
+        <input id="fOtherProject" maxlength="60" data-tp="Owner or project name"
+               placeholder="Owner or project name">
+      </div>
+      <div class="field">
+        <label for="fOtherWhere" data-t>Address</label>
+        <input id="fOtherWhere" maxlength="80" data-tp="Street and city"
+               placeholder="Street and city">
+      </div>
     </div>
     <div class="field">
       <label for="fUnit" data-t>Unit</label>
@@ -2167,6 +2182,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "מערכת ההתראות לא הצליחה להגיע למכשיר הזה: {why}",
     "Could not ask the notifier: {why}":
       "לא התאפשר לפנות למערכת ההתראות: {why}",
+    "Somewhere else — type it in":
+      "מקום אחר — הקלידו אותו",
+    "Whose property":
+      "של מי הנכס",
+    "Address":
+      "כתובת",
+    "Owner or project name":
+      "שם הבעלים או הפרויקט",
+    "Street and city":
+      "רחוב ועיר",
+    "Type the address.":
+      "הקלידו את הכתובת.",
     "Was booked for {d} — done on this day":
       "הוזמן ל-{d} — בוצע ביום זה",
     "Booked for {d}, done on this day":
@@ -2999,6 +3026,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Le service de notifications n\u2019a pas pu joindre cet appareil\u00a0: {why}",
     "Could not ask the notifier: {why}":
       "Impossible de s\u2019adresser au service de notifications\u00a0: {why}",
+    "Somewhere else \u2014 type it in": "Ailleurs \u2014 \u00e0 \u00e9crire",
+    "Whose property": "Propri\u00e9t\u00e9 de qui",
+    "Address": "Adresse",
+    "Owner or project name": "Nom du propri\u00e9taire ou du projet",
+    "Street and city": "Rue et ville",
+    "Type the address.": "\u00c9crivez l\u2019adresse.",
     "Was booked for {d} \u2014 done on this day":
       "Pr\u00e9vu le {d} \u2014 fait ce jour-ci",
     "Booked for {d}, done on this day":
@@ -3372,6 +3405,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(day<10?"0":"")+day;
   }
   function fromIso(s){ var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  /* A typed address turned into something steady enough to compare. Two
+     people writing "1010 Sherbrooke" and "1010 sherbrooke  " mean the same
+     corner, and the hour to travel between jobs should know that. */
+  function slug(t){
+    return String(t).toLowerCase().normalize ?
+      String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)
+      : String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
   function addDays(d,n){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
   function hourLong(h){
     if (state.lang === "fr") return h + "\u00a0h";
@@ -3450,7 +3492,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v116";
+  var APP_VERSION = "v117";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3666,6 +3708,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
       o.textContent = p.id + " — " + p.name;
       sel.appendChild(o);
     });
+    var other = document.createElement("option");
+    other.value = OTHER; other.textContent = tr("Somewhere else — type it in");
+    sel.appendChild(other);
+  }
+  /* Somewhere that is not one of ours. The two typed lines are kept on the
+     job and nowhere else. */
+  var OTHER = "__other";
+  function otherPicked(){ return $("fProject").value === OTHER; }
+  function showOtherFields(on){
+    $("fOtherRow").hidden = !on;
+    $("fBuildingRow").hidden = !!on;
   }
   function fillBuildings(projectId, sel, hint){
     sel = sel || $("fBuilding");
@@ -7923,8 +7976,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     drawFormShots();
 
     if (editing){
+      var wasOther = editing.projectId === OTHER;
       $("fProject").value = editing.projectId;
-      fillBuildings(editing.projectId);
+      showOtherFields(wasOther);
+      if (wasOther){
+        $("fOtherProject").value = editing.projectName || "";
+        $("fOtherWhere").value = editing.buildingName || "";
+      }
+      fillBuildings(wasOther ? "" : editing.projectId);
       $("fBuilding").value = editing.buildingId;
       $("fUnit").value = editing.unit || "";
       $("fJob").value = editing.job || "";
@@ -7935,6 +7994,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       $("fFrom").value = String(editing.from);
       refreshHours(editing.to);
     } else {
+      showOtherFields(false);
+      $("fOtherProject").value = ""; $("fOtherWhere").value = "";
       fillBuildings("");
       refreshHours();
     }
@@ -7943,6 +8004,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   function hereKey(){
     var pid = $("fProject").value, p = project(pid);
+    if (pid === OTHER){
+      var w = $("fOtherWhere").value.trim();
+      return w ? {proj: OTHER, bld: OTHER + "-" + slug(w)} : {proj:"", bld:""};
+    }
     if (!p) return {proj:"", bld:""};
     return {proj: pid,
             bld: $("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "")};
@@ -7994,8 +8059,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
 
   $("fProject").addEventListener("change", function(){
-    fillBuildings($("fProject").value);
+    showOtherFields(otherPicked());
+    fillBuildings(otherPicked() ? "" : $("fProject").value);
     refreshHours();
+  });
+  ["fOtherProject", "fOtherWhere"].forEach(function(id){
+    $(id).addEventListener("input", refreshHours);
   });
   $("fBuilding").addEventListener("change", function(){ refreshHours(); });
   $("fTravelOverride").addEventListener("change", function(){ refreshHours(); });
@@ -8045,14 +8114,24 @@ dialog#callDlg::backdrop{background:#0b0f12}
   });
   function saveFromForm(){
     var ds=openDate, crewId=editing ? editing.crewId : viewCrewId();
-    var pid=$("fProject").value;
-    var p=project(pid);
-    if (!p){ $("formErr").textContent=tr("Pick a project first."); return; }
-    var bid=$("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "");
-    // Leaving the building unset books the whole project. The project's own
-    // name is stored as the label, so every card, chip and notification still
-    // has somewhere to say where the job is, with no special case for it.
-    var b=buildingOf(pid,bid) || {id:"", name:p.name};
+    var pid=$("fProject").value, p, b;
+    if (pid === OTHER){
+      var oname = $("fOtherProject").value.trim();
+      var owhere = $("fOtherWhere").value.trim();
+      if (!owhere){ $("formErr").textContent=tr("Type the address."); return; }
+      p = {id: OTHER, name: oname || owhere, manager:"", managerPhone:""};
+      // Named after the address so two jobs at the same typed address count as
+      // the same place, and nobody is given an hour to travel across a car park.
+      b = {id: OTHER + "-" + slug(owhere), name: owhere};
+    } else {
+      p=project(pid);
+      if (!p){ $("formErr").textContent=tr("Pick a project first."); return; }
+      var bid=$("fBuilding").value || (p.buildings.length===1 ? p.buildings[0].id : "");
+      // Leaving the building unset books the whole project. The project's own
+      // name is stored as the label, so every card, chip and notification still
+      // has somewhere to say where the job is, with no special case for it.
+      b=buildingOf(pid,bid) || {id:"", name:p.name};
+    }
 
     var allDay=$("fAllDay").checked;
     var from = allDay ? DAY_START : parseInt($("fFrom").value,10);
