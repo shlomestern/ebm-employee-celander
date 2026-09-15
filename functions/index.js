@@ -551,8 +551,13 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
       ? ` · ${at.away >= 1000 ? `${(at.away / 1000).toFixed(1)} km` : `${at.away} m`}` +
         " from the address"
       : "";
-    const title = endedNow ? `${who} finished` : `${who} clocked in`;
-    const body = endedNow
+    const parked = endedNow && !!after.parked;
+    const title = parked ? `${who} stopped for the day`
+                : endedNow ? `${who} finished` : `${who} clocked in`;
+    const body = parked
+      ? `${where} · left ${AT(after.clockOut)} · not finished` +
+        (after.backOn ? ` · back ${after.backOn}` : "")
+      : endedNow
       ? `${where} · left ${AT(after.clockOut)}` +
         ` · ${used ? `used ${used}` : "nothing used"}` + notItsDay
       : `${where} · started ${AT(after.clockIn)}` +
@@ -754,6 +759,12 @@ exports.notifyCrewOnNewJob = onDocumentCreated(
 
     const when = job.allDay ? "All day" : `${HOURS(job.from)} – ${HOURS(job.to)}`;
     const where = job.buildingName + (job.unit ? ` · Unit ${job.unit}` : "");
+    // The rest of a job he stopped himself, on the day he himself picked.
+    // He was there when it was arranged; a buzz about it is noise.
+    if (job.carriedFrom) {
+      logger.info(`${job.crewId} carried his own job to ${job.date} — not told`);
+      return;
+    }
     // Whoever booked it was asked whether the parts are already on site. If
     // they are not, that belongs in the notification and not in a line the
     // man has to open the app to find.

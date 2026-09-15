@@ -1354,6 +1354,44 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <span class="spacer"></span>
       <button type="submit" class="btn btn-primary" id="pauseGo" data-t>Pause the job</button>
     </div>
+    <div class="actions">
+      <button type="button" class="btn" id="pauseCarry" data-t>Done for today — back another day</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Not finished, and not being finished today either. Today's hours are
+     closed off where they stand and the rest of the work goes on another
+     day, as its own job, so neither day's timesheet borrows from the other. -->
+<dialog id="carryDlg">
+  <form method="dialog" class="dlg" id="carryForm">
+    <div class="eyebrow" id="carryWho"></div>
+    <h3 data-t>Finishing this another day</h3>
+    <p class="sub" data-t>Your hours today are closed off now. The rest of the job is put on the day you pick, so you come back to it there.</p>
+    <div class="field">
+      <label for="carryDate" data-t>Coming back on</label>
+      <input type="date" id="carryDate" required>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="carryFrom" data-t>From</label>
+        <select id="carryFrom"></select>
+      </div>
+      <div class="field">
+        <label for="carryTo" data-t>To</label>
+        <select id="carryTo"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="carryNote" data-t>What is left to do</label>
+      <input id="carryNote" maxlength="80" autocomplete="off" data-tp="Optional" placeholder="Optional">
+    </div>
+    <p class="err" id="carryErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="carryCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="carryGo" data-t>Finish for today</button>
+    </div>
   </form>
 </dialog>
 
@@ -2199,6 +2237,28 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "מערכת ההתראות לא הצליחה להגיע למכשיר הזה: {why}",
     "Could not ask the notifier: {why}":
       "לא התאפשר לפנות למערכת ההתראות: {why}",
+    "Done for today — back another day":
+      "סיימתי להיום — אחזור ביום אחר",
+    "Finishing this another day":
+      "סיום העבודה ביום אחר",
+    "Your hours today are closed off now. The rest of the job is put on the day you pick, so you come back to it there.":
+      "השעות שלכם להיום נסגרות עכשיו. שאר העבודה עובר ליום שתבחרו, ושם תחזרו אליה.",
+    "Coming back on":
+      "חוזרים בתאריך",
+    "What is left to do":
+      "מה נשאר לעשות",
+    "Finish for today":
+      "לסיים להיום",
+    "Not finished":
+      "לא הושלם",
+    "Stopped for the day — back on {d}":
+      "סיים להיום — חוזר ב-{d}",
+    "Stopped for the day — coming back {d}":
+      "סיים להיום — חוזר ב-{d}",
+    "Carried over from {d}":
+      "המשך מ-{d}",
+    "Could not set that up.":
+      "לא התאפשר להגדיר את זה.",
     "Where you are":
       "המיקום שלכם",
     "This does not look like the address":
@@ -3071,6 +3131,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Le service de notifications n\u2019a pas pu joindre cet appareil\u00a0: {why}",
     "Could not ask the notifier: {why}":
       "Impossible de s\u2019adresser au service de notifications\u00a0: {why}",
+    "Done for today \u2014 back another day": "Fini pour aujourd\u2019hui \u2014 je reviens un autre jour",
+    "Finishing this another day": "Finir \u00e7a un autre jour",
+    "Your hours today are closed off now. The rest of the job is put on the day you pick, so you come back to it there.":
+      "Vos heures d\u2019aujourd\u2019hui sont ferm\u00e9es maintenant. Le reste du travail est plac\u00e9 au jour que vous choisissez, pour le reprendre l\u00e0.",
+    "Coming back on": "Retour le",
+    "What is left to do": "Ce qu\u2019il reste \u00e0 faire",
+    "Finish for today": "Terminer la journ\u00e9e",
+    "Not finished": "Non termin\u00e9",
+    "Stopped for the day \u2014 back on {d}": "Arr\u00eat\u00e9 pour la journ\u00e9e \u2014 retour le {d}",
+    "Stopped for the day \u2014 coming back {d}": "Arr\u00eat\u00e9 pour la journ\u00e9e \u2014 retour le {d}",
+    "Carried over from {d}": "Suite du {d}",
+    "Could not set that up.": "Impossible de faire \u00e7a.",
     "Where you are": "O\u00f9 vous \u00eates",
     "This does not look like the address": "\u00c7a ne ressemble pas \u00e0 l\u2019adresse",
     "If the phone has it wrong, carry on \u2014 the office will see what it said.":
@@ -3555,7 +3627,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v119";
+  var APP_VERSION = "v120";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3999,7 +4071,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         worked: round2(worked), paused: round2(paused),
         started: j.clockIn ? clockLong(j.clockIn) : "",
         ended: j.clockOut ? clockLong(j.clockOut) : "",
-        state: j.clockOut ? tr("Finished")
+        state: j.parked ? tr("Not finished")
+             : j.clockOut ? tr("Finished")
              : onBreak(j) ? tr("Paused")
              : (j.clockIn ? tr("On site") : tr("Not clocked in")),
         used: (j.used || []).map(function(u){
@@ -6720,6 +6793,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     // On site and paused are drawn dots and carry no character of their own;
     // finished keeps a tick, because a shape reads better than a colour for
     // the one state that means there is nothing left to do.
+    // Carried to another day: his hours are closed but the work is not done,
+    // and a tick against it would say it was.
+    if (j.parked)    return {k:"hold", g:"",       label: tr("Paused")};
     if (j.clockOut) return {k:"fin",  g:"\u2713", label: tr("Finished")};
     if (onBreak(j))  return {k:"hold", g:"",       label: tr("Paused")};
     if (j.clockIn)   return {k:"on",   g:"",       label: tr("On site")};
@@ -7021,6 +7097,133 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
   $("pauseCancel").addEventListener("click", function(){ $("pauseDlg").close(); pauseJob = null; });
   $("pauseForm").addEventListener("submit", function(ev){ ev.preventDefault(); startBreak(); });
+
+  /* ---------- finishing another day ----------
+
+     A man who has done six hours on a job and is going home is neither
+     finished nor paused. Leaving it paused overnight counts the night as a
+     break and leaves the job hanging on yesterday; clocking out calls it
+     finished when it is not.
+
+     So the day is closed where it stands and what is left becomes its own
+     job on the day he is coming back. Two days of work, two days of hours,
+     and each one says where it came from. */
+  var carryJob = null;
+  function fillCarryHours(keep){
+    var j = carryJob; if (!j) return;
+    var ds = $("carryDate").value;
+    computeBusy(ds, j.crewId, j.id, {proj: j.projectId, bld: j.buildingId});
+    var f = $("carryFrom"); f.innerHTML = "";
+    var i, o;
+    for (i = DAY_START; i < DAY_END; i++){
+      o = document.createElement("option"); o.value = i;
+      if (busyMap[i]){ o.textContent = tr("{h} \u2014 taken", {h: hourLong(i)}); o.disabled = true; }
+      else if (travelStart[i]){
+        o.textContent = tr("{h} \u2014 travelling from {where}",
+                           {h: hourLong(i), where: travelStart[i]});
+        o.disabled = true;
+      } else if (offMap[i]){ o.textContent = tr("{h} \u2014 time off", {h: hourLong(i)}); o.disabled = true; }
+      else o.textContent = hourLong(i);
+      f.appendChild(o);
+    }
+    var want = keep === undefined ? j.from : keep, ok = null;
+    for (i = 0; i < f.options.length; i++){
+      if (f.options[i].disabled) continue;
+      if (ok === null) ok = f.options[i].value;
+      if (+f.options[i].value === +want){ ok = f.options[i].value; break; }
+    }
+    if (ok !== null) f.value = ok;
+    fillCarryTo();
+  }
+  function fillCarryTo(){
+    var j = carryJob; if (!j) return;
+    var from = parseInt($("carryFrom").value, 10);
+    var t = $("carryTo"); t.innerHTML = "";
+    for (var i = from + 1; i <= DAY_END; i++){
+      if (busyMap[i - 1] && i - 1 !== from) break;
+      var o = document.createElement("option");
+      o.value = i; o.textContent = hourLong(i);
+      t.appendChild(o);
+    }
+    // As long as was booked in the first place, where the day allows it.
+    var want = from + Math.max(1, (j.to || 0) - (j.from || 0));
+    for (var k = 0; k < t.options.length; k++){
+      if (+t.options[k].value === want){ t.value = String(want); return; }
+    }
+    if (t.options.length) t.value = t.options[t.options.length - 1].value;
+  }
+  function openCarry(j){
+    carryJob = j;
+    var m = memberOr(j.crewId);
+    $("carryWho").textContent = m.name + " \u00b7 " + whereLine(j);
+    $("carryDate").min = todayIso;
+    var next = iso(addDays(new Date(), 1));
+    $("carryDate").value = next;
+    $("carryNote").value = "";
+    $("carryErr").textContent = "";
+    $("carryGo").disabled = false;
+    fillCarryHours();
+    $("carryDlg").showModal();
+  }
+  $("carryDate").addEventListener("change", function(){ fillCarryHours(); });
+  $("carryFrom").addEventListener("change", function(){ fillCarryTo(); });
+  $("carryCancel").addEventListener("click", function(){
+    $("carryDlg").close(); carryJob = null;
+  });
+  $("pauseCarry").addEventListener("click", function(){
+    var j = pauseJob;
+    $("pauseDlg").close(); pauseJob = null;
+    if (j) openCarry(j);
+  });
+  $("carryForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var j = carryJob; if (!j) return;
+    var ds = $("carryDate").value;
+    var from = parseInt($("carryFrom").value, 10), to = parseInt($("carryTo").value, 10);
+    if (!ds || !(to > from)){
+      $("carryErr").textContent = tr("Pick a day and the hours."); return;
+    }
+    if (ds < todayIso){ $("carryErr").textContent = tr("That day has gone."); return; }
+    if (overlaps(ds, j.crewId, from, to, null)){
+      $("carryErr").textContent = tr("{name} already has a job in those hours. Pick another time.",
+        {name: memberOr(j.crewId).name});
+      return;
+    }
+    $("carryGo").disabled = true;
+    var now = new Date().toISOString();
+    var left = $("carryNote").value.trim();
+    var rest = {
+      v: 2, id: newId(), date: ds, crewId: j.crewId,
+      from: from, to: to, allDay: false,
+      projectId: j.projectId, projectName: j.projectName,
+      buildingId: j.buildingId, buildingName: j.buildingName,
+      unit: j.unit || "",
+      job: left ? j.job + " \u2014 " + left : j.job,
+      photos: [], stock: j.stock || "", tight: false,
+      manager: j.manager || "", managerPhone: j.managerPhone || "",
+      carriedFrom: j.id, carriedDate: j.date,
+      createdAt: now, createdBy: j.createdBy, createdById: j.createdById,
+      bookedBy: meName(),
+      clockIn: null, clockOut: null, breaks: [], notes: [], used: []
+    };
+    // Today first: his hours are the part that must not be lost if the
+    // second write fails. A day closed with no job waiting is a nuisance;
+    // a job waiting with the day still open is a man clocked in overnight.
+    patchJob(j.id, {
+      clockOut: now,
+      breaks: onBreak(j) ? closedBreaks(j, now) : (j.breaks || []),
+      parked: true, backOn: ds
+    }).then(function(){
+      return saveJob(rest);
+    }).then(function(){
+      noteDown("clock", tr("Stopped for the day \u2014 coming back {d}",
+        {d: F_MED.format(fromIso(ds))}), j.id);
+      $("carryDlg").close(); carryJob = null; render();
+    }).catch(function(e){
+      $("carryGo").disabled = false;
+      $("carryErr").textContent = errText(e, tr("Could not set that up."));
+    });
+  });
 
   function openUsed(j){
     usedJob = j;
@@ -7340,7 +7543,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var w = document.createElement("span"); w.className="job-where";
     w.textContent = j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "");
     top.appendChild(t); top.appendChild(w);
-    if (j.clockOut){
+    if (j.parked){
+      var p0=document.createElement("span"); p0.className="pill hold";
+      p0.textContent=tr("Not finished"); top.appendChild(p0);
+    } else if (j.clockOut){
       var p1=document.createElement("span"); p1.className="pill off"; p1.textContent=tr("Finished"); top.appendChild(p1);
     } else if (j.urgent && !j.clockIn){
       var p4=document.createElement("span"); p4.className="pill hold"; p4.textContent=tr("Emergency"); top.appendChild(p4);
@@ -7389,6 +7595,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
         ? tr("Opened again by {who}", {who: j.reopenedBy || ""})
         : tr("Clock cleared by {who}", {who: j.reopenedBy || ""});
       card.appendChild(rp);
+    }
+    if (j.parked && j.backOn){
+      var pk=document.createElement("div"); pk.className="job-hold";
+      pk.textContent = tr("Stopped for the day \u2014 back on {d}",
+        {d: F_MED.format(fromIso(j.backOn))});
+      card.appendChild(pk);
+    }
+    if (j.carriedFrom && j.carriedDate){
+      var cf=document.createElement("div"); cf.className="job-sub";
+      cf.textContent = tr("Carried over from {d}",
+        {d: F_MED.format(fromIso(j.carriedDate))});
+      card.appendChild(cf);
     }
     if (j.movedFrom){
       var mvd=document.createElement("div"); mvd.className="job-sub";
