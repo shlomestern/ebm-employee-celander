@@ -888,7 +888,6 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55; cursor:pointer"></p>
 
     <div class="actions">
-      <button type="button" class="btn" id="meOffBtn" data-t>Day off</button>
       <button type="button" class="btn" id="meLogBtn" hidden data-t>What happened</button>
       <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
       <button type="button" class="btn" id="meCrewBtn" hidden data-t>Crew &amp; codes</button>
@@ -1415,6 +1414,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <div class="actions">
       <button type="button" class="btn btn-primary" id="addJobBtn" data-t>Add a job</button>
       <button type="button" class="btn" id="askJobBtn" hidden data-t>Emergency request</button>
+      <button type="button" class="btn" id="dayOffBtn" hidden data-t>Ask for this day off</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="dayClose" data-t>Close</button>
     </div>
@@ -1583,6 +1583,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Crew and codes saved": "\u00c9quipe et codes enregistr\u00e9s",
     "Time off": "Cong\u00e9", "Day off": "Jour de cong\u00e9",
     "Ask for a day off": "Demander un jour de cong\u00e9",
+    "Ask for this day off": "Demander ce jour en cong\u00e9",
+    "You have this day off": "Vous avez ce jour en cong\u00e9",
+    "Already asked for": "D\u00e9j\u00e0 demand\u00e9",
     "The office says yes or no, and your phone is told either way. Nothing is booked off until they agree.":
       "Le bureau dit oui ou non, et votre t\u00e9l\u00e9phone est averti dans les deux cas. Rien n\u2019est r\u00e9serv\u00e9 tant qu\u2019ils n\u2019ont pas accept\u00e9.",
     "First day": "Premier jour", "Last day": "Dernier jour",
@@ -2271,7 +2274,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v112";
+  var APP_VERSION = "v113";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3273,8 +3276,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     offClashLine();
   });
   $("offH2").addEventListener("change", offClashLine);
-  function openOffAsk(){
-    var t = iso(addDays(new Date(), 1));
+  function openOffAsk(ds){
+    /* Asked from the day itself, so the day it is about is already filled in.
+       It sat in the account sheet at first, which is where you go to change
+       your language, not to say you cannot come in on Thursday. */
+    var t = ds || iso(addDays(new Date(), 1));
     $("offFrom").min = todayIso; $("offTo").min = todayIso;
     $("offFrom").value = t; $("offTo").value = t;
     $("offWhy").value = "";
@@ -3290,7 +3296,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   });
   $("offTo").addEventListener("change", offClashLine);
   $("offCancel").addEventListener("click", function(){ $("offDlg").close(); });
-  $("meOffBtn").addEventListener("click", function(){ $("meDlg").close(); openOffAsk(); });
+  $("dayOffBtn").addEventListener("click", function(){ openOffAsk(openDate); });
   $("offForm").addEventListener("submit", function(ev){
     ev.preventDefault();
     var shape = offAsShaped(), f = shape.from, t = shape.to;
@@ -6586,6 +6592,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
     // Only worth offering when the booking in the way is somebody else's.
     $("askJobBtn").hidden = !can("book") || dayIsPast(ds) ||
       !jobsOn(ds, viewCrewId()).some(function(j){ return !bookedByMe(j); });
+    /* The men on the tools ask for time off. The office does not ask itself,
+       and an admin sitting in the office does not ask either — they are the
+       ones being asked. */
+    $("dayOffBtn").hidden = isOffice() || ds < todayIso;
+    var already = offOn(ds, state.me) || offAsked(ds, state.me);
+    if (!$("dayOffBtn").hidden && already){
+      $("dayOffBtn").textContent = already.state === "approved"
+        ? tr("You have this day off") : tr("Already asked for");
+      $("dayOffBtn").disabled = true;
+    } else {
+      $("dayOffBtn").textContent = tr("Ask for this day off");
+      $("dayOffBtn").disabled = false;
+    }
 
     var host=$("dayJobs"); host.innerHTML="";
     var list=jobsOn(ds, viewCrewId());
