@@ -888,6 +888,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55; cursor:pointer"></p>
 
     <div class="actions">
+      <button type="button" class="btn" id="meOffBtn" data-t>Day off</button>
       <button type="button" class="btn" id="meLogBtn" hidden data-t>What happened</button>
       <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
       <button type="button" class="btn" id="meCrewBtn" hidden data-t>Crew &amp; codes</button>
@@ -1086,6 +1087,70 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <button type="button" class="btn" id="mvCancel" data-t>Back</button>
       <span class="spacer"></span>
       <button type="submit" class="btn btn-primary" id="mvSave" data-t>Move it</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="offDlg">
+  <form method="dialog" class="dlg" id="offForm">
+    <div class="eyebrow" data-t>Time off</div>
+    <h3 data-t>Ask for a day off</h3>
+    <p class="sub" data-t>The office says yes or no, and your phone is told either way. Nothing is booked off until they agree.</p>
+    <div class="seg" id="offKind" role="group">
+      <button type="button" data-k="days" data-t>Whole days</button>
+      <button type="button" data-k="hours" data-t>A few hours</button>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="offFrom" id="offFromLb" data-t>First day</label>
+        <input type="date" id="offFrom" required>
+      </div>
+      <div class="field" id="offToField">
+        <label for="offTo" data-t>Last day</label>
+        <input type="date" id="offTo">
+      </div>
+    </div>
+    <div class="row2" id="offHourRow" hidden>
+      <div class="field">
+        <label for="offH1" data-t>From</label>
+        <select id="offH1"></select>
+      </div>
+      <div class="field">
+        <label for="offH2" data-t>To</label>
+        <select id="offH2"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="offWhy" data-t>Why (optional)</label>
+      <input id="offWhy" maxlength="120" autocomplete="off" data-tp="e.g. family" placeholder="e.g. family">
+    </div>
+    <p class="sub" id="offClash" style="margin:2px 0 0"></p>
+    <p class="err" id="offErr"></p>
+    <div class="mesec" id="offMineSec" style="margin-top:16px" hidden>
+      <div class="eyebrow" data-t>What you have asked for</div>
+      <div id="offMine" class="sub" style="margin-top:6px"></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn" id="offCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="offSend" data-t>Ask</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="offDecDlg">
+  <form method="dialog" class="dlg" id="offDecForm">
+    <div class="eyebrow" data-t>Time off</div>
+    <h3 id="offDecWho"></h3>
+    <p class="sub" id="offDecWhen"></p>
+    <p class="sub" id="offDecWhy" style="margin-top:2px"></p>
+    <p class="warn" id="offDecJobs" hidden></p>
+    <p class="err" id="offDecErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="offDecClose" data-t>Close</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-danger" id="offDecNo" data-t>Say no</button>
+      <button type="button" class="btn btn-go" id="offDecYes" data-t>Give the day off</button>
     </div>
   </form>
 </dialog>
@@ -1411,6 +1476,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <div class="shots" id="formShots"></div>
     </div>
 
+    <label class="check" id="offAnywayRow" hidden>
+      <input type="checkbox" id="fOffAnyway">
+      <span data-th><b>Book it anyway</b>This person was given this day off.</span>
+    </label>
     <label class="check" id="travelRow" hidden>
       <input type="checkbox" id="fTravelOverride">
       <span data-th><b>Book back to back anyway</b>There is no hour left to travel between the two addresses.</span>
@@ -1512,6 +1581,55 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Crew changed \u2014 {what}": "\u00c9quipe chang\u00e9e \u2014 {what}",
     "added {who}": "ajout\u00e9 {who}", "removed {who}": "retir\u00e9 {who}",
     "Crew and codes saved": "\u00c9quipe et codes enregistr\u00e9s",
+    "Time off": "Cong\u00e9", "Day off": "Jour de cong\u00e9",
+    "Ask for a day off": "Demander un jour de cong\u00e9",
+    "The office says yes or no, and your phone is told either way. Nothing is booked off until they agree.":
+      "Le bureau dit oui ou non, et votre t\u00e9l\u00e9phone est averti dans les deux cas. Rien n\u2019est r\u00e9serv\u00e9 tant qu\u2019ils n\u2019ont pas accept\u00e9.",
+    "First day": "Premier jour", "Last day": "Dernier jour",
+    "Why (optional)": "Pourquoi (facultatif)", "e.g. family": "p.\u00a0ex. famille",
+    "Ask": "Demander", "Got it": "Compris",
+    "What you have asked for": "Ce que vous avez demand\u00e9",
+    "{a} to {b}": "du {a} au {b}",
+    "given by {who}": "accord\u00e9 par {who}", "refused by {who}": "refus\u00e9 par {who}",
+    "waiting for an answer": "en attente d\u2019une r\u00e9ponse",
+    "You have 1 job booked in those days. The office will see that.":
+      "Vous avez 1 travail r\u00e9serv\u00e9 ces jours-l\u00e0. Le bureau le verra.",
+    "You have {n} jobs booked in those days. The office will see that.":
+      "Vous avez {n} travaux r\u00e9serv\u00e9s ces jours-l\u00e0. Le bureau le verra.",
+    "Pick a day.": "Choisissez un jour.",
+    "The last day is before the first one.": "Le dernier jour est avant le premier.",
+    "You have already asked about one of those days.":
+      "Vous avez d\u00e9j\u00e0 demand\u00e9 pour un de ces jours.",
+    "{who} is asking for a day off": "{who} demande un jour de cong\u00e9",
+    "1 job booked in it": "1 travail r\u00e9serv\u00e9 dedans",
+    "{n} jobs booked in it": "{n} travaux r\u00e9serv\u00e9s dedans",
+    "1 job is booked in those days and will stay booked. Reschedule it yourself if the day is given.":
+      "1 travail est r\u00e9serv\u00e9 ces jours-l\u00e0 et le restera. Replanifiez-le vous-m\u00eame si le cong\u00e9 est accord\u00e9.",
+    "{n} jobs are booked in those days and will stay booked. Reschedule them yourself if the days are given.":
+      "{n} travaux sont r\u00e9serv\u00e9s ces jours-l\u00e0 et le resteront. Replanifiez-les vous-m\u00eame si le cong\u00e9 est accord\u00e9.",
+    "Give the day off": "Accorder le cong\u00e9", "Say no": "Refuser",
+    "Whole days": "Journ\u00e9es enti\u00e8res", "A few hours": "Quelques heures",
+    "Which day": "Quel jour",
+    "Off {a}\u2013{b}": "Cong\u00e9 {a}\u2013{b}",
+    "{h} \u2014 time off": "{h} \u2014 cong\u00e9",
+    "You have 1 job booked in that time. The office will see that.":
+      "Vous avez 1 travail r\u00e9serv\u00e9 \u00e0 ce moment-l\u00e0. Le bureau le verra.",
+    "You have {n} jobs booked in that time. The office will see that.":
+      "Vous avez {n} travaux r\u00e9serv\u00e9s \u00e0 ce moment-l\u00e0. Le bureau le verra.",
+    "You have already asked about that time.": "Vous avez d\u00e9j\u00e0 demand\u00e9 pour ce moment-l\u00e0.",
+    "{name} is off {a}\u2013{b} that day, given by {who}. Tick the box to book it anyway.":
+      "{name} est en cong\u00e9 {a}\u2013{b} ce jour-l\u00e0, accord\u00e9 par {who}. Cochez la case pour r\u00e9server quand m\u00eame.",
+    "You have the day off": "Vous avez le cong\u00e9",
+    "No to the day off": "Cong\u00e9 refus\u00e9",
+    "Asked for {when} off": "A demand\u00e9 {when} en cong\u00e9",
+    "Gave {who} {when} off": "A accord\u00e9 \u00e0 {who} {when} en cong\u00e9",
+    "Said no to {who} for {when}": "A refus\u00e9 \u00e0 {who} pour {when}",
+    "That did not save.": "Ce n\u2019a pas \u00e9t\u00e9 enregistr\u00e9.",
+    "the office": "le bureau",
+    "{name} has this day off, given by {who}. Tick the box to book it anyway.":
+      "{name} a cong\u00e9 ce jour-l\u00e0, accord\u00e9 par {who}. Cochez la case pour r\u00e9server quand m\u00eame.",
+    "<b>Book it anyway</b>This person was given this day off.":
+      "<b>R\u00e9server quand m\u00eame</b>Cette personne a eu cong\u00e9 ce jour-l\u00e0.",
     "Asked for {man} on {d}, {h}": "A demand\u00e9 {man} le {d}, {h}",
     "Let it in \u2014 {how}": "Accept\u00e9 \u2014 {how}",
     "pushed the other work later": "l\u2019autre travail repouss\u00e9",
@@ -2153,7 +2271,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v110";
+  var APP_VERSION = "v112";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2174,6 +2292,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     view: "month",
     jobs: {},                 // jobId -> job
     reqs: [],                 // asks for somebody else's worker
+    offs: [],                 // asks for a day off, and what was said
     mode: "loading",          // shared | cloud | device
     db: null, fb: null, unsubs: [], seen: {},
     people: DEFAULT_PEOPLE.map(function(p){ return {id:p.id, name:p.name, trade:p.trade, code:p.code}; }),
@@ -2405,7 +2524,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
   /* Hours already taken by another job are not offered at all, rather than
      accepted and then rejected on save. */
-  var busyMap = {}, travelStart = {}, travelEnd = {};
+  var busyMap = {}, travelStart = {}, travelEnd = {}, offMap = {};
   /* Same site or not. A job booked for the whole project counts as being at
      any of its buildings — otherwise leaving the building blank on one of two
      jobs at the same address demanded an hour of travel between them. */
@@ -2418,7 +2537,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
      means being in two places at once. An hour is kept free for getting
      there, and two jobs in the same building can still run back to back. */
   function computeBusy(ds, crewId, skipId, here){
-    busyMap = {}; travelStart = {}; travelEnd = {};
+    busyMap = {}; travelStart = {}; travelEnd = {}; offMap = {};
+    var span = offHoursOn(ds, crewId);
+    if (span) for (var oh = span.from; oh < span.to; oh++) offMap[oh] = true;
     jobsOn(ds, crewId).forEach(function(j){
       if (skipId && j.id === skipId) return;
       for (var h=j.from; h<j.to; h++) busyMap[h] = true;
@@ -2431,7 +2552,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     });
   }
   function travelOff(){ return !!$("fTravelOverride").checked; }
-  function blockedStart(h){ return !!busyMap[h] || (!!travelStart[h] && !travelOff()); }
+  function offAnyway(){ return !!$("fOffAnyway").checked; }
+  function blockedStart(h){
+    return !!busyMap[h] || (!!offMap[h] && !offAnyway()) ||
+           (!!travelStart[h] && !travelOff());
+  }
   function travelClash(from, to){
     return travelStart[from] || travelEnd[to] || null;
   }
@@ -2448,6 +2573,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       o.value=i;
       if (busyMap[i]){
         o.textContent = tr("{h} \u2014 taken", {h: hourLong(i)});
+        o.disabled = true;
+      } else if (offMap[i] && !offAnyway()){
+        o.textContent = tr("{h} \u2014 time off", {h: hourLong(i)});
         o.disabled = true;
       } else if (travelStart[i] && !travelOff()){
         o.textContent = tr("{h} \u2014 travelling from {where}",
@@ -2967,6 +3095,285 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function replaceReq(r){
     return putReqs((state.reqs || []).map(function(x){ return x.id === r.id ? r : x; }));
   }
+  /* ---------- asking for a day off ----------
+     Anybody who signs in can ask — the men on the tools and the office staff
+     alike — and only the master office code answers. A day off is a run of
+     days rather than one, because nobody takes a Thursday off on its own as
+     often as they take the Thursday and the Friday.
+
+     An approved day off marks the day and warns whoever books into it. It
+     does not touch work already on that day: cancelling somebody's booked
+     jobs because a day off was granted is a decision with consequences for
+     other people, and it belongs to the office, not to the app. */
+  var LS_OFF = "ebm-crew:dayoff:v1";
+  function offRef(){
+    if (state.mode === "cloud"  && state.fb) return state.fb.collection("config").doc("dayoff");
+    if (state.mode === "shared" && state.db) return state.db.doc("config/dayoff");
+    return null;
+  }
+  function subscribeOff(){
+    if (state.offUnsub){ try{ state.offUnsub(); }catch(e){} state.offUnsub = null; }
+    var ref = offRef();
+    if (!ref) return;
+    state.offUnsub = ref.onSnapshot(function(snap){
+      var d = (snap.exists && snap.data()) || {};
+      state.offs = Array.isArray(d.list) ? d.list : [];
+      lsWrite(LS_OFF, state.offs);
+      renderAlerts(); render();
+    }, function(){});
+  }
+  function pushOff(r){
+    var ref = offRef();
+    if (ref) return ref.set({list: FV().arrayUnion(r)}, {merge: true});
+    var no = cannotShare(); if (no) return no;
+    state.offs = (state.offs || []).concat([r]);
+    lsWrite(LS_OFF, state.offs); renderAlerts(); render();
+    return Promise.resolve();
+  }
+  function putOffs(list){
+    var ref = offRef();
+    if (ref) return ref.set({list: list});
+    var no = cannotShare(); if (no) return no;
+    state.offs = list; lsWrite(LS_OFF, state.offs); renderAlerts(); render();
+    return Promise.resolve();
+  }
+  function replaceOff(r){
+    return putOffs((state.offs || []).map(function(x){ return x.id === r.id ? r : x; }));
+  }
+  function eachDay(from, to, fn){
+    var d = fromIso(from), end = fromIso(to || from), guard = 0;
+    while (d <= end && guard++ < 400){ fn(iso(d)); d = addDays(d, 1); }
+  }
+  /* Is this person off on this day, and by whose leave. A record covers the
+     whole of each day it spans unless it names hours, in which case it covers
+     only those and only on its one day. */
+  function offOn(ds, who){
+    var hit = null;
+    (state.offs || []).forEach(function(r){
+      if (r.state !== "approved" || r.byId !== who) return;
+      eachDay(r.from, r.to || r.from, function(x){ if (x === ds) hit = r; });
+    });
+    return hit;
+  }
+  function wholeDayOff(r){ return !r || r.allDay !== false; }
+  function offHoursOn(ds, who){
+    var span = null;
+    (state.offs || []).forEach(function(r){
+      if (r.state !== "approved" || r.byId !== who || wholeDayOff(r)) return;
+      if (r.from === ds) span = {from: r.h1, to: r.h2, by: r.decidedBy};
+    });
+    return span;
+  }
+  function offText(r){
+    return wholeDayOff(r) ? tr("Day off")
+      : tr("Off {a}\u2013{b}", {a: hourLong(r.h1), b: hourLong(r.h2)});
+  }
+  function offAsked(ds, who){
+    var hit = null;
+    (state.offs || []).forEach(function(r){
+      if (r.state !== "open" || r.byId !== who) return;
+      eachDay(r.from, r.to, function(x){ if (x === ds) hit = r; });
+    });
+    return hit;
+  }
+  function myOffs(){
+    return (state.offs || []).filter(function(r){
+      return r.byId === state.me && r.to >= todayIso;
+    }).sort(function(a,b){ return a.from < b.from ? -1 : 1; });
+  }
+  function openOffs(){
+    return (state.offs || []).filter(function(r){
+      return r.state === "open" && r.to >= todayIso;
+    }).sort(function(a,b){ return a.from < b.from ? -1 : 1; });
+  }
+
+  function offWhenText(r){
+    if (!wholeDayOff(r))
+      return F_LONG.format(fromIso(r.from)) + " \u00b7 " +
+             hourLong(r.h1) + "\u2013" + hourLong(r.h2);
+    return (r.from === (r.to || r.from)) ? F_LONG.format(fromIso(r.from))
+      : tr("{a} to {b}", {a: F_MED.format(fromIso(r.from)), b: F_MED.format(fromIso(r.to))});
+  }
+  function jobsInside(r){
+    var out = [];
+    Object.keys(state.jobs).forEach(function(k){
+      var j = state.jobs[k];
+      if (!j || j.crewId !== r.byId || j.clockOut) return;
+      eachDay(r.from, r.to || r.from, function(ds){
+        if (j.date !== ds || out.indexOf(j) >= 0) return;
+        // Hours off only collide with the hours actually worked.
+        if (!wholeDayOff(r) && (j.to <= r.h1 || j.from >= r.h2)) return;
+        out.push(j);
+      });
+    });
+    return out;
+  }
+  function drawMyOffs(){
+    var host = $("offMine"), mine = myOffs();
+    host.innerHTML = "";
+    $("offMineSec").hidden = !mine.length;
+    mine.forEach(function(r){
+      var row = document.createElement("div");
+      row.style.marginBottom = "4px";
+      var b = document.createElement("b"); b.textContent = offWhenText(r);
+      row.appendChild(b);
+      row.appendChild(document.createTextNode(" \u00b7 " + (
+        r.state === "approved" ? tr("given by {who}", {who: r.decidedBy || ""}) :
+        r.state === "refused"  ? tr("refused by {who}", {who: r.decidedBy || ""}) :
+        tr("waiting for an answer"))));
+      host.appendChild(row);
+    });
+  }
+  function offAsShaped(){
+    var f = $("offFrom").value;
+    if (offKind === "hours")
+      return {from: f, to: f, byId: state.me, allDay: false,
+              h1: parseInt($("offH1").value, 10), h2: parseInt($("offH2").value, 10)};
+    return {from: f, to: $("offTo").value || f, byId: state.me, allDay: true};
+  }
+  function offClashLine(){
+    var r = offAsShaped(), f = r.from, t = r.to;
+    if (!f || t < f){ $("offClash").textContent = ""; return; }
+    var n = jobsInside(r).length;
+    $("offClash").textContent = n
+      ? (n === 1 ? tr("You have 1 job booked in that time. The office will see that.")
+                 : tr("You have {n} jobs booked in that time. The office will see that.", {n: n}))
+      : "";
+  }
+  var offKind = "days";
+  function fillOffHours(){
+    var a = $("offH1"), b = $("offH2"), i, o;
+    a.innerHTML = ""; b.innerHTML = "";
+    for (i = DAY_START; i < DAY_END; i++){
+      o = document.createElement("option"); o.value = i; o.textContent = hourLong(i);
+      a.appendChild(o);
+    }
+    for (i = DAY_START + 1; i <= DAY_END; i++){
+      o = document.createElement("option"); o.value = i; o.textContent = hourLong(i);
+      b.appendChild(o);
+    }
+    a.value = String(DAY_START); b.value = String(DAY_START + 2);
+  }
+  function drawOffKind(){
+    Array.prototype.forEach.call($("offKind").children, function(x){
+      x.setAttribute("aria-pressed", x.dataset.k === offKind ? "true" : "false");
+    });
+    var hours = offKind === "hours";
+    $("offHourRow").hidden = !hours;
+    $("offToField").hidden = hours;
+    $("offFromLb").textContent = hours ? tr("Which day") : tr("First day");
+    offClashLine();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#offKind button"), function(x){
+    x.addEventListener("click", function(){ offKind = x.dataset.k; drawOffKind(); });
+  });
+  $("offH1").addEventListener("change", function(){
+    if (parseInt($("offH2").value,10) <= parseInt($("offH1").value,10))
+      $("offH2").value = String(parseInt($("offH1").value,10) + 1);
+    offClashLine();
+  });
+  $("offH2").addEventListener("change", offClashLine);
+  function openOffAsk(){
+    var t = iso(addDays(new Date(), 1));
+    $("offFrom").min = todayIso; $("offTo").min = todayIso;
+    $("offFrom").value = t; $("offTo").value = t;
+    $("offWhy").value = "";
+    $("offErr").textContent = ""; $("offSend").disabled = false;
+    offKind = "days"; fillOffHours(); drawOffKind();
+    drawMyOffs();
+    $("offDlg").showModal();
+  }
+  $("offFrom").addEventListener("change", function(){
+    if (!$("offTo").value || $("offTo").value < $("offFrom").value)
+      $("offTo").value = $("offFrom").value;
+    offClashLine();
+  });
+  $("offTo").addEventListener("change", offClashLine);
+  $("offCancel").addEventListener("click", function(){ $("offDlg").close(); });
+  $("meOffBtn").addEventListener("click", function(){ $("meDlg").close(); openOffAsk(); });
+  $("offForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var shape = offAsShaped(), f = shape.from, t = shape.to;
+    if (!f){ $("offErr").textContent = tr("Pick a day."); return; }
+    if (f < todayIso){ $("offErr").textContent = tr("That day has gone."); return; }
+    if (t < f){ $("offErr").textContent = tr("The last day is before the first one."); return; }
+    if (!shape.allDay && !(shape.h2 > shape.h1)){
+      $("offErr").textContent = tr("The end time has to be after the start time."); return;
+    }
+    // Whole days already asked about swallow anything inside them; two lots of
+    // hours on one day are fine as long as they do not overlap.
+    var already = null;
+    (state.offs || []).forEach(function(x){
+      if (x.byId !== state.me || x.state === "refused") return;
+      eachDay(f, t, function(ds){
+        eachDay(x.from, x.to || x.from, function(xd){
+          if (xd !== ds) return;
+          if (wholeDayOff(x) || shape.allDay) { already = x; return; }
+          if (!(shape.h2 <= x.h1 || shape.h1 >= x.h2)) already = x;
+        });
+      });
+    });
+    if (already){
+      $("offErr").textContent = tr("You have already asked about that time.");
+      return;
+    }
+    $("offSend").disabled = true;
+    var r = {id: newId(), at: new Date().toISOString(),
+             byId: state.me, by: meName(), from: f, to: t,
+             allDay: shape.allDay,
+             why: $("offWhy").value.trim(), state: "open", seen: false};
+    if (!shape.allDay){ r.h1 = shape.h1; r.h2 = shape.h2; }
+    pushOff(r).then(function(){ $("offDlg").close(); })
+      .catch(function(e){
+        $("offSend").disabled = false;
+        $("offErr").textContent = errText(e, tr("The request did not send."));
+      });
+  });
+
+  /* The office's side. Saying yes marks the days; it does not touch work
+     already booked on them, which is named here so the decision is made
+     knowing the cost. */
+  var offDec = null;
+  function openOffDec(r){
+    offDec = r;
+    $("offDecWho").textContent = tr("{who} is asking for a day off", {who: r.by});
+    $("offDecWhen").textContent = offWhenText(r);
+    $("offDecWhy").textContent = r.why || "";
+    $("offDecWhy").hidden = !r.why;
+    var hit = jobsInside(r);
+    $("offDecJobs").hidden = !hit.length;
+    if (hit.length){
+      $("offDecJobs").textContent = (hit.length === 1
+        ? tr("1 job is booked in those days and will stay booked. Reschedule it yourself if the day is given.")
+        : tr("{n} jobs are booked in those days and will stay booked. Reschedule them yourself if the days are given.", {n: hit.length}));
+    }
+    $("offDecErr").textContent = "";
+    $("offDecYes").disabled = false; $("offDecNo").disabled = false;
+    $("offDecDlg").showModal();
+  }
+  function settleOff(yes){
+    var r = offDec; if (!r) return;
+    $("offDecYes").disabled = true; $("offDecNo").disabled = true;
+    var done = {};
+    Object.keys(r).forEach(function(k){ done[k] = r[k]; });
+    done.state = yes ? "approved" : "refused";
+    done.decidedAt = new Date().toISOString();
+    done.decidedBy = meName(); done.decidedById = state.me;
+    done.seen = false;
+    replaceOff(done).then(function(){
+      noteDown("dayoff", yes
+        ? tr("Gave {who} {when} off", {who: r.by, when: offWhenText(r)})
+        : tr("Said no to {who} for {when}", {who: r.by, when: offWhenText(r)}), "");
+      $("offDecDlg").close(); offDec = null; render();
+    }).catch(function(e){
+      $("offDecYes").disabled = false; $("offDecNo").disabled = false;
+      $("offDecErr").textContent = errText(e, tr("That did not save."));
+    });
+  }
+  $("offDecYes").addEventListener("click", function(){ settleOff(true); });
+  $("offDecNo").addEventListener("click", function(){ settleOff(false); });
+  $("offDecClose").addEventListener("click", function(){ $("offDecDlg").close(); offDec = null; });
+
   /* Open asks this person has to answer: theirs to answer if one of their own
      bookings is in the way, and the office answers for anybody. */
   function myAsks(){
@@ -5471,6 +5878,42 @@ dialog#callDlg::backdrop{background:#0b0f12}
   /* Anything waiting on the office sits above the calendar, so opening the app
      from a notification puts the answer on screen instead of asking whoever
      tapped it to go hunting for the right day. */
+  function offAskRow(r){
+    var row = document.createElement("div"); row.className = "alert ask";
+    var tx = document.createElement("div"); tx.className = "txt";
+    var hd = document.createElement("div"); hd.className = "hd";
+    hd.textContent = tr("{who} is asking for a day off", {who: r.by});
+    var dt = document.createElement("div"); dt.className = "dt";
+    var n = jobsInside(r).length;
+    dt.textContent = offWhenText(r) + (r.why ? " \u00b7 " + r.why : "")
+      + (n ? " \u00b7 " + (n === 1 ? tr("1 job booked in it") : tr("{n} jobs booked in it", {n: n})) : "");
+    tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+    var op = document.createElement("button"); op.type = "button"; op.className = "btn btn-primary";
+    op.textContent = tr("Look at it");
+    op.addEventListener("click", function(){ openOffDec(r); });
+    row.appendChild(op);
+    return row;
+  }
+  function offAnswerRow(r){
+    var yes = r.state === "approved";
+    var row = document.createElement("div"); row.className = "alert ask";
+    var tx = document.createElement("div"); tx.className = "txt";
+    var hd = document.createElement("div"); hd.className = "hd";
+    hd.textContent = yes ? tr("You have the day off") : tr("No to the day off");
+    var dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = offWhenText(r) + " \u00b7 " +
+      (yes ? tr("given by {who}", {who: r.decidedBy || ""})
+           : tr("refused by {who}", {who: r.decidedBy || ""}));
+    tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+    var ok = document.createElement("button"); ok.type = "button"; ok.className = "btn";
+    ok.textContent = tr("Got it");
+    ok.addEventListener("click", function(){
+      var done = {}; Object.keys(r).forEach(function(k){ done[k] = r[k]; });
+      done.seen = true; replaceOff(done);
+    });
+    row.appendChild(ok);
+    return row;
+  }
   function askRow(r){
     var row = document.createElement("div"); row.className = "alert ask";
     var tx = document.createElement("div"); tx.className = "txt";
@@ -5531,7 +5974,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     var asks = can("book") ? myAsks() : [];
     var answers = can("book") ? myAnswers() : [];
-    host.hidden = !rows.length && !asks.length && !answers.length;
+    // Day off: the office sees every open ask, and everybody sees the answer
+    // to their own until they have looked at it.
+    var offAsks = state.me === "office" ? openOffs() : [];
+    var offAnswers = myOffs().filter(function(r){
+      return r.state !== "open" && !r.seen;
+    });
+    host.hidden = !rows.length && !asks.length && !answers.length
+                  && !offAsks.length && !offAnswers.length;
+    offAsks.forEach(function(r){ host.appendChild(offAskRow(r)); });
+    offAnswers.forEach(function(r){ host.appendChild(offAnswerRow(r)); });
     asks.forEach(function(r){ host.appendChild(askRow(r)); });
     answers.forEach(function(r){ host.appendChild(answerRow(r)); });
     rows.forEach(function(j){
@@ -5989,6 +6441,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
       var yt = holidayFor(ds);
       if (yt){ cell.className += " off yomtov"; cell.title = yt; }
+      var dayOff = offOn(ds, viewCrewId());
+      if (dayOff){
+        if (wholeDayOff(dayOff)) cell.className += " off";
+        cell.title = offText(dayOff);
+      }
       var list=jobsOn(ds, viewCrewId());
       /* Counted off the same marks the chips carry, so what is read out can
          never drift from what is drawn. Counting "clocked in and not out" as
@@ -6031,7 +6488,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       } else {
         var fh=document.createElement("span"); fh.className="freehint";
         fh.textContent = state.mode==="loading" ? ""
-          : (yt ? yt : (isWeekend(ds) ? tr("Off") : (dayIsPast(ds) ? "" : tr("Free"))));
+          : (yt ? yt : dayOff ? offText(dayOff)
+             : (isWeekend(ds) ? tr("Off") : (dayIsPast(ds) ? "" : tr("Free"))));
+        if (dayOff) fh.className = "freehint yt";
         if (yt) fh.className = "freehint yt";
         cell.appendChild(fh);
       }
@@ -6235,6 +6694,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("paneForm").reset();
     fillProjects();
     $("travelWarn").hidden = true;
+    $("offAnywayRow").hidden = true; $("fOffAnyway").checked = false;
     // Booking on somebody else's behalf hands over the right to edit and
     // cancel it, so it belongs to the master office code alone — an admin
     // putting a job in a colleague's name is not their call to make.
@@ -6390,6 +6850,25 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (clash && !travelOff()){
       $("formErr").textContent = tr("No time to get there \u2014 {name} has a job at {where} right against this one. Tick the box to book it anyway.",
         {name: memberOr(crewId).name, where: clash});
+      return;
+    }
+
+    /* A day the office itself gave off. Not a refusal — plans change and the
+       office may well mean it — but it must not happen without being said. */
+    var off = offOn(ds, crewId);
+    if (off && !wholeDayOff(off) && !(to <= off.h1 || from >= off.h2 || allDay)) {
+      // nothing: it overlaps, and falls through to the warning below
+    } else if (off && !wholeDayOff(off)) {
+      off = null;                       // his hours off are nowhere near this
+    }
+    if (off && !$("fOffAnyway").checked){
+      $("formErr").textContent = wholeDayOff(off)
+        ? tr("{name} has this day off, given by {who}. Tick the box to book it anyway.",
+             {name: memberOr(crewId).name, who: off.decidedBy || tr("the office")})
+        : tr("{name} is off {a}\u2013{b} that day, given by {who}. Tick the box to book it anyway.",
+             {name: memberOr(crewId).name, a: hourLong(off.h1), b: hourLong(off.h2),
+              who: off.decidedBy || tr("the office")});
+      $("offAnywayRow").hidden = false;
       return;
     }
 
@@ -6855,6 +7334,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
     /* An emergency request lives apart from the jobs, and so does its
        answer. Both are the kind of thing somebody asks about a week later —
        who wanted him, who let it through, and what it cost the day. */
+    (state.offs || []).forEach(function(r){
+      ev(r.at, r.by, "change",
+         tr("Asked for {when} off", {when: offWhenText(r)}) + (r.why ? " \u2014 " + r.why : ""),
+         null, "");
+      if (r.decidedAt){
+        ev(r.decidedAt, r.decidedBy, "change",
+           r.state === "approved"
+             ? tr("Gave {who} {when} off", {who: r.by, when: offWhenText(r)})
+             : tr("Said no to {who} for {when}", {who: r.by, when: offWhenText(r)}), null, "");
+      }
+    });
     (state.reqs || []).forEach(function(r){
       var spot = r.buildingName + (r.unit ? " \u00b7 " + tr("Unit {u}", {u: r.unit}) : "");
       ev(r.at, r.by, "book",
@@ -6994,6 +7484,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
       subscribeChats();
       watchCalls();
       subscribeReqs();
+      /* Signing in happens before the connection is open, so the listener set
+         up there attaches to nothing. Everything else is re-attached here,
+         once there is a database to attach to, and this belongs with them —
+         without it the office simply never hears a day off being asked for. */
+      subscribeOff();
       render();
     }, function(){ rosterSettled(); });
   }
@@ -7304,6 +7799,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (Array.isArray(r)) state.reqs = r;
   })();
 
+  (function loadCachedOffs(){
+    var r = lsRead(LS_OFF, null);
+    if (Array.isArray(r)) state.offs = r;
+  })();
+
   (function loadCachedRoster(){
     var c = lsRead(LS_ROSTER, null);
     if (c && Array.isArray(c.people) && c.people.length){
@@ -7349,6 +7849,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     subscribeChats();
     watchCalls();
     subscribeReqs();
+    subscribeOff();
     setupPush();
     loadLangFor(id);
     noteWho().then(loadAlerts);
