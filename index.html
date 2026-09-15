@@ -235,6 +235,7 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .cell.today .dnum .tdot{width:5px; height:5px; border-radius:50%; background:var(--sel); flex:none}
 .chips{display:flex; flex-direction:column; gap:3px; min-width:0}
 .chip{
+  position:relative;
   display:flex; flex-direction:column; gap:1px; min-width:0; text-align:left;
   background:var(--pc-soft, var(--sel-soft)); border-radius:6px; padding:4px 7px;
   box-shadow:inset 3px 0 0 var(--pc, var(--sel));
@@ -248,16 +249,22 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
    the same three colours the day sheet already uses for the same three
    things. A finished job also steps back a shade, so a day that went well
    reads as quiet rather than as more to do. */
-.chip .st{flex:none; font-size:9px; line-height:1}
-.chip .st.on{color:var(--open)}
-.chip .st.hold{color:var(--mark)}
-.chip .st.fin{color:var(--ink-3); font-size:11px}
+/* A drawn circle rather than a typed one. At nine pixels the bullet
+   character is a smudge whose colour nobody can name — it was reported as
+   blue, and it was green. A real dot holds its colour at a glance, which is
+   the whole job: green means somebody is there now. */
+.chip .st{flex:none; line-height:1}
+.chip .st.on, .chip .st.hold{width:8px; height:8px; border-radius:50%}
+.chip .st.on{background:var(--open); box-shadow:0 0 0 1.5px var(--open-soft)}
+.chip .st.hold{background:var(--mark)}
+.chip .st.fin{color:var(--ink-3); font-size:12px; font-weight:700}
 .chip.done{opacity:.55; box-shadow:inset 3px 0 0 var(--ink-3)}
 .chip.done .t{color:var(--ink-2)}
-.legend .dot{font-size:9px; line-height:1}
-.legend .dot.on{color:var(--open)}
-.legend .dot.hold{color:var(--mark)}
-.legend .dot.fin{color:var(--ink-3); font-size:11px}
+.legend .dot{display:inline-block; vertical-align:-1px; line-height:1}
+.legend .dot.on, .legend .dot.hold{width:8px; height:8px; border-radius:50%}
+.legend .dot.on{background:var(--open)}
+.legend .dot.hold{background:var(--mark)}
+.legend .dot.fin{color:var(--ink-3); font-size:12px; font-weight:700}
 .chip .n{font-family:"Archivo",sans-serif; font-size:11px; font-weight:600; letter-spacing:.03em;
   line-height:1.2; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
   white-space:nowrap; min-width:0}
@@ -747,7 +754,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
   .topbar h1{font-size:22px}
   .dow{padding:6px 4px; font-size:9.5px; letter-spacing:.05em}
   .cell{min-height:58px; padding:4px}
+  /* A cell in a month on a phone is about fifty pixels wide. "10\u201311" wants
+     thirty-two of them and the dot wants twelve more, so on the first line the
+     hours lose their last character — and the hours are what the chip is for.
+     The mark moves to the corner, over the empty half of the project line,
+     where it costs nothing. On any wider screen it stays on the first line
+     exactly where it was. */
   .chip{padding:3px 5px}
+  .chip .t{gap:0}
+  .chip .st{position:absolute; right:5px; bottom:4px}
   .chip .t{font-size:12px}
   .freehint{display:none}
   .cell .freehint.yt{display:block; font-size:9.5px}
@@ -2074,7 +2089,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v106";
+  var APP_VERSION = "v107";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4913,9 +4928,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
      what the job is, not how far along it is — and stays off the calendar so
      the one mark keeps one meaning. */
   function jobMark(j){
+    // On site and paused are drawn dots and carry no character of their own;
+    // finished keeps a tick, because a shape reads better than a colour for
+    // the one state that means there is nothing left to do.
     if (j.clockOut) return {k:"fin",  g:"\u2713", label: tr("Finished")};
-    if (onBreak(j))  return {k:"hold", g:"\u25cf", label: tr("Paused")};
-    if (j.clockIn)   return {k:"on",   g:"\u25cf", label: tr("On site")};
+    if (onBreak(j))  return {k:"hold", g:"",       label: tr("Paused")};
+    if (j.clockIn)   return {k:"on",   g:"",       label: tr("On site")};
     return {k:"", g:"", label:""};
   }
   /* Only the states actually on screen are explained. A week with nothing
@@ -5905,7 +5923,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
           var hh=document.createElement("span"); hh.className="hh";
           hh.textContent = j.allDay ? "All day" : (hourBare(j.from) + "–" + hourBare(j.to));
           t.appendChild(hh);
-          if (mk.g){
+          if (mk.k){
             var sm=document.createElement("span"); sm.className="st "+mk.k;
             sm.textContent = mk.g; sm.title = mk.label;
             t.appendChild(sm);
