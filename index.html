@@ -1512,6 +1512,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Crew changed \u2014 {what}": "\u00c9quipe chang\u00e9e \u2014 {what}",
     "added {who}": "ajout\u00e9 {who}", "removed {who}": "retir\u00e9 {who}",
     "Crew and codes saved": "\u00c9quipe et codes enregistr\u00e9s",
+    "Asked for {man} on {d}, {h}": "A demand\u00e9 {man} le {d}, {h}",
+    "Let it in \u2014 {how}": "Accept\u00e9 \u2014 {how}",
+    "pushed the other work later": "l\u2019autre travail repouss\u00e9",
+    "dropped the other work": "l\u2019autre travail annul\u00e9",
+    "Said no to it": "Refus\u00e9",
+    "This phone cannot reach the calendar, so that reached nobody. It is not waiting to send \u2014 get a signal, reload, and do it again.":
+      "Ce t\u00e9l\u00e9phone ne peut pas joindre le calendrier, donc \u00e7a n\u2019a atteint personne. Ce n\u2019est pas en attente d\u2019envoi \u2014 trouvez du signal, rechargez, et refaites-le.",
     "Anything used?": "Du mat\u00e9riel\u00a0?",
     "Parts only \u2014 the app already has your hours. Nothing to put down? Tap Done.":
       "Le mat\u00e9riel seulement \u2014 l\u2019application a d\u00e9j\u00e0 vos heures. Rien \u00e0 inscrire\u00a0? Touchez Termin\u00e9.",
@@ -2146,7 +2153,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v109";
+  var APP_VERSION = "v110";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -2249,9 +2256,24 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return null;
   }
   function FV(){ return firebase.firestore.FieldValue; }
+  /* A write meant for other people, made on a phone that never reached the
+     database. Saving it here and reporting success is the worst of the three
+     possible answers: the person is told it went, and it never went.
+
+     That is how an emergency request came to be made, closed as if sent, and
+     seen by nobody — there is no record of it anywhere, because the only copy
+     was on the phone that made it. "device" is a deliberate standalone with
+     no database configured at all and still saves locally; "offline" means
+     one was configured and could not be reached, and that must say so. */
+  function cannotShare(){
+    return state.mode === "offline"
+      ? Promise.reject({code: "__offline__"})
+      : null;
+  }
   function saveJob(job){
     var ref = jobRef(job.id);
     if (ref) return ref.set(job);
+    var no = cannotShare(); if (no) return no;
     state.jobs[job.id] = job;
     lsWrite(LS_JOBS, state.jobs); render();
     return Promise.resolve();
@@ -2259,6 +2281,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function patchJob(id, patch){
     var ref = jobRef(id);
     if (ref) return ref.update(patch);
+    var no = cannotShare(); if (no) return no;
     var j = state.jobs[id]; if (!j) return Promise.resolve();
     for (var k in patch) j[k] = patch[k];
     lsWrite(LS_JOBS, state.jobs); render();
@@ -2267,6 +2290,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function removeJob(id){
     var ref = jobRef(id);
     if (ref) return ref.delete();
+    var no = cannotShare(); if (no) return no;
     delete state.jobs[id];
     lsWrite(LS_JOBS, state.jobs); render();
     return Promise.resolve();
@@ -2276,6 +2300,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (c==="revoked"||c==="not_granted") return tr("You no longer have access. Reload the page.");
     if (c==="resource_exhausted") return tr("Too many changes at once. Wait a moment and try again.");
     if (c==="quota_exceeded") return tr("The calendar is full. Delete some old jobs first.");
+    if (c==="__offline__") return tr("This phone cannot reach the calendar, so that reached nobody. It is not waiting to send \u2014 get a signal, reload, and do it again.");
     if (c==="unavailable") return tr("No connection right now. Try again in a moment.");
     if (c==="permission-denied") return tr("This calendar is not accepting changes. Check the Firebase rules.");
     if (err && err.message) return err.message;
@@ -2927,6 +2952,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function pushReq(r){
     var ref = reqRef();
     if (ref) return ref.set({list: FV().arrayUnion(r)}, {merge: true});
+    var no = cannotShare(); if (no) return no;
     state.reqs = (state.reqs || []).concat([r]);
     lsWrite(LS_REQS, state.reqs); renderAlerts();
     return Promise.resolve();
@@ -2934,6 +2960,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function putReqs(list){
     var ref = reqRef();
     if (ref) return ref.set({list: list});
+    var no = cannotShare(); if (no) return no;
     state.reqs = list; lsWrite(LS_REQS, state.reqs); renderAlerts();
     return Promise.resolve();
   }
@@ -6799,10 +6826,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     function where(j){
       return j.buildingName + (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "");
     }
-    function ev(at, who, kind, text, j){
+    function ev(at, who, kind, text, j, place){
       if (!at) return;
       out.push({at: at, by: who || "", kind: kind, text: text,
-                where: j ? where(j) : "", jobId: j ? j.id : ""});
+                where: place || (j ? where(j) : ""), jobId: j ? j.id : ""});
     }
     Object.keys(state.jobs).forEach(function(k){
       var j = state.jobs[k]; if (!j) return;
@@ -6824,6 +6851,25 @@ dialog#callDlg::backdrop{background:#0b0f12}
       (j.notes || []).forEach(function(n){
         ev(n.at, n.by, "change", tr("Note: {t}", {t: n.text}), j);
       });
+    });
+    /* An emergency request lives apart from the jobs, and so does its
+       answer. Both are the kind of thing somebody asks about a week later —
+       who wanted him, who let it through, and what it cost the day. */
+    (state.reqs || []).forEach(function(r){
+      var spot = r.buildingName + (r.unit ? " \u00b7 " + tr("Unit {u}", {u: r.unit}) : "");
+      ev(r.at, r.by, "book",
+         tr("Asked for {man} on {d}, {h}", {man: r.crewName,
+            d: F_MED.format(fromIso(r.date)),
+            // Spelled out here, not the calendar's bare "10–12": a log is read
+            // cold, days later, with no day around it to say which 10 it was.
+            h: hourLong(r.from) + "\u2013" + hourLong(r.to)}), null, spot);
+      if (r.decidedAt){
+        ev(r.decidedAt, r.decidedBy, "book",
+           r.state === "approved"
+             ? tr("Let it in \u2014 {how}", {how: r.how === "cancel"
+                 ? tr("dropped the other work") : tr("pushed the other work later")})
+             : tr("Said no to it"), null, spot);
+      }
     });
     return out;
   }
