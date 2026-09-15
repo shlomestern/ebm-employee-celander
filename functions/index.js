@@ -52,6 +52,12 @@ async function push(db, map, tokens, title, body, tag) {
     tokens,
     notification: {title, body},
     webpush: {
+      /* Without this, Android holds a push until the tablet wakes up on its
+         own — a man clocked in at 3:11 and the office was told at 3:18. A
+         normal-urgency push is what Chrome is allowed to sit on while the
+         screen is off. None of these can wait: they are all somebody
+         standing on a site right now. */
+      headers: {Urgency: "high"},
       notification: {
         icon: "/ebm-employee-celander/icons/icon-192.png",
         // Android throws the badge's colours away and keeps the alpha, so a
@@ -662,6 +668,7 @@ exports.selfTest = onDocumentWritten(
           body: `Sent by the office to this ${after.kind || "device"}.`,
         },
         webpush: {
+          headers: {Urgency: "high"},
           notification: {
             icon: "/ebm-employee-celander/icons/icon-192.png",
             badge: "/ebm-employee-celander/icons/badge-96.png",
