@@ -7127,6 +7127,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     });
     var first = !Object.keys(state.seen).length;
     state.jobs=fresh;
+    /* Kept on the phone so a man with no signal opens the app to the schedule
+       he last saw rather than to an empty month. bootDevice has always read
+       this back and said "showing what was last saved on this phone" — but
+       with a connection nothing ever wrote it, so there was nothing to show
+       and the sentence was not true. */
+    lsWrite(LS_JOBS, state.jobs);
     if (!first) notifyNew(fresh);
     Object.keys(fresh).forEach(function(k){ state.seen[k]=1; });
     render();
