@@ -896,6 +896,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <p class="sub" id="meNotifText" style="margin:6px 0 0"></p>
       <button type="button" class="btn" id="meNotifBtn" hidden data-t>Turn on notifications</button>
       <button type="button" class="btn" id="meTestBtn" hidden data-t>Send a test buzz</button>
+      <p class="sub" id="meTestOut" style="margin:8px 0 0"></p>
     </div>
 
     <div class="mesec">
@@ -2156,14 +2157,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "שליחת התראת בדיקה",
     "Sending…":
       "שולחים…",
-    "Sent — check your notifications":
-      "נשלח — בדקו את ההתראות",
-    "This phone would not show it":
-      "הטלפון הזה לא הציג אותה",
-    "EBM Crew — test":
-      "צוות EBM — בדיקה",
-    "If you can see this, this phone can buzz for {name}.":
-      "אם אתם רואים את זה, הטלפון הזה יכול להתריע עבור {name}.",
+    "This device has not registered for notifications yet. Close this and open the app again.":
+      "המכשיר הזה עדיין לא נרשם להתראות. סגרו ופתחו את האפליקציה שוב.",
+    "No answer from the notifier. It may not be running — tell whoever set this up.":
+      "אין תשובה ממערכת ההתראות. ייתכן שהיא אינה פועלת — דווחו למי שהתקין אותה.",
+    "The notifier sent it to this device. If nothing appeared on your screen just then, this computer is holding notifications back — the app itself is fine.":
+      "מערכת ההתראות שלחה למכשיר הזה. אם לא הופיע כלום על המסך כרגע, המחשב הזה חוסם את ההתראות — האפליקציה עצמה תקינה.",
+    "The notifier could not reach this device: {why}":
+      "מערכת ההתראות לא הצליחה להגיע למכשיר הזה: {why}",
+    "Could not ask the notifier: {why}":
+      "לא התאפשר לפנות למערכת ההתראות: {why}",
+    "Someone new":
+      "מישהו חדש",
     "Connection":
       "חיבור",
     "Crew & codes":
@@ -2980,11 +2985,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Turn on notifications": "Activer les notifications",
     "Send a test buzz": "Envoyer un test",
     "Sending\u2026": "Envoi\u2026",
-    "Sent \u2014 check your notifications": "Envoy\u00e9 \u2014 regardez vos notifications",
-    "This phone would not show it": "Cet appareil ne l\u2019a pas affich\u00e9e",
-    "EBM Crew \u2014 test": "\u00c9quipe EBM \u2014 test",
-    "If you can see this, this phone can buzz for {name}.":
-      "Si vous voyez ceci, cet appareil peut sonner pour {name}.",
+    "This device has not registered for notifications yet. Close this and open the app again.":
+      "Cet appareil n\u2019est pas encore inscrit aux notifications. Fermez et rouvrez l\u2019application.",
+    "No answer from the notifier. It may not be running \u2014 tell whoever set this up.":
+      "Aucune r\u00e9ponse du service de notifications. Il ne tourne peut-\u00eatre pas \u2014 pr\u00e9venez la personne qui l\u2019a install\u00e9.",
+    "The notifier sent it to this device. If nothing appeared on your screen just then, this computer is holding notifications back \u2014 the app itself is fine.":
+      "Le service de notifications l\u2019a envoy\u00e9e \u00e0 cet appareil. Si rien n\u2019est apparu \u00e0 l\u2019instant, c\u2019est cet ordinateur qui les bloque \u2014 l\u2019application, elle, fonctionne.",
+    "The notifier could not reach this device: {why}":
+      "Le service de notifications n\u2019a pas pu joindre cet appareil\u00a0: {why}",
+    "Could not ask the notifier: {why}":
+      "Impossible de s\u2019adresser au service de notifications\u00a0: {why}",
+    "Someone new": "Quelqu\u2019un de nouveau",
     "Connection": "Connexion",
     "Crew & codes": "\u00c9quipe et codes",
     "Sign out": "Se d\u00e9connecter",
@@ -3431,7 +3442,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v114";
+  var APP_VERSION = "v115";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6003,7 +6014,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function mediaErr(e){
     var n = (e && e.name) || "";
     if (n === "NotAllowedError")
-      return tr("The camera and microphone are blocked. Allow them for this app in your phone's settings.");
+      return tr("The camera and microphone are blocked. Allow them for this app in your phone’s settings.");
     if (n === "NotFoundError") return tr("No camera or microphone on this device.");
     if (n === "NotReadableError") return tr("The camera is being used by something else.");
     return errText(e, tr("The call could not start."));
@@ -8171,20 +8182,55 @@ dialog#callDlg::backdrop{background:#0b0f12}
     setupPush();
     setTimeout(function(){ $("meNotifBtn").disabled = false; openMe(); }, 1800);
   });
+  /* The test used to draw a notification on this screen itself and call that
+     a pass. It proved the screen could draw one — nothing else. A desktop
+     that never hears a word from the office would have passed it every time.
+
+     So it goes the whole way now: this device asks the notifier to send to
+     this device, and the notifier writes back whether it managed to. That
+     splits the only two things it can be. Either the notifier could not reach
+     this device — and it says why — or it sent it and the notification never
+     appeared, which puts the fault on this computer and nowhere else. */
+  function tokenSlug(t){
+    return String(t).replace(/[^A-Za-z0-9]/g, "").slice(-14).toLowerCase();
+  }
   $("meTestBtn").addEventListener("click", function(){
-    var b = $("meTestBtn");
+    var b = $("meTestBtn"), out = $("meTestOut");
+    function rest(){
+      setTimeout(function(){
+        b.disabled = false; b.textContent = tr("Send a test buzz");
+      }, 1500);
+    }
+    out.textContent = "";
+    if (!state.pushToken || !state.fb){
+      out.textContent = tr("This device has not registered for notifications yet. Close this and open the app again.");
+      return;
+    }
     b.disabled = true; b.textContent = tr("Sending\u2026");
-    navigator.serviceWorker.ready.then(function(reg){
-      return reg.showNotification(tr("EBM Crew \u2014 test"), {
-        body: tr("If you can see this, this phone can buzz for {name}.", {name: meName()}),
-        icon: "icons/icon-192.png", badge: "icons/badge-96.png", tag: "ebm-test"
-      });
-    }).then(function(){
-      b.textContent = tr("Sent \u2014 check your notifications");
-    }).catch(function(){
-      b.textContent = tr("This phone would not show it");
-    }).then(function(){
-      setTimeout(function(){ b.disabled = false; b.textContent = tr("Send a test buzz"); }, 4000);
+    var stamp = new Date().toISOString();
+    var ref = state.fb.collection("config").doc("selftest-" + tokenSlug(state.pushToken));
+    var settled = false, stop = null;
+    var giveUp = setTimeout(function(){
+      if (settled) return;
+      settled = true; if (stop) stop();
+      out.textContent = tr("No answer from the notifier. It may not be running \u2014 tell whoever set this up.");
+      rest();
+    }, 25000);
+    stop = ref.onSnapshot(function(snap){
+      var d = snap.data() || {};
+      if (settled || d.state !== "done" || d.asked !== stamp) return;
+      settled = true; clearTimeout(giveUp); if (stop) stop();
+      out.textContent = d.ok
+        ? tr("The notifier sent it to this device. If nothing appeared on your screen just then, this computer is holding notifications back \u2014 the app itself is fine.")
+        : tr("The notifier could not reach this device: {why}", {why: d.error || "unknown"});
+      rest();
+    }, function(){});
+    ref.set({token: state.pushToken, who: state.me, kind: deviceKind(),
+             asked: stamp, state: "asked"}).catch(function(e){
+      if (settled) return;
+      settled = true; clearTimeout(giveUp); if (stop) stop();
+      out.textContent = tr("Could not ask the notifier: {why}", {why: errText(e)});
+      rest();
     });
   });
   /* ---------- two things to try when it is not working ----------
@@ -9122,6 +9168,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }).then(function(token){
       if (!token) return;
       state.pushOn = true;
+      state.pushToken = token;
       // The service worker shows every push itself now, whether the calendar
       // is open or not, so there is nothing for the page to listen for.
       return rememberToken(token);

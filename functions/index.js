@@ -11,7 +11,8 @@ const {onDocumentCreated, onDocumentUpdated, onDocumentWritten} =
   require("firebase-functions/v2/firestore");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {initializeApp} = require("firebase-admin/app");
-const {getFirestore} = require("firebase-admin/firestore");
+const {getFirestore, FieldPath, FieldValue} =
+  require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
 const logger = require("firebase-functions/logger");
 
@@ -69,9 +70,16 @@ async function push(db, map, tokens, title, body, tag) {
         code === "messaging/invalid-registration-token") dead.add(tokens[i]);
   });
   if (dead.size) {
-    const kept = {};
-    Object.keys(map).forEach((t) => { if (!dead.has(t)) kept[t] = map[t]; });
-    await db.doc("config/tokens").set({tokens: kept});
+    /* Written one field at a time. Rewriting the whole document to drop a
+       token also wiped the devices map beside it — which is the only record
+       of what each registered phone actually is — and threw away any phone
+       that had registered since this function read the list. */
+    const gone = [];
+    dead.forEach((t) => {
+      gone.push(new FieldPath("tokens", t), FieldValue.delete());
+      gone.push(new FieldPath("devices", t), FieldValue.delete());
+    });
+    await db.doc("config/tokens").update(...gone);
   }
   return res.successCount;
 }
@@ -627,6 +635,54 @@ exports.notifyOnCall = onDocumentWritten(
  *  trigger covers all of config because the document appears the first time
  *  somebody writes; anything that is not a conversation is dropped at once.
  */
+/** Proves the whole way from the notifier to one device, and says which end
+ *  is at fault when nothing arrives.
+ *
+ *  A device writes its own token here and asks. This sends to that token and
+ *  writes back what Firebase said. Either it could not be delivered — and the
+ *  reason lands on the screen of the person asking — or it went, in which case
+ *  a silent device is being silenced by the computer it is sitting on.
+ */
+exports.selfTest = onDocumentWritten(
+  {document: "config/{docId}", region: "northamerica-northeast1"},
+  async (event) => {
+    const id = event.params.docId;
+    if (!id.startsWith("selftest-")) return;
+    const after = (event.data.after && event.data.after.data()) || {};
+    // The answer written below lands back here as another write. Only an ask
+    // is acted on, so it stops there rather than sending forever.
+    if (after.state !== "asked" || !after.token) return;
+
+    let ok = false; let error = "";
+    try {
+      await getMessaging().send({
+        token: after.token,
+        notification: {
+          title: "EBM Crew — test",
+          body: `Sent by the office to this ${after.kind || "device"}.`,
+        },
+        webpush: {
+          notification: {
+            icon: "/ebm-employee-celander/icons/icon-192.png",
+            badge: "/ebm-employee-celander/icons/badge-96.png",
+            tag: "ebm-test",
+          },
+          fcmOptions: {link: "https://shlomestern.github.io/ebm-employee-celander/"},
+        },
+      });
+      ok = true;
+    } catch (e) {
+      error = (e && ((e.errorInfo && e.errorInfo.code) || e.code || e.message)) ||
+        "could not send";
+    }
+    await event.data.after.ref.set(
+      {state: "done", ok, error, answered: new Date().toISOString()},
+      {merge: true});
+    logger.info(`self test ${id} for ${after.who} on ${after.kind} — ` +
+      (ok ? "sent" : `failed: ${error}`));
+  }
+);
+
 exports.notifyOnMessage = onDocumentWritten(
   {document: "config/{docId}", region: "northamerica-northeast1"},
   async (event) => {
