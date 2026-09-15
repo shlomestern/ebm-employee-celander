@@ -260,7 +260,9 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .chip .st.fin{color:var(--ink-3); font-size:12px; font-weight:700}
 .chip.done{opacity:.55; box-shadow:inset 3px 0 0 var(--ink-3)}
 .chip.done .t{color:var(--ink-2)}
-.legend .dot{display:inline-block; vertical-align:-1px; line-height:1}
+.legend .keyitem{display:inline-flex; align-items:center; gap:5px; margin-right:15px;
+  white-space:nowrap}
+.legend .dot{display:inline-block; line-height:1}
 .legend .dot.on, .legend .dot.hold{width:8px; height:8px; border-radius:50%}
 .legend .dot.on{background:var(--open)}
 .legend .dot.hold{background:var(--mark)}
@@ -2089,7 +2091,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v107";
+  var APP_VERSION = "v108";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4936,26 +4938,25 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (j.clockIn)   return {k:"on",   g:"",       label: tr("On site")};
     return {k:"", g:"", label:""};
   }
-  /* Only the states actually on screen are explained. A week with nothing
-     finished in it does not need a line telling you what a tick would mean. */
+  /* The key under the calendar, always all three. It used to show only the
+     states that happened to be on screen, on the reasoning that a week with
+     nothing finished in it needs no line about what a tick means. But a key
+     that comes and goes is a key nobody learns: the first time you see a
+     green dot is exactly the week there is no green dot to explain it. */
+  var MARK_KEY = [
+    {k:"on",   g:"",         label:"On site"},
+    {k:"hold", g:"",         label:"Paused"},
+    {k:"fin",  g:"\u2713",   label:"Finished"}
+  ];
   function drawMarkLegend(){
     var host = $("legendMarks");
     host.textContent = "";
-    var seen = {};
-    Object.keys(state.jobs).forEach(function(k){
-      var j = state.jobs[k];
-      if (!j || (isOffice() ? j.crewId !== viewCrewId() : j.crewId !== state.me)) return;
-      var mk = jobMark(j);
-      if (mk.k) seen[mk.k] = mk;
-    });
-    ["on","hold","fin"].forEach(function(k){
-      if (!seen[k]) return;
-      var w = document.createElement("span");
-      var d = document.createElement("span"); d.className = "dot " + k;
-      d.textContent = seen[k].g;
+    MARK_KEY.forEach(function(m){
+      var w = document.createElement("span"); w.className = "keyitem";
+      var d = document.createElement("span"); d.className = "dot " + m.k;
+      d.textContent = m.g;
       w.appendChild(d);
-      w.appendChild(document.createTextNode(" " + seen[k].label.toLowerCase()));
-      w.style.marginRight = "14px";
+      w.appendChild(document.createTextNode(" " + tr(m.label).toLowerCase()));
       host.appendChild(w);
     });
   }
