@@ -556,7 +556,7 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
                 : endedNow ? `${who} finished` : `${who} clocked in`;
     const body = parked
       ? `${where} · left ${AT(after.clockOut)} · not finished` +
-        (after.backOn ? ` · back ${after.backOn}` : "")
+        (after.left ? ` · ${after.left}` : "")
       : endedNow
       ? `${where} · left ${AT(after.clockOut)}` +
         ` · ${used ? `used ${used}` : "nothing used"}` + notItsDay

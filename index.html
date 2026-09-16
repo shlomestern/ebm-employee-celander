@@ -1528,6 +1528,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
       </div>
     </div>
 
+    <!-- A job that takes a week is one job to the office and one line to
+         write, but it has to be on the calendar on every day it is worked
+         or nobody knows where the man is on the Wednesday. -->
+    <div class="field" id="daysRow">
+      <label for="fDays" data-t>How many days</label>
+      <select id="fDays"></select>
+      <span class="hint" id="daysHint"></span>
+    </div>
+
     <div class="field" id="ownerRow" hidden>
       <label for="fOwner" data-t>Booked by</label>
       <select id="fOwner"></select>
@@ -2200,6 +2209,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "מערכת ההתראות לא הצליחה להגיע למכשיר הזה: {why}",
     "Could not ask the notifier: {why}":
       "לא התאפשר לפנות למערכת ההתראות: {why}",
+    "How many days":
+      "כמה ימים",
+    "Just this day":
+      "היום בלבד",
+    "{n} days":
+      "{n} ימים",
+    "On {days}":
+      "בתאריכים {days}",
+    "Only {n} of those days are free. Book the rest separately.":
+      "רק {n} מהימים הללו פנויים. הזמינו את השאר בנפרד.",
+    "Day {n} of {of}":
+      "יום {n} מתוך {of}",
+    "Cancel this day":
+      "ביטול היום הזה",
+    "Cancel all {n} days":
+      "ביטול כל {n} הימים",
     "Done for today":
       "סיימתי להיום",
     "Back on {d}, {a}–{b}":
@@ -2208,8 +2233,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "אין מקום להמשך בשלושת השבועות הקרובים. דווחו למשרד.",
     "Finishing this another day":
       "סיום העבודה ביום אחר",
-    "Your hours today are closed off now. The rest of the job is put back on the calendar for you.":
-      "השעות שלכם להיום נסגרות עכשיו. שאר העבודה מוחזר ללוח עבורכם.",
+    "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
+      "השעות שלכם להיום נסגרות עכשיו. העבודה נשארת כאן, מסומנת כלא הושלמה, והמשרד יודיע מתי לחזור אליה.",
+    "Go back to it":
+      "חזרה לעבודה",
+    "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
+      "השעות שכבר נעשו נשארות ב-{d}. הפעולה הזו מעבירה את ההמשך ליום שתבחרו.",
+    "Going back to it on {d}":
+      "חוזרים לעבודה ב-{d}",
+    "Stopped for the day, not finished":
+      "סיים להיום — לא הושלם",
+    "Stopped for the day, not finished — {what}":
+      "סיים להיום — לא הושלם — {what}",
     "Finish for today":
       "לסיים להיום",
     "Not finished":
@@ -3094,13 +3129,29 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Le service de notifications n\u2019a pas pu joindre cet appareil\u00a0: {why}",
     "Could not ask the notifier: {why}":
       "Impossible de s\u2019adresser au service de notifications\u00a0: {why}",
+    "How many days": "Combien de jours",
+    "Just this day": "Ce jour seulement",
+    "{n} days": "{n} jours",
+    "On {days}": "Les {days}",
+    "Only {n} of those days are free. Book the rest separately.":
+      "Seulement {n} de ces jours sont libres. R\u00e9servez le reste s\u00e9par\u00e9ment.",
+    "Day {n} of {of}": "Jour {n} sur {of}",
+    "Cancel this day": "Annuler ce jour",
+    "Cancel all {n} days": "Annuler les {n} jours",
     "Done for today": "Fini pour aujourd\u2019hui",
     "Back on {d}, {a}\u2013{b}": "Retour le {d}, {a}\u2013{b}",
     "There is no room for the rest of it in the next three weeks. Tell the office.":
       "Pas de place pour la suite dans les trois prochaines semaines. Pr\u00e9venez le bureau.",
     "Finishing this another day": "Finir \u00e7a un autre jour",
-    "Your hours today are closed off now. The rest of the job is put back on the calendar for you.":
-      "Vos heures d\u2019aujourd\u2019hui sont ferm\u00e9es maintenant. Le reste du travail est remis au calendrier pour vous.",
+    "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
+      "Vos heures d\u2019aujourd\u2019hui sont ferm\u00e9es maintenant. Le travail reste ici, marqu\u00e9 non termin\u00e9, et le bureau dira quand y retourner.",
+    "Go back to it": "Y retourner",
+    "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
+      "Les heures d\u00e9j\u00e0 faites restent au {d}. Ceci place le reste au jour que vous choisissez.",
+    "Going back to it on {d}": "Retour au travail le {d}",
+    "Stopped for the day, not finished": "Arr\u00eat\u00e9 pour la journ\u00e9e \u2014 non termin\u00e9",
+    "Stopped for the day, not finished \u2014 {what}":
+      "Arr\u00eat\u00e9 pour la journ\u00e9e \u2014 non termin\u00e9 \u2014 {what}",
     "Finish for today": "Terminer la journ\u00e9e",
     "Not finished": "Non termin\u00e9",
     "Stopped for the day \u2014 back on {d}": "Arr\u00eat\u00e9 pour la journ\u00e9e \u2014 retour le {d}",
@@ -3591,7 +3642,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v122";
+  var APP_VERSION = "v123";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6816,8 +6867,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     });
     return b;
   }
+  /* A job somebody has already worked on — clocked in on, or stopped for the
+     day without finishing — is not moved. Its hours happened on the day they
+     happened and they stay there. What the office is really asking for is
+     another day to go back and finish it, so that is what it gets: a fresh
+     job on the chosen day, and the worked day left exactly as it was. */
+  function worked(j){ return !!(j && (j.clockIn || j.parked)); }
   function movable(j){
-    if (!j || j.clockOut) return false;            // finished is finished
+    // Finished is finished. Stopped for the day is not finished.
+    if (!j || (j.clockOut && !j.parked)) return false;
     /* A day that has gone is the whole point. The first cut of this refused
        to move anything dated before today, on the reasoning that you cannot
        change the past — but the job that needs moving is exactly the one
@@ -6888,6 +6946,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
   function moveNote(){
     var j = mvJob; if (!j) return "";
+    if (worked(j))
+      return tr("The hours already worked stay on {d}. This puts the rest of it on the day you pick.",
+                {d: F_MED.format(fromIso(j.date))});
     // Whoever is not doing the moving is the one who needs telling.
     if (j.crewId === state.me)
       return tr("{name} will be told that you moved it.",
@@ -6926,11 +6987,41 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!ds || !(to > from)){ $("mvErr").textContent = tr("Pick a day and the hours."); return; }
     if (ds < todayIso){ $("mvErr").textContent = tr("That day has gone."); return; }
     $("mvSave").disabled = true;
-    // The late ask belonged to the old day; the clock never started.
-    patchJob(j.id, {
-      date: ds, from: from, to: to, allDay: false, late: null,
-      movedBy: meName(), movedAt: new Date().toISOString(), movedFrom: j.date
-    }).then(function(){
+    var done;
+    if (worked(j)){
+      /* Its hours belong to the day they were worked. Moving the job would
+         drag them along and the old day would lose a morning's work off the
+         books, so the rest of it goes as a job of its own instead. */
+      var now = new Date().toISOString();
+      done = saveJob({
+        v: 2, id: newId(), date: ds, crewId: j.crewId,
+        from: from, to: to, allDay: false,
+        projectId: j.projectId, projectName: j.projectName,
+        buildingId: j.buildingId, buildingName: j.buildingName,
+        unit: j.unit || "", job: j.job,
+        photos: [], stock: j.stock || "", tight: false,
+        manager: j.manager || "", managerPhone: j.managerPhone || "",
+        carriedFrom: j.id, carriedDate: j.date,
+        createdAt: now, createdBy: j.createdBy, createdById: j.createdById,
+        bookedBy: meName(),
+        clockIn: null, clockOut: null, breaks: [], notes: [], used: []
+      }).then(function(){
+        // The worked day keeps its hours and stops saying it is waiting:
+        // what is left is on the calendar now, with a day against it.
+        return patchJob(j.id, {parked: true, backOn: ds,
+                               clockOut: j.clockOut || now});
+      }).then(function(){
+        noteDown("change", tr("Going back to it on {d}",
+          {d: F_MED.format(fromIso(ds))}), j.id);
+      });
+    } else {
+      // The late ask belonged to the old day; the clock never started.
+      done = patchJob(j.id, {
+        date: ds, from: from, to: to, allDay: false, late: null,
+        movedBy: meName(), movedAt: new Date().toISOString(), movedFrom: j.date
+      });
+    }
+    done.then(function(){
       $("mvDlg").close(); mvJob = null; render();
     }).catch(function(e){
       $("mvSave").disabled = false;
@@ -7030,7 +7121,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
      answers. A man reading that row should find it there rather than hunting
      for a button somewhere else on the sheet. */
   var DONE_TODAY = "__done";
-  var pauseJob = null, pauseWhy = PAUSE_WHY[0], pausePlan = null;
+  var pauseJob = null, pauseWhy = PAUSE_WHY[0];
   function goingHome(){ return pauseWhy === DONE_TODAY; }
   function drawPauseWhy(){
     var host = $("pauseWhy"); host.innerHTML = "";
@@ -7050,7 +7141,6 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function refreshPauseMode(){
     var j = pauseJob;
     if (!goingHome()){
-      pausePlan = null;
       $("pauseTitle").textContent = tr("Pausing this job");
       $("pauseSub").textContent = tr("The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.");
       $("pauseWhen").hidden = true;
@@ -7059,25 +7149,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
       $("pauseErr").textContent = "";
       return;
     }
-    pausePlan = j ? findRoom(j) : null;
+    /* No day is picked for him and none is shown. Hunting the calendar for
+       the next gap big enough sent a nine-hour job a week out, past two
+       weekends and a yom tov, which is not what a man means when he says he
+       will finish it another time. The job stays where it is, marked not
+       finished, and the office says when he goes back. */
     $("pauseTitle").textContent = tr("Finishing this another day");
-    $("pauseSub").textContent = tr("Your hours today are closed off now. The rest of the job is put back on the calendar for you.");
+    $("pauseSub").textContent = tr("Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.");
     $("pauseGo").textContent = tr("Finish for today");
-    if (!pausePlan){
-      $("pauseWhen").hidden = true;
-      $("pauseErr").textContent = tr("There is no room for the rest of it in the next three weeks. Tell the office.");
-      $("pauseGo").disabled = true;
-      return;
-    }
+    $("pauseWhen").hidden = true;
     $("pauseErr").textContent = "";
-    $("pauseWhen").hidden = false;
-    $("pauseWhen").textContent = tr("Back on {d}, {a}\u2013{b}", {
-      d: F_MED.format(fromIso(pausePlan.date)),
-      a: hourLong(pausePlan.from), b: hourLong(pausePlan.to)});
     $("pauseGo").disabled = false;
   }
   function openPause(j){
-    pauseJob = j; pauseWhy = PAUSE_WHY[0]; pausePlan = null;
+    pauseJob = j; pauseWhy = PAUSE_WHY[0];
     var m = memberOr(j.crewId);
     $("pauseWho").textContent = m.name + " \u00b7 " + j.buildingName +
       (j.unit ? " \u00b7 " + tr("Unit {u}", {u:j.unit}) : "");
@@ -7104,84 +7189,26 @@ dialog#callDlg::backdrop{background:#0b0f12}
   $("pauseCancel").addEventListener("click", function(){ $("pauseDlg").close(); pauseJob = null; });
   $("pauseForm").addEventListener("submit", function(ev){ ev.preventDefault(); startBreak(); });
 
-  /* ---------- finishing another day ----------
+  /* ---------- going home half way through ----------
 
      A man who has done six hours on a job and is going home is neither
      finished nor paused. Leaving it paused overnight counts the night as a
-     break and leaves the job hanging on yesterday; clocking out calls it
-     finished when it is not.
+     break; clocking out calls it finished when it is not.
 
-     So the day is closed where it stands and what is left becomes its own
-     job on the day he is coming back. Two days of work, two days of hours,
-     and each one says where it came from. */
-  var carryJob = null, carryPlan = null;
-  /* The next day he would actually be working: not a weekend, not yom tov.
-     Asking a man standing in a stairwell to pick a date out of a calendar is
-     the opposite of what this button is for. */
-  function nextWorkDay(ds){
-    for (var i = 1; i <= 21; i++){
-      var x = iso(addDays(fromIso(ds), i));
-      if (!isWeekend(x) && !holidayFor(x)) return x;
-    }
-    return iso(addDays(fromIso(ds), 1));
-  }
-  /* The same hours he had, on the first day they are free. Failing that, the
-     earliest hours on that day that the job fits into — because two jobs on
-     one man at one hour is a worse answer than a different hour. */
-  function findRoom(j){
-    var need = Math.max(1, (j.to || 0) - (j.from || 0));
-    var ds = j.date < todayIso ? todayIso : j.date;
-    for (var day = 0; day < 21; day++){
-      ds = nextWorkDay(ds);
-      if (offOn(ds, j.crewId) && wholeDayOff(offOn(ds, j.crewId))) continue;
-      computeBusy(ds, j.crewId, j.id, {proj: j.projectId, bld: j.buildingId});
-      var starts = [j.from];
-      for (var h = DAY_START; h <= DAY_END - need; h++)
-        if (h !== j.from) starts.push(h);
-      for (var k = 0; k < starts.length; k++){
-        var from = starts[k], to = from + need, ok = from >= DAY_START && to <= DAY_END;
-        for (var x = from; ok && x < to; x++)
-          if (busyMap[x] || travelStart[x] || offMap[x]) ok = false;
-        if (ok) return {date: ds, from: from, to: to};
-      }
-    }
-    return null;
-  }
+     So his day is closed where it stands and the job is left exactly where
+     it is, marked not finished. Nothing is booked and no day is named. */
   function finishForToday(j, note){
-    var plan = pausePlan;
-    if (!plan){
-      $("pauseGo").disabled = false;
-      $("pauseErr").textContent = tr("There is no room for the rest of it in the next three weeks. Tell the office.");
-      return;
-    }
     var now = new Date().toISOString();
-    var rest = {
-      v: 2, id: newId(), date: plan.date, crewId: j.crewId,
-      from: plan.from, to: plan.to, allDay: false,
-      projectId: j.projectId, projectName: j.projectName,
-      buildingId: j.buildingId, buildingName: j.buildingName,
-      unit: j.unit || "", job: note ? j.job + " \u2014 " + note : j.job,
-      photos: [], stock: j.stock || "", tight: false,
-      manager: j.manager || "", managerPhone: j.managerPhone || "",
-      carriedFrom: j.id, carriedDate: j.date,
-      createdAt: now, createdBy: j.createdBy, createdById: j.createdById,
-      bookedBy: meName(),
-      clockIn: null, clockOut: null, breaks: [], notes: [], used: []
-    };
-    // Today first on purpose. His hours are the part that must not be lost
-    // if the second write fails: a day closed with no job waiting is a
-    // nuisance, a job waiting with the day still open is a man clocked in
-    // overnight.
     patchJob(j.id, {
       clockOut: now,
       breaks: onBreak(j) ? closedBreaks(j, now) : (j.breaks || []),
-      parked: true, backOn: plan.date
+      parked: true,
+      left: note || ""
     }).then(function(){
-      return saveJob(rest);
-    }).then(function(){
-      noteDown("clock", tr("Stopped for the day \u2014 coming back {d}",
-        {d: F_MED.format(fromIso(plan.date))}), j.id);
-      $("pauseDlg").close(); pauseJob = null; pausePlan = null; render();
+      noteDown("clock", note
+        ? tr("Stopped for the day, not finished \u2014 {what}", {what: note})
+        : tr("Stopped for the day, not finished"), j.id);
+      $("pauseDlg").close(); pauseJob = null; render();
     }).catch(function(e){
       $("pauseGo").disabled = false;
       $("pauseErr").textContent = errText(e, tr("Could not set that up."));
@@ -7559,11 +7586,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
         : tr("Clock cleared by {who}", {who: j.reopenedBy || ""});
       card.appendChild(rp);
     }
-    if (j.parked && j.backOn){
+    if (j.parked){
       var pk=document.createElement("div"); pk.className="job-hold";
-      pk.textContent = tr("Stopped for the day \u2014 back on {d}",
-        {d: F_MED.format(fromIso(j.backOn))});
+      pk.textContent = j.backOn
+        // Booked a day of its own before this stopped doing that. Left as it
+        // was said at the time rather than quietly rewritten.
+        ? tr("Stopped for the day \u2014 back on {d}",
+             {d: F_MED.format(fromIso(j.backOn))})
+        : j.left
+        ? tr("Stopped for the day, not finished \u2014 {what}", {what: j.left})
+        : tr("Stopped for the day, not finished");
       card.appendChild(pk);
+    }
+    if (j.seriesOf > 1){
+      var sr=document.createElement("div"); sr.className="job-sub";
+      sr.textContent = tr("Day {n} of {of}", {n: j.seriesNo, of: j.seriesOf});
+      card.appendChild(sr);
     }
     if (j.carriedFrom && j.carriedDate){
       var cf=document.createElement("div"); cf.className="job-sub";
@@ -7732,7 +7770,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     if (movable(j)){
       var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
-      mv.textContent=tr("Reschedule");
+      // Nothing is being rescheduled on a job that has already been worked;
+      // he is being sent back to finish it. The button should say so.
+      mv.textContent = worked(j) ? tr("Go back to it") : tr("Reschedule");
       mv.addEventListener("click", function(){ openMove(j); });
       acts.appendChild(mv);
     }
@@ -7743,20 +7783,49 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     acts.appendChild(Object.assign(document.createElement("span"), {className:"spacer"}));
     if (opts.remove && !dayIsPast(j.date)){
-      var del=document.createElement("button"); del.type="button"; del.className="btn btn-danger"; del.textContent=tr("Cancel job");
-      del.addEventListener("click", function(){
-        if (del.dataset.armed!=="1"){ del.dataset.armed="1"; del.textContent=tr("Sure?"); return; }
-        del.disabled=true;
-        noteDown("cancel", tr("Cancelled \u2014 {what}",
-          {what: rangeShort(j) + " \u00b7 " + j.buildingName +
-                 (j.unit ? " \u00b7 " + tr("Unit {u}", {u: j.unit}) : "") +
-                 " \u00b7 " + memberOr(j.crewId).name}), j.id);
-        removeJob(j.id).then(opts.after||function(){}).catch(function(e){
-          del.disabled=false; del.dataset.armed="0"; del.textContent=tr("Cancel job");
-          alert(errText(e,tr("Could not cancel.")));
+      /* The rest of a run of days that has not been worked yet. Cancelling
+         one Wednesday out of a week of drains and leaving the Thursday and
+         the Friday standing is almost never what was meant, but sometimes
+         it is — so both are offered and neither is assumed. */
+      var restOfRun = !j.seriesId ? [] : Object.keys(state.jobs)
+        .map(function(k){ return state.jobs[k]; })
+        .filter(function(x){
+          return x.seriesId === j.seriesId && x.id !== j.id &&
+                 !x.clockIn && !dayIsPast(x.date);
         });
+      function scrub(list, btn, label){
+        btn.disabled = true;
+        list.forEach(function(x){
+          noteDown("cancel", tr("Cancelled \u2014 {what}",
+            {what: rangeShort(x) + " \u00b7 " + x.buildingName +
+                   (x.unit ? " \u00b7 " + tr("Unit {u}", {u: x.unit}) : "") +
+                   " \u00b7 " + memberOr(x.crewId).name}), x.id);
+        });
+        list.reduce(function(chain, x){
+          return chain.then(function(){ return removeJob(x.id); });
+        }, Promise.resolve()).then(opts.after || function(){}).catch(function(e){
+          btn.disabled=false; btn.dataset.armed="0"; btn.textContent=label;
+          alert(errText(e, tr("Could not cancel.")));
+        });
+      }
+      var del=document.createElement("button"); del.type="button"; del.className="btn btn-danger";
+      del.textContent = restOfRun.length ? tr("Cancel this day") : tr("Cancel job");
+      del.addEventListener("click", function(){
+        var label = restOfRun.length ? tr("Cancel this day") : tr("Cancel job");
+        if (del.dataset.armed!=="1"){ del.dataset.armed="1"; del.textContent=tr("Sure?"); return; }
+        scrub([j], del, label);
       });
       acts.appendChild(del);
+      if (restOfRun.length){
+        var dall=document.createElement("button"); dall.type="button"; dall.className="btn btn-danger";
+        dall.textContent = tr("Cancel all {n} days", {n: restOfRun.length + 1});
+        dall.addEventListener("click", function(){
+          var label = tr("Cancel all {n} days", {n: restOfRun.length + 1});
+          if (dall.dataset.armed!=="1"){ dall.dataset.armed="1"; dall.textContent=tr("Sure?"); return; }
+          scrub([j].concat(restOfRun), dall, label);
+        });
+        acts.appendChild(dall);
+      }
     }
     if (acts.children.length) card.appendChild(acts);
 
@@ -8270,6 +8339,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       fillBuildings("");
       refreshHours();
     }
+    fillDays(1);
+    refreshDaysHint();
     setTimeout(function(){ $("fProject").focus(); },30);
   }
 
@@ -8285,6 +8356,71 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
   /* The travel gap depends on which address was picked, so the hours have to
      be worked out again every time that changes. */
+  /* ---------- a job that runs over several days ----------
+
+     One job to the office, one line to write, but it has to stand on the
+     calendar on every day it is worked or nobody knows where the man is on
+     the Wednesday. So it is booked as one job per day, each with its own
+     clock and its own hours, tied together by the first one's id.
+
+     Days it would never be worked are stepped over — weekends, yom tov, a
+     day he has off — and so is a day already taken at those hours, because
+     the alternative is two jobs on one man at one o'clock. Which days it
+     actually landed on is shown before anything is saved. */
+  var MAX_DAYS = 14;
+  function seriesDays(startDs, crewId, from, to, want, skipId){
+    var out = [], ds = startDs, guard = 0;
+    while (out.length < want && guard++ < 120){
+      var usable = !isWeekend(ds) && !holidayFor(ds);
+      if (usable){
+        var off = offOn(ds, crewId);
+        if (off && (wholeDayOff(off) ||
+            !(to <= off.h1 || from >= off.h2))) usable = false;
+      }
+      if (usable && overlaps(ds, crewId, from, to, skipId)) usable = false;
+      if (usable) out.push(ds);
+      ds = iso(addDays(fromIso(ds), 1));
+    }
+    return out;
+  }
+  function wantedDays(){
+    var n = parseInt($("fDays").value, 10);
+    return isNaN(n) || n < 1 ? 1 : Math.min(MAX_DAYS, n);
+  }
+  function fillDays(keep){
+    var sel = $("fDays");
+    if (sel.options.length !== MAX_DAYS){
+      sel.innerHTML = "";
+      for (var i = 1; i <= MAX_DAYS; i++){
+        var o = document.createElement("option");
+        o.value = i;
+        o.textContent = i === 1 ? tr("Just this day") : tr("{n} days", {n: i});
+        sel.appendChild(o);
+      }
+    }
+    sel.value = String(keep || 1);
+  }
+  function refreshDaysHint(){
+    var hint = $("daysHint"), want = wantedDays();
+    // Editing touches the one day in front of you. Turning one job into five
+    // half way through is a different thing and is not offered here.
+    $("daysRow").hidden = !!editing;
+    if (editing || want < 2){ hint.textContent = ""; return; }
+    var allDay = $("fAllDay").checked;
+    var from = allDay ? DAY_START : parseInt($("fFrom").value, 10);
+    var to   = allDay ? DAY_END   : parseInt($("fTo").value, 10);
+    var crewId = viewCrewId();
+    var days = seriesDays(openDate, crewId, from, to, want, null);
+    if (days.length < want){
+      hint.textContent = tr("Only {n} of those days are free. Book the rest separately.",
+        {n: days.length});
+      return;
+    }
+    hint.textContent = tr("On {days}", {
+      days: days.map(function(d){ return F_MED.format(fromIso(d)); }).join(", ")});
+  }
+  $("fDays").addEventListener("change", refreshDaysHint);
+
   function refreshHours(keepTo){
     var kept = $("fFrom").value;
     computeBusy(openDate, editing ? editing.crewId : viewCrewId(),
@@ -8296,6 +8432,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     fillTo(keepTo);
     refreshAllDay();
     refreshTravelUi();
+    refreshDaysHint();
   }
   function refreshTravelUi(){
     var any = Object.keys(travelStart).length || Object.keys(travelEnd).length;
@@ -8471,24 +8608,43 @@ dialog#callDlg::backdrop{background:#0b0f12}
       return;
     }
 
-    var job={
-      v:2, id:newId(), date:ds, crewId:crewId,
-      from:from, to:to, allDay:allDay,
-      projectId:p.id, projectName:p.name,
-      buildingId:b.id, buildingName:b.name,
-      unit:$("fUnit").value.trim(),
-      job:$("fJob").value.trim(),
-      photos: formShots,
-      stock: stockAsk,
-      tight: !!(clash && travelOff()),
-      manager:p.manager||"", managerPhone:p.managerPhone||"",
-      createdAt:new Date().toISOString(),
-      createdBy: ownerName(pickedOwner()), createdById: pickedOwner(),
-      bookedBy: state.me === pickedOwner() ? "" : meName(),
-      clockIn:null, clockOut:null, breaks:[], notes:[]
-    };
+    var want = wantedDays();
+    var days = want > 1
+      ? seriesDays(ds, crewId, from, to, want, null)
+      : [ds];
+    if (!days.length) days = [ds];
+    var seriesId = newId();
+    var made = days.map(function(dayIso, i){
+      return {
+        v:2, id: i === 0 ? seriesId : newId(), date: dayIso, crewId:crewId,
+        from:from, to:to, allDay:allDay,
+        projectId:p.id, projectName:p.name,
+        buildingId:b.id, buildingName:b.name,
+        unit:$("fUnit").value.trim(),
+        job:$("fJob").value.trim(),
+        // The photos belong to the job, not to each day of it; hanging four
+        // pictures on every one of five days is five times the storage for
+        // the same four pictures.
+        photos: i === 0 ? formShots : [],
+        stock: stockAsk,
+        tight: !!(clash && travelOff()),
+        manager:p.manager||"", managerPhone:p.managerPhone||"",
+        seriesId: days.length > 1 ? seriesId : "",
+        seriesNo: days.length > 1 ? i + 1 : 0,
+        seriesOf: days.length > 1 ? days.length : 0,
+        createdAt:new Date().toISOString(),
+        createdBy: ownerName(pickedOwner()), createdById: pickedOwner(),
+        bookedBy: state.me === pickedOwner() ? "" : meName(),
+        clockIn:null, clockOut:null, breaks:[], notes:[]
+      };
+    });
     $("formSave").disabled=true;
-    saveJob(job).then(function(){ showDayPane(); })
+    // One after the other rather than all at once: a half-written run of
+    // days is recoverable by hand, a pile of writes that failed in the
+    // middle in an unknown order is not.
+    made.reduce(function(chain, x){
+      return chain.then(function(){ return saveJob(x); });
+    }, Promise.resolve()).then(function(){ showDayPane(); })
       .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The job did not save.")); });
   }
 
