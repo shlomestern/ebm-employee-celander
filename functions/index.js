@@ -45,6 +45,30 @@ async function audience(db) {
   };
 }
 
+/** Everyone with an approved day off covering a given date.
+ *
+ *  The office was told a man was free on a day he had asked for off through
+ *  the app and been given. Nothing was wrong with the day off — it was on his
+ *  calendar and the hours were blocked — but the seven o'clock round-up only
+ *  ever counted bookings, and a man off for the day has none.
+ *
+ *  Whole days only. Somebody off from one until three still has the rest of
+ *  the day, and is free in the sense this is asking about.
+ */
+async function offOn(db, date) {
+  const snap = await db.doc("config/dayoff").get();
+  const list = (snap.exists && snap.data().list) || [];
+  const out = new Map();
+  list.forEach((r) => {
+    if (!r || r.state !== "approved" || !r.byId) return;
+    if (r.allDay === false) return;
+    const from = r.from || "";
+    const to = r.to || r.from || "";
+    if (from && to && date >= from && date <= to) out.set(r.byId, r);
+  });
+  return out;
+}
+
 /** Sends, then forgets tokens the device has thrown away. */
 async function push(db, map, tokens, title, body, tag) {
   if (!tokens.length) return 0;
@@ -151,15 +175,19 @@ function isYomTov(when) {
 
 /** Who has nothing on at all, as it reads on a lock screen. Pure, so it can
  *  be checked without a database. */
-function freeText(free, booked, jobCount) {
-  const names = free.length === 1 ? free[0]
-    : free.slice(0, -1).join(", ") + " and " + free[free.length - 1];
+function freeText(free, booked, jobCount, away) {
+  const join = (list) => list.length === 1 ? list[0]
+    : list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+  // Naming who is off saves the office wondering where the rest of them are,
+  // and is the shortest way to show the day off was counted.
+  const offNote = (away && away.length)
+    ? ` ${join(away)} ${away.length === 1 ? "is" : "are"} off.` : "";
   return {
-    title: `Free today: ${names}`,
-    body: booked
+    title: `Free today: ${join(free)}`,
+    body: (booked
       ? `Nothing booked for them today. The rest of the crew have ` +
         `${jobCount} job${jobCount === 1 ? "" : "s"} on.`
-      : "Nothing is booked for anybody today.",
+      : "Nothing is booked for anybody today.") + offNote,
   };
 }
 
@@ -177,9 +205,10 @@ exports.freeToday = onSchedule(
       return;
     }
 
-    const [snap, aud] = await Promise.all([
+    const [snap, aud, off] = await Promise.all([
       db.collection("bookings").where("date", "==", date).get(),
       audience(db),
+      offOn(db, date),
     ]);
     const jobs = snap.docs.map((d) => d.data()).filter((j) => j.v === 2);
     const busy = new Set(jobs.map((j) => j.crewId));
@@ -187,9 +216,11 @@ exports.freeToday = onSchedule(
     // The men on the tools. An admin is not booked onto jobs, so an admin is
     // not free in any sense worth telling anybody about.
     const crew = aud.people.filter((p) => p.trade !== "admin");
-    const free = crew.filter((p) => !busy.has(p.id));
+    // A man the office gave the day off to is not free. He was being named
+    // every time, because a day off is the absence of bookings.
+    const free = crew.filter((p) => !busy.has(p.id) && !off.has(p.id));
     if (!crew.length || !free.length) {
-      logger.info(`${date}: all ${crew.length} of the crew are booked`);
+      logger.info(`${date}: nobody free — ${busy.size} booked, ${off.size} off`);
       return;
     }
 
@@ -198,7 +229,8 @@ exports.freeToday = onSchedule(
       logger.info(`${free.length} free on ${date} — no office phone registered`);
       return;
     }
-    const {title, body} = freeText(free.map((p) => p.name), jobs.length > 0, jobs.length);
+    const {title, body} = freeText(free.map((p) => p.name), jobs.length > 0, jobs.length,
+      crew.filter((p) => off.has(p.id)).map((p) => p.name));
     const sent = await push(db, aud.map, tokens, title, body, `free-${date}`);
     logger.info(`free on ${date}: ${free.map((p) => p.name).join(", ")} ` +
       `— told ${sent} phone(s)`);

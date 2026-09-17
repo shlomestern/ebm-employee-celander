@@ -300,6 +300,9 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 }
 .pill.on{background:var(--open-soft); color:var(--open)}
 .pill.off{background:var(--surface-3); color:var(--ink-3)}
+/* A day off said in the same grey as "8 hours still free" read like a note
+   about the weather. It is the whole answer to what that day is. */
+.sub.off{color:var(--mark); font-weight:600}
 .pill.hold{background:var(--mark); color:#fff}
 .job-actions{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
 .job-actions .spacer{flex:1}
@@ -1473,6 +1476,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <button type="button" class="btn btn-primary" id="addJobBtn" data-t>Add a job</button>
       <button type="button" class="btn" id="askJobBtn" hidden data-t>Emergency request</button>
       <button type="button" class="btn" id="dayOffBtn" hidden data-t>Ask for this day off</button>
+      <button type="button" class="btn btn-danger" id="dayOffBackBtn" hidden data-t>Take this day back</button>
       <span class="spacer"></span>
       <button type="button" class="btn" id="dayClose" data-t>Close</button>
     </div>
@@ -2235,6 +2239,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "סיום העבודה ביום אחר",
     "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
       "השעות שלכם להיום נסגרות עכשיו. העבודה נשארת כאן, מסומנת כלא הושלמה, והמשרד יודיע מתי לחזור אליה.",
+    "Take this day back":
+      "ביטול יום החופש",
+    "Your day off was taken back":
+      "יום החופש שלכם בוטל",
+    "taken back by {who}":
+      "בוטל על ידי {who}",
+    "Took {who}'s {when} off back":
+      "ביטל ל-{who} את החופשה ב-{when}",
+    "{name} has this day off.":
+      "ל-{name} יש יום חופש בתאריך זה.",
+    "{name} is off {a}–{b}.":
+      "{name} בחופשה בשעות {a}–{b}.",
+    "Reason: {why}":
+      "סיבה: {why}",
+    "Given by {who}.":
+      "אושר על ידי {who}.",
     "Go back to it":
       "חזרה לעבודה",
     "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
@@ -3145,6 +3165,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Finishing this another day": "Finir \u00e7a un autre jour",
     "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
       "Vos heures d\u2019aujourd\u2019hui sont ferm\u00e9es maintenant. Le travail reste ici, marqu\u00e9 non termin\u00e9, et le bureau dira quand y retourner.",
+    "Take this day back": "Reprendre ce cong\u00e9",
+    "Your day off was taken back": "Votre cong\u00e9 a \u00e9t\u00e9 repris",
+    "taken back by {who}": "repris par {who}",
+    "Took {who}'s {when} off back": "A repris le cong\u00e9 de {who} du {when}",
+    "{name} has this day off.": "{name} a cong\u00e9 ce jour-ci.",
+    "{name} is off {a}\u2013{b}.": "{name} est absent de {a} \u00e0 {b}.",
+    "Reason: {why}": "Motif\u00a0: {why}",
+    "Given by {who}.": "Accord\u00e9 par {who}.",
     "Go back to it": "Y retourner",
     "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
       "Les heures d\u00e9j\u00e0 faites restent au {d}. Ceci place le reste au jour que vous choisissez.",
@@ -3642,7 +3670,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v123";
+  var APP_VERSION = "v124";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4601,8 +4629,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var b = document.createElement("b"); b.textContent = offWhenText(r);
       row.appendChild(b);
       row.appendChild(document.createTextNode(" \u00b7 " + (
-        r.state === "approved" ? tr("given by {who}", {who: r.decidedBy || ""}) :
-        r.state === "refused"  ? tr("refused by {who}", {who: r.decidedBy || ""}) :
+        r.state === "approved"  ? tr("given by {who}", {who: r.decidedBy || ""}) :
+        r.state === "refused"   ? tr("refused by {who}", {who: r.decidedBy || ""}) :
+        r.state === "withdrawn" ? tr("taken back by {who}", {who: r.decidedBy || ""}) :
         tr("waiting for an answer"))));
       host.appendChild(row);
     });
@@ -4690,7 +4719,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     // hours on one day are fine as long as they do not overlap.
     var already = null;
     (state.offs || []).forEach(function(x){
-      if (x.byId !== state.me || x.state === "refused") return;
+      if (x.byId !== state.me ||
+          x.state === "refused" || x.state === "withdrawn") return;
       eachDay(f, t, function(ds){
         eachDay(x.from, x.to || x.from, function(xd){
           if (xd !== ds) return;
@@ -4756,6 +4786,42 @@ dialog#callDlg::backdrop{background:#0b0f12}
       $("offDecErr").textContent = errText(e, tr("That did not save."));
     });
   }
+  /* Nothing could be booked onto a day off and nothing could undo one either,
+     which between them made an approved day off the end of the conversation.
+     An emergency on a Thursday is not a reason to quietly drop a job on a man
+     who was told he had the day; it is a reason to tell him the day is off
+     again, out loud, which is what this does. */
+  function takeDayBack(r){
+    var done = {};
+    Object.keys(r).forEach(function(k){ done[k] = r[k]; });
+    done.state = "withdrawn";
+    done.decidedAt = new Date().toISOString();
+    done.decidedBy = meName(); done.decidedById = state.me;
+    done.seen = false;
+    return replaceOff(done).then(function(){
+      noteDown("dayoff", tr("Took {who}'s {when} off back",
+        {who: r.by, when: offWhenText(r)}), "");
+      render();
+    });
+  }
+  $("dayOffBackBtn").addEventListener("click", function(){
+    var b = $("dayOffBackBtn");
+    var r = offOn(openDate, viewCrewId());
+    if (!r || !isOffice()) return;
+    if (b.dataset.armed !== "1"){
+      b.dataset.armed = "1"; b.textContent = tr("Sure?"); return;
+    }
+    b.disabled = true;
+    takeDayBack(r).then(function(){
+      b.dataset.armed = "0"; b.disabled = false;
+      b.textContent = tr("Take this day back");
+      showDayPane();
+    }).catch(function(e){
+      b.disabled = false; b.dataset.armed = "0";
+      b.textContent = tr("Take this day back");
+      $("dayErr").textContent = errText(e, tr("That did not save."));
+    });
+  });
   $("offDecYes").addEventListener("click", function(){ settleOff(true); });
   $("offDecNo").addEventListener("click", function(){ settleOff(false); });
   $("offDecClose").addEventListener("click", function(){ $("offDecDlg").close(); offDec = null; });
@@ -7411,11 +7477,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var row = document.createElement("div"); row.className = "alert ask";
     var tx = document.createElement("div"); tx.className = "txt";
     var hd = document.createElement("div"); hd.className = "hd";
-    hd.textContent = yes ? tr("You have the day off") : tr("No to the day off");
+    var back = r.state === "withdrawn";
+    hd.textContent = back ? tr("Your day off was taken back")
+                   : yes  ? tr("You have the day off")
+                          : tr("No to the day off");
     var dt = document.createElement("div"); dt.className = "dt";
     dt.textContent = offWhenText(r) + " \u00b7 " +
-      (yes ? tr("given by {who}", {who: r.decidedBy || ""})
-           : tr("refused by {who}", {who: r.decidedBy || ""}));
+      (back ? tr("taken back by {who}", {who: r.decidedBy || ""})
+       : yes ? tr("given by {who}", {who: r.decidedBy || ""})
+             : tr("refused by {who}", {who: r.decidedBy || ""}));
     tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
     var ok = document.createElement("button"); ok.type = "button"; ok.className = "btn";
     ok.textContent = tr("Got it");
@@ -8173,15 +8243,37 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var yt = holidayFor(ds);
     var weekendNote = yt ? tr("{holiday} \u2014 normally a day off. ", {holiday: yt})
                          : (isWeekend(ds) ? tr("Normally a day off. ") : "");
+    /* A day the office itself gave him. It was showing the same "8 hours
+       still free" as any other day and the Add a job button sat there ready,
+       so the day off was only discovered at the moment of saving — and the
+       reason he gave for wanting it was nowhere on the sheet at all. */
+    var mine = offOn(ds, viewCrewId());
+    var offLine = "";
+    if (mine){
+      offLine = (wholeDayOff(mine)
+        ? tr("{name} has this day off.", {name: m.name})
+        : tr("{name} is off {a}\u2013{b}.",
+             {name: m.name, a: hourLong(mine.h1), b: hourLong(mine.h2)}))
+        + (mine.why ? " " + tr("Reason: {why}", {why: mine.why}) : "")
+        + (mine.decidedBy ? " " + tr("Given by {who}.", {who: mine.decidedBy}) : "");
+    }
     if (!can("book")){
-      $("daySub").textContent = list0Text(ds);
-    } else $("daySub").textContent = weekendNote + (dayIsPast(ds) ? tr("This day has passed.")
+      $("daySub").textContent = offLine || list0Text(ds);
+    } else if (mine && wholeDayOff(mine)){
+      $("daySub").textContent = offLine;
+    } else $("daySub").textContent = (offLine ? offLine + " " : "")
+      + weekendNote + (dayIsPast(ds) ? tr("This day has passed.")
       : (free===0 ? tr("Fully booked.")
                   : tr(free===1 ? "{n} hour still free: {when}."
                                 : "{n} hours still free: {when}.",
                        {n: free, when: freeSpanText(ds, viewCrewId())})));
+    $("daySub").className = mine ? "sub off" : "sub";
     $("addJobBtn").hidden = !can("book");
-    $("addJobBtn").disabled = dayIsPast(ds) || free===0;
+    // A whole day off is not a day to be booking work into. The office can
+    // still take it back — the day off itself has an Undo on it — but not by
+    // quietly dropping a job on top of it.
+    $("addJobBtn").disabled = dayIsPast(ds) || free===0 ||
+                              !!(mine && wholeDayOff(mine));
     // Only worth offering when the booking in the way is somebody else's.
     $("askJobBtn").hidden = !can("book") || dayIsPast(ds) ||
       !jobsOn(ds, viewCrewId()).some(function(j){ return !bookedByMe(j); });
@@ -8189,6 +8281,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
        and an admin sitting in the office does not ask either — they are the
        ones being asked. */
     $("dayOffBtn").hidden = isOffice() || ds < todayIso;
+    /* Only the master office code, and only while the day is still ahead:
+       taking back a day that has already been and gone changes nothing except
+       the record of what he was told. */
+    var canTakeBack = state.me === "office" && mine && wholeDayOff(mine) && ds >= todayIso;
+    $("dayOffBackBtn").hidden = !canTakeBack;
+    $("dayOffBackBtn").dataset.armed = "0";
+    $("dayOffBackBtn").disabled = false;
+    $("dayOffBackBtn").textContent = tr("Take this day back");
     var already = offOn(ds, state.me) || offAsked(ds, state.me);
     if (!$("dayOffBtn").hidden && already){
       $("dayOffBtn").textContent = already.state === "approved"
@@ -9116,6 +9216,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         ev(r.decidedAt, r.decidedBy, "change",
            r.state === "approved"
              ? tr("Gave {who} {when} off", {who: r.by, when: offWhenText(r)})
+             : r.state === "withdrawn"
+             ? tr("Took {who}'s {when} off back", {who: r.by, when: offWhenText(r)})
              : tr("Said no to {who} for {when}", {who: r.by, when: offWhenText(r)}), null, "");
       }
     });
