@@ -240,6 +240,21 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
   background:var(--pc-soft, var(--sel-soft)); border-radius:6px; padding:4px 7px;
   box-shadow:inset 3px 0 0 var(--pc, var(--sel));
 }
+/* One job over two days, drawn as one thing. The chip loses its rounded
+   corner on the side it carries on to and puts a bar across the gap into the
+   next cell, so a run of days reads as a run and not as two bookings that
+   happen to look alike. Only ever between cells that touch — a Saturday and
+   the Sunday after it are at opposite ends of the grid, and a line between
+   them would be a lie about where they are. */
+.chip.cont-r{border-start-end-radius:0; border-end-end-radius:0}
+.chip.cont-l{border-start-start-radius:0; border-end-start-radius:0;
+  box-shadow:none}
+.chip.cont-r::after, .chip.cont-l::before{
+  content:""; position:absolute; top:calc(50% - 1.5px); height:3px;
+  background:var(--pc, var(--sel)); pointer-events:none;
+}
+.chip.cont-r::after{inset-inline-end:-16px; width:16px}
+.chip.cont-l::before{inset-inline-start:-16px; width:16px}
 .chip .t{font-family:"Archivo",sans-serif; font-size:13px; font-weight:700; letter-spacing:-.01em;
   line-height:1.15; color:var(--pc, var(--sel)); font-variant-numeric:tabular-nums;
   display:flex; align-items:center; gap:4px; min-width:0}
@@ -1349,6 +1364,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="sub" id="pauseSub" data-t>The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.</p>
     <div class="whyrow" id="pauseWhy"></div>
     <p class="sub" id="pauseWhen" hidden style="font-weight:600; margin:10px 0 0"></p>
+    <!-- Asked, never demanded. A man who has just worked nine hours and is
+         standing in a stairwell may simply not know, and "Don't know" is a
+         real answer that the office can act on. -->
+    <div id="planRow" hidden>
+      <div class="eyebrow" style="margin-top:12px" data-t>When do you think you will finish it?</div>
+      <div class="whyrow" id="planPick"></div>
+      <div class="field" id="planDayField" hidden style="margin-top:8px">
+        <label for="planDay" data-t>Which day</label>
+        <input type="date" id="planDay">
+      </div>
+    </div>
     <div class="field">
       <label for="pauseNote" data-t>Anything to add</label>
       <input id="pauseNote" maxlength="60" autocomplete="off" data-tp="Optional" placeholder="Optional">
@@ -2240,6 +2266,30 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "סיום העבודה ביום אחר",
     "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
       "השעות שלכם להיום נסגרות עכשיו. העבודה נשארת כאן, מסומנת כלא הושלמה, והמשרד יודיע מתי לחזור אליה.",
+    "When do you think you will finish it?":
+      "מתי לדעתכם תסיימו את העבודה?",
+    "Tomorrow":
+      "מחר",
+    "Another day":
+      "יום אחר",
+    "Don't know":
+      "לא יודע",
+    "He does not know when he will finish it":
+      "הוא לא יודע מתי יסיים את העבודה",
+    "He thinks he will finish it {d}":
+      "לדעתו יסיים את העבודה ב-{d}",
+    "{who} did not finish {where}":
+      "{who} לא סיים את {where}",
+    "he does not know when he will finish":
+      "הוא לא יודע מתי יסיים",
+    "he thinks {d}":
+      "לדעתו {d}",
+    "he did not say when":
+      "הוא לא אמר מתי",
+    "Say when":
+      "קביעת מועד",
+    "Leave it":
+      "להשאיר כרגע",
     "{h} — your own booking":
       "{h} — הזמנה שלכם",
     "This lands on top of your own booking at {h}. He would have two jobs at once.":
@@ -3170,6 +3220,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Finishing this another day": "Finir \u00e7a un autre jour",
     "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
       "Vos heures d\u2019aujourd\u2019hui sont ferm\u00e9es maintenant. Le travail reste ici, marqu\u00e9 non termin\u00e9, et le bureau dira quand y retourner.",
+    "When do you think you will finish it?": "Quand pensez-vous le finir\u00a0?",
+    "Tomorrow": "Demain",
+    "Another day": "Un autre jour",
+    "Don't know": "Je ne sais pas",
+    "He does not know when he will finish it": "Il ne sait pas quand il le finira",
+    "He thinks he will finish it {d}": "Il pense le finir le {d}",
+    "{who} did not finish {where}": "{who} n\u2019a pas fini {where}",
+    "he does not know when he will finish": "il ne sait pas quand il finira",
+    "he thinks {d}": "il pense le {d}",
+    "he did not say when": "il n\u2019a pas dit quand",
+    "Say when": "Fixer un jour",
+    "Leave it": "Laisser comme \u00e7a",
     "{h} \u2014 your own booking": "{h} \u2014 votre propre r\u00e9servation",
     "This lands on top of your own booking at {h}. He would have two jobs at once.":
       "Ceci se pose sur votre propre r\u00e9servation de {h}. Il aurait deux travaux en m\u00eame temps.",
@@ -3678,7 +3740,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v125";
+  var APP_VERSION = "v126";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6878,6 +6940,26 @@ dialog#callDlg::backdrop{background:#0b0f12}
      chip has room for. An emergency or a late ask is a different question —
      what the job is, not how far along it is — and stays off the calendar so
      the one mark keeps one meaning. */
+  /* Two bookings that are really one job: the days of a run booked together,
+     or the rest of something carried onto another day. */
+  function sameTask(a, b){
+    if (!a || !b || a.id === b.id) return false;
+    if (a.seriesId && a.seriesId === b.seriesId) return true;
+    return b.carriedFrom === a.id || a.carriedFrom === b.id;
+  }
+  /* Whether the cell beside this one holds the rest of the same job. Only the
+     cell beside it: the week wraps after Saturday, so a line drawn from there
+     to the Sunday would cross the whole calendar. */
+  function joinsNext(j){
+    if (fromIso(j.date).getDay() === 6) return false;
+    var nxt = iso(addDays(fromIso(j.date), 1));
+    return jobsOn(nxt, j.crewId).some(function(x){ return sameTask(j, x); });
+  }
+  function joinsPrev(j){
+    if (fromIso(j.date).getDay() === 0) return false;
+    var prv = iso(addDays(fromIso(j.date), -1));
+    return jobsOn(prv, j.crewId).some(function(x){ return sameTask(j, x); });
+  }
   function jobMark(j){
     // On site and paused are drawn dots and carry no character of their own;
     // finished keeps a tick, because a shape reads better than a colour for
@@ -7226,6 +7308,46 @@ dialog#callDlg::backdrop{background:#0b0f12}
      for a button somewhere else on the sheet. */
   var DONE_TODAY = "__done";
   var pauseJob = null, pauseWhy = PAUSE_WHY[0];
+  /* What he thinks is left. Nothing here is required — he can say nothing at
+     all and finish the day — but a man who does know saves the office a phone
+     call, and one who does not is worth hearing from too: "don't know" is an
+     answer, and the office is shown it and asked to put a day against it. */
+  var planPick = "";           // "", a date, or "unknown"
+  function drawPlanPick(){
+    var host = $("planPick"); host.innerHTML = "";
+    var soon = iso(addDays(new Date(), 1));
+    var opts = [
+      {k: soon,      label: tr("Tomorrow")},
+      {k: "__pick",  label: tr("Another day")},
+      {k: "unknown", label: tr("Don't know")}
+    ];
+    opts.forEach(function(o){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = o.label;
+      var on = o.k === "__pick"
+        ? (planPick && planPick !== "unknown" && planPick !== soon)
+        : planPick === o.k;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.addEventListener("click", function(){
+        // Tapping the one already chosen puts it back to no answer, because
+        // there is no other way to take back something you never had to say.
+        if (o.k === "__pick"){
+          planPick = on ? "" : ($("planDay").value || iso(addDays(new Date(), 2)));
+          $("planDay").value = planPick === "" ? "" : planPick;
+        } else {
+          planPick = on ? "" : o.k;
+        }
+        drawPlanPick();
+      });
+      host.appendChild(b);
+    });
+    var picking = planPick && planPick !== "unknown" && planPick !== soon;
+    $("planDayField").hidden = !picking;
+  }
+  $("planDay").addEventListener("change", function(){
+    planPick = $("planDay").value || "";
+    drawPlanPick();
+  });
   function goingHome(){ return pauseWhy === DONE_TODAY; }
   function drawPauseWhy(){
     var host = $("pauseWhy"); host.innerHTML = "";
@@ -7248,6 +7370,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       $("pauseTitle").textContent = tr("Pausing this job");
       $("pauseSub").textContent = tr("The clock stops until you come back, so the time you are away is not counted as worked. The office is told where you have gone.");
       $("pauseWhen").hidden = true;
+      $("planRow").hidden = true;
       $("pauseGo").textContent = tr("Pause the job");
       $("pauseGo").disabled = false;
       $("pauseErr").textContent = "";
@@ -7262,11 +7385,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("pauseSub").textContent = tr("Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.");
     $("pauseGo").textContent = tr("Finish for today");
     $("pauseWhen").hidden = true;
+    $("planRow").hidden = false;
+    $("planDay").min = todayIso;
+    drawPlanPick();
     $("pauseErr").textContent = "";
     $("pauseGo").disabled = false;
   }
   function openPause(j){
-    pauseJob = j; pauseWhy = PAUSE_WHY[0];
+    pauseJob = j; pauseWhy = PAUSE_WHY[0]; planPick = "";
+    $("planDay").value = "";
     var m = memberOr(j.crewId);
     $("pauseWho").textContent = m.name + " \u00b7 " + j.buildingName +
       (j.unit ? " \u00b7 " + tr("Unit {u}", {u:j.unit}) : "");
@@ -7307,7 +7434,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       clockOut: now,
       breaks: onBreak(j) ? closedBreaks(j, now) : (j.breaks || []),
       parked: true,
-      left: note || ""
+      left: note || "",
+      plan: planPick || ""
     }).then(function(){
       noteDown("clock", note
         ? tr("Stopped for the day, not finished \u2014 {what}", {what: note})
@@ -7510,6 +7638,38 @@ dialog#callDlg::backdrop{background:#0b0f12}
     row.appendChild(op);
     return row;
   }
+  /* Not finished, and nobody has said when it will be. Whatever he answered
+     is repeated here, because "Thursday" and "don't know" want different
+     things from whoever is reading it. */
+  function looseRow(j){
+    var row = document.createElement("div"); row.className = "alert ask";
+    var tx = document.createElement("div"); tx.className = "txt";
+    var hd = document.createElement("div"); hd.className = "hd";
+    hd.textContent = tr("{who} did not finish {where}",
+      {who: memberOr(j.crewId).name, where: whereLine(j)});
+    var dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = F_MED.format(fromIso(j.date)) + " \u00b7 " + (
+      j.plan === "unknown" ? tr("he does not know when he will finish")
+      : j.plan ? tr("he thinks {d}", {d: F_MED.format(fromIso(j.plan))})
+      : tr("he did not say when"));
+    tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+    var go = document.createElement("button"); go.type = "button"; go.className = "btn btn-primary";
+    go.textContent = tr("Say when");
+    go.addEventListener("click", function(){ openMove(j); });
+    row.appendChild(go);
+    // Not every unfinished job needs a day put against it today. Dismissing
+    // says so, and it stays on the calendar marked not finished either way.
+    var no = document.createElement("button"); no.type = "button"; no.className = "btn";
+    no.textContent = tr("Leave it");
+    no.addEventListener("click", function(){
+      no.disabled = true;
+      patchJob(j.id, {seenLoose: true}).catch(function(e){
+        no.disabled = false; alert(errText(e, tr("That did not save.")));
+      });
+    });
+    row.appendChild(no);
+    return row;
+  }
   function offAnswerRow(r){
     var yes = r.state === "approved";
     var row = document.createElement("div"); row.className = "alert ask";
@@ -7600,8 +7760,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var offAnswers = myOffs().filter(function(r){
       return r.state !== "open" && !r.seen;
     });
+    /* A job stopped half way through with no day against it. He was asked
+       when he thought he would finish and either did not know or did not
+       say, so the question comes here, where somebody can answer it. */
+    var loose = [];
+    if (can("book")){
+      Object.keys(state.jobs).forEach(function(k){
+        var j = state.jobs[k];
+        if (j && j.parked && !j.backOn && !j.seenLoose && ownsJob(j)) loose.push(j);
+      });
+      loose.sort(function(a,b){ return a.date < b.date ? 1 : -1; });
+    }
     host.hidden = !rows.length && !asks.length && !answers.length
-                  && !offAsks.length && !offAnswers.length;
+                  && !offAsks.length && !offAnswers.length && !loose.length;
+    loose.forEach(function(j){ host.appendChild(looseRow(j)); });
     offAsks.forEach(function(r){ host.appendChild(offAskRow(r)); });
     offAnswers.forEach(function(r){ host.appendChild(offAnswerRow(r)); });
     asks.forEach(function(r){ host.appendChild(askRow(r)); });
@@ -7693,6 +7865,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
         ? tr("Opened again by {who}", {who: j.reopenedBy || ""})
         : tr("Clock cleared by {who}", {who: j.reopenedBy || ""});
       card.appendChild(rp);
+    }
+    if (j.parked && !j.backOn){
+      var pl=document.createElement("div"); pl.className="job-sub";
+      pl.textContent = j.plan === "unknown"
+        ? tr("He does not know when he will finish it")
+        : j.plan
+        ? tr("He thinks he will finish it {d}", {d: F_MED.format(fromIso(j.plan))})
+        : "";
+      if (pl.textContent) card.appendChild(pl);
     }
     if (j.parked){
       var pk=document.createElement("div"); pk.className="job-hold";
@@ -8181,6 +8362,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
           }
           var n=document.createElement("span"); n.className="n";
           n.textContent = j.projectId;
+          if (joinsNext(j)) c.className += " cont-r";
+          if (joinsPrev(j)) c.className += " cont-l";
           c.appendChild(t); c.appendChild(n); chips.appendChild(c);
         });
         cell.appendChild(chips);

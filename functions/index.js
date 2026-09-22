@@ -586,8 +586,14 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     const parked = endedNow && !!after.parked;
     const title = parked ? `${who} stopped for the day`
                 : endedNow ? `${who} finished` : `${who} clocked in`;
+    /* What he said about finishing it. "Don't know" is carried through as
+       plainly as a date: it is the case that wants somebody at the office to
+       do something, and the app puts the question in their alerts. */
+    const plan = after.plan === "unknown" ? " · does not know when"
+               : after.plan ? ` · thinks ${after.plan}`
+               : " · did not say when";
     const body = parked
-      ? `${where} · left ${AT(after.clockOut)} · not finished` +
+      ? `${where} · left ${AT(after.clockOut)} · not finished` + plan +
         (after.left ? ` · ${after.left}` : "")
       : endedNow
       ? `${where} · left ${AT(after.clockOut)}` +
