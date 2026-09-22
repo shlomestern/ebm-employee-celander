@@ -3740,7 +3740,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v126";
+  var APP_VERSION = "v127";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -7767,7 +7767,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (can("book")){
       Object.keys(state.jobs).forEach(function(k){
         var j = state.jobs[k];
-        if (j && j.parked && !j.backOn && !j.seenLoose && ownsJob(j)) loose.push(j);
+        // Whoever booked it, and nobody else. ownsJob counts the office code
+        // as the owner of everything on the calendar, which put every
+        // unfinished job in the office's alerts rather than in the alerts of
+        // the admin who arranged it and has to arrange the rest.
+        if (j && j.parked && !j.backOn && !j.seenLoose && bookedByMe(j)) loose.push(j);
       });
       loose.sort(function(a,b){ return a.date < b.date ? 1 : -1; });
     }
