@@ -1124,6 +1124,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       </div>
     </div>
     <p class="sub" id="mvNote" style="margin:2px 0 0"></p>
+    <p class="warn" id="mvWarn" hidden></p>
     <p class="err" id="mvErr"></p>
     <div class="actions">
       <button type="button" class="btn" id="mvCancel" data-t>Back</button>
@@ -2239,6 +2240,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "סיום העבודה ביום אחר",
     "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
       "השעות שלכם להיום נסגרות עכשיו. העבודה נשארת כאן, מסומנת כלא הושלמה, והמשרד יודיע מתי לחזור אליה.",
+    "{h} — your own booking":
+      "{h} — הזמנה שלכם",
+    "This lands on top of your own booking at {h}. He would have two jobs at once.":
+      "זה מתיישב על ההזמנה שלכם ב-{h}. יהיו לו שתי עבודות באותה שעה.",
     "Take this day back":
       "ביטול יום החופש",
     "Your day off was taken back":
@@ -3165,6 +3170,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Finishing this another day": "Finir \u00e7a un autre jour",
     "Your hours today are closed off now. The job stays here, marked not finished, and the office will say when you go back to it.":
       "Vos heures d\u2019aujourd\u2019hui sont ferm\u00e9es maintenant. Le travail reste ici, marqu\u00e9 non termin\u00e9, et le bureau dira quand y retourner.",
+    "{h} \u2014 your own booking": "{h} \u2014 votre propre r\u00e9servation",
+    "This lands on top of your own booking at {h}. He would have two jobs at once.":
+      "Ceci se pose sur votre propre r\u00e9servation de {h}. Il aurait deux travaux en m\u00eame temps.",
     "Take this day back": "Reprendre ce cong\u00e9",
     "Your day off was taken back": "Votre cong\u00e9 a \u00e9t\u00e9 repris",
     "taken back by {who}": "repris par {who}",
@@ -3670,7 +3678,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v124";
+  var APP_VERSION = "v125";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6956,15 +6964,36 @@ dialog#callDlg::backdrop{background:#0b0f12}
        without booking rights away. */
     return ownsJob(j);
   }
+  /* Hours on that day held by nothing but this person's own bookings.
+     A full day was simply "No room on that day. Pick another one." with no
+     way past it — even when every job standing in the way was booked by the
+     same man now trying to move something into it. His own day to arrange:
+     he can stack them, and the hour says whose it is so he knows he is. */
+  var mvMine = {};
+  function myOwnHours(ds, crewId, skipId){
+    var mine = {};
+    jobsOn(ds, crewId).forEach(function(x){
+      if (x.id === skipId) return;
+      var ours = bookedByMe(x);
+      for (var h = x.from; h < x.to; h++){
+        if (!ours) mine[h] = false;
+        else if (mine[h] !== false) mine[h] = true;
+      }
+    });
+    return mine;
+  }
   function fillMoveHours(keep){
     var j = mvJob; if (!j) return;
     var ds = $("mvDate").value;
     computeBusy(ds, j.crewId, j.id, {proj: j.projectId, bld: j.buildingId});
+    mvMine = myOwnHours(ds, j.crewId, j.id);
     var f = $("mvFrom"); f.innerHTML = "";
     var i, o;
     for (i = DAY_START; i < DAY_END; i++){
       o = document.createElement("option"); o.value = i;
-      if (busyMap[i]){
+      if (busyMap[i] && mvMine[i] === true){
+        o.textContent = tr("{h} \u2014 your own booking", {h: hourLong(i)});
+      } else if (busyMap[i]){
         o.textContent = tr("{h} \u2014 taken", {h: hourLong(i)}); o.disabled = true;
       } else if (travelStart[i]){
         o.textContent = tr("{h} \u2014 travelling from {where}",
@@ -6987,7 +7016,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var j = mvJob; if (!j) return;
     var from = parseInt($("mvFrom").value, 10);
     var maxTo = DAY_END, h;
-    for (h = from; h < DAY_END; h++){ if (busyMap[h]){ maxTo = h; break; } }
+    // Somebody else's booking still stops it; his own does not.
+    for (h = from; h < DAY_END; h++){
+      if (busyMap[h] && mvMine[h] !== true){ maxTo = h; break; }
+    }
     var t = $("mvTo"); t.innerHTML = "";
     var want = from + Math.max(1, j.to - j.from);   // keep it the same length
     var i, o, pick = null;
@@ -7007,8 +7039,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (pick !== null) t.value = pick;
     var room = t.options.length && pick !== null;
     $("mvSave").disabled = !room;
+    var over = [], to = pick === null ? from : parseInt(pick, 10);
+    for (i = from; i < to; i++) if (busyMap[i] && mvMine[i] === true) over.push(i);
     $("mvErr").textContent = room ? ""
       : tr("No room on that day. Pick another one.");
+    $("mvWarn").hidden = !(room && over.length);
+    if (room && over.length)
+      $("mvWarn").textContent = tr("This lands on top of your own booking at {h}. He would have two jobs at once.",
+        {h: hourLong(over[0])});
   }
   function moveNote(){
     var j = mvJob; if (!j) return "";
