@@ -2372,8 +2372,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "רחוב ועיר",
     "Type the address.":
       "הקלידו את הכתובת.",
-    "Was booked for {d} — done on this day":
-      "הוזמן ל-{d} — בוצע ביום זה",
+    "Was booked for {d}, {a}–{b} — done on this day":
+      "הוזמן ל-{d}, {a}–{b} — בוצע ביום זה",
     "Booked for {d}, done on this day":
       "הוזמן ל-{d}, בוצע ביום זה",
     "Someone new":
@@ -3280,8 +3280,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Owner or project name": "Nom du propri\u00e9taire ou du projet",
     "Street and city": "Rue et ville",
     "Type the address.": "\u00c9crivez l\u2019adresse.",
-    "Was booked for {d} \u2014 done on this day":
-      "Pr\u00e9vu le {d} \u2014 fait ce jour-ci",
+    "Was booked for {d}, {a}\u2013{b} \u2014 done on this day":
+      "Pr\u00e9vu le {d}, {a}\u2013{b} \u2014 fait ce jour-ci",
     "Booked for {d}, done on this day":
       "Pr\u00e9vu le {d}, fait ce jour-ci",
     "Someone new": "Quelqu\u2019un de nouveau",
@@ -3740,7 +3740,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v127";
+  var APP_VERSION = "v128";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -7905,8 +7905,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (j.movedFrom){
       var mvd=document.createElement("div"); mvd.className="job-sub";
       mvd.textContent = j.movedWhy === "finished"
-        ? tr("Was booked for {d} \u2014 done on this day", 
-             {d: F_MED.format(fromIso(j.movedFrom))})
+        ? tr("Was booked for {d}, {a}\u2013{b} \u2014 done on this day",
+             {d: F_MED.format(fromIso(j.movedFrom)),
+              a: hourLong(j.from), b: hourLong(j.to)})
         : tr("Moved from {d} by {who}",
              {d: F_MED.format(fromIso(j.movedFrom)), who: j.movedBy || ""});
       card.appendChild(mvd);
@@ -7939,10 +7940,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     if (j.clockIn){
       var cs=document.createElement("div"); cs.className="job-sub";
+      /* The day, whenever the time alone could be read as the wrong one: a
+         clock that ran past midnight, or a job sitting on a day its clock
+         does not belong to. "In 8:53 a.m. · Out 9:55 a.m." on a card headed
+         by another day's hours is a sentence nobody should have to guess at. */
+      var inDay  = iso(new Date(j.clockIn));
+      var outDay = j.clockOut ? iso(new Date(j.clockOut)) : inDay;
+      var crossed = inDay !== outDay;
+      function stamp(x, withDay){
+        var t = new Date(x);
+        return withDay ? F_MED.format(t) + ", " + F_TIME.format(t) : F_TIME.format(t);
+      }
+      var sayDay = crossed || inDay !== j.date;
       cs.textContent = j.clockOut
-        ? tr("In {t} \u00b7 Out {u}", {t: F_TIME.format(new Date(j.clockIn)),
-                                      u: F_TIME.format(new Date(j.clockOut))})
-        : tr("In {t}", {t: F_TIME.format(new Date(j.clockIn))});
+        ? tr("In {t} \u00b7 Out {u}", {t: stamp(j.clockIn, sayDay),
+                                      u: stamp(j.clockOut, crossed)})
+        : tr("In {t}", {t: stamp(j.clockIn, sayDay)});
       var away = pausedMs(j, Date.parse(j.clockOut) || Date.now());
       if (away >= 60000) cs.textContent += " \u00b7 " + tr("paused {d}", {d: awayFor(away)});
       card.appendChild(cs);
