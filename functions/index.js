@@ -480,6 +480,11 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
 
     const startedNow = !before.clockIn && !!after.clockIn;
     const endedNow = !before.clockOut && !!after.clockOut;
+    /* Somebody wiped a man's clock. He clocked in at 7:16, the office was
+       told, and by half eight the job said he had never started — and the
+       only person who found out was the man himself, when he opened the app
+       and saw he was not clocked in. He is told now, and so is the office. */
+    const clearedNow = !!before.clockIn && !after.clockIn;
     const lateBefore = (before.late && before.late.at) || "";
     const lateNow = !!after.late && after.late.at !== lateBefore;
     // A break opening or closing. Clocking out closes one at the same moment,
@@ -493,7 +498,7 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
     const movedNow = (after.movedAt || "") !== (before.movedAt || "") &&
                      !!after.movedAt && before.date !== after.date;
     if (!startedNow && !endedNow && !lateNow && !pausedNow && !backNow &&
-        !movedNow) return;
+        !movedNow && !clearedNow) return;
 
     const db = getFirestore();
     const aud = await audience(db);
@@ -532,6 +537,22 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
         `${event.params.jobId}-late`);
       logger.info(`${who} running late until ${after.late.until} — ` +
         `notified ${sent} phone(s)${next ? ", next job affected" : ", nothing after it"}`);
+      return;
+    }
+
+    if (clearedNow) {
+      // The man whose clock it was, first. Then the office and whoever booked
+      // it — between them somebody has to know whether he was really there.
+      const ids = new Set(["office", after.crewId]);
+      if (after.createdById) ids.add(after.createdById);
+      const tokens = Object.keys(aud.map).filter((t) => ids.has(aud.map[t]));
+      const sent = await push(db, aud.map, tokens,
+        `${who}'s clock was cleared`,
+        `${where} · was in at ${AT(before.clockIn)}` +
+        (after.reopenedBy ? ` · cleared by ${after.reopenedBy}` : ""),
+        `${event.params.jobId}-cleared`);
+      logger.info(`${who}'s clock on ${event.params.jobId} cleared by ` +
+        `${after.reopenedBy || "?"} — ${sent} phone(s)`);
       return;
     }
 

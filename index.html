@@ -2310,6 +2310,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "סיבה: {why}",
     "Given by {who}.":
       "אושר על ידי {who}.",
+    "Opened again — {where}":
+      "נפתח מחדש — {where}",
+    "Cleared the clock — {where}, was in at {t}":
+      "ניקה את השעון — {where}, היה רשום כניסה ב-{t}",
+    "Cancelled to let an emergency in — {what}":
+      "בוטל כדי לפנות מקום לקריאת חירום — {what}",
     "Go back to it":
       "חזרה לעבודה",
     "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
@@ -3243,6 +3249,11 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "{name} is off {a}\u2013{b}.": "{name} est absent de {a} \u00e0 {b}.",
     "Reason: {why}": "Motif\u00a0: {why}",
     "Given by {who}.": "Accord\u00e9 par {who}.",
+    "Opened again \u2014 {where}": "R\u00e9ouvert \u2014 {where}",
+    "Cleared the clock \u2014 {where}, was in at {t}":
+      "Pointage effac\u00e9 \u2014 {where}, \u00e9tait point\u00e9 \u00e0 {t}",
+    "Cancelled to let an emergency in \u2014 {what}":
+      "Annul\u00e9 pour laisser passer une urgence \u2014 {what}",
     "Go back to it": "Y retourner",
     "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
       "Les heures d\u00e9j\u00e0 faites restent au {d}. Ceci place le reste au jour que vous choisissez.",
@@ -3740,7 +3751,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v128";
+  var APP_VERSION = "v129";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5185,7 +5196,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var hit = collidesWith(r.date, r.crewId, r.from, r.to);
     var steps = [];
     if (decHow === "cancel"){
-      hit.forEach(function(j){ steps.push(removeJob(j.id)); });
+      hit.forEach(function(j){
+        // Cancelling to make room is still cancelling. This was the one way a
+        // job could leave the calendar without the log saying so.
+        noteDown("cancel", tr("Cancelled to let an emergency in \u2014 {what}",
+          {what: rangeShort(j) + " \u00b7 " + whereLine(j) +
+                 " \u00b7 " + memberOr(j.crewId).name}), j.id);
+        steps.push(removeJob(j.id));
+      });
     } else {
       var plan = decisionPlan(r);
       if (!plan.ok) return Promise.reject(new Error(tr("It will not fit in the day.")));
@@ -7014,7 +7032,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
         : {clockIn: null, clockOut: null, breaks: [], used: [], late: null};
       patch.reopenedBy = meName();
       patch.reopenedAt = new Date().toISOString();
-      patchJob(j.id, patch).then(opts.after || function(){})
+      /* Wiping a man's clock is the most destructive thing on this card and
+         it left no trace at all. A crew member clocked in at 7:16, the office
+         was told, and by half eight the job said he had never started — with
+         nothing anywhere to say who had cleared it or when. */
+      patchJob(j.id, patch).then(function(){
+        noteDown("clock", fin
+          ? tr("Opened again \u2014 {where}", {where: whereLine(j)})
+          : tr("Cleared the clock \u2014 {where}, was in at {t}",
+               {where: whereLine(j),
+                t: j.clockIn ? F_TIME.format(new Date(j.clockIn)) : "?"}), j.id);
+      }).then(opts.after || function(){})
         .catch(function(e){
           b.disabled = false; b.dataset.armed = "0"; b.textContent = label;
           alert(errText(e, fin ? tr("Could not open it again.")
