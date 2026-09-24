@@ -3755,7 +3755,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v130";
+  var APP_VERSION = "v131";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3935,14 +3935,34 @@ dialog#callDlg::backdrop{background:#0b0f12}
       return j.date === ds && (!crewId || j.crewId === crewId);
     }).sort(function(a,b){ return a.from - b.from; });
   }
+  /* How much of the day a job is really holding.
+
+     A job booked all day and finished at half eleven was still holding five
+     o'clock, so the day said "Fully booked" and Add a job was dead — on a man
+     who had been free since lunchtime. A booking is a claim on the day until
+     it is done; once it is done it only ever held the hours it took.
+
+     Only ever shrinks, never grows: a man who worked past his booked end did
+     not thereby block hours nobody had given him. And a job stopped for the
+     day without finishing is not done, so it keeps the whole claim — he is
+     coming back to it. */
+  function heldTo(j){
+    if (!j || !j.clockOut || j.parked) return j.to;
+    var t = new Date(j.clockOut);
+    if (isNaN(t.getTime())) return j.to;
+    // The clock belongs to another day; it says nothing about this one.
+    if (iso(t) !== j.date) return j.to;
+    var end = t.getHours() + ((t.getMinutes() || t.getSeconds()) ? 1 : 0);
+    return Math.min(j.to, Math.max(j.from + 1, end));
+  }
   function overlaps(ds, crewId, from, to, skipId){
     return jobsOn(ds, crewId).some(function(j){
-      return j.id !== skipId && from < j.to && to > j.from;
+      return j.id !== skipId && from < heldTo(j) && to > j.from;
     });
   }
   function freeHours(ds, crewId){
     var used = 0;
-    jobsOn(ds, crewId).forEach(function(j){ used += (j.to - j.from); });
+    jobsOn(ds, crewId).forEach(function(j){ used += (heldTo(j) - j.from); });
     return Math.max(0, (DAY_END - DAY_START) - used);
   }
   /* Which hours are free, not merely how many. Saying "3 hours still free,
@@ -3952,7 +3972,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function freeSpans(ds, crewId){
     var taken = {};
     jobsOn(ds, crewId).forEach(function(j){
-      for (var h = j.from; h < j.to; h++) taken[h] = 1;
+      var held = heldTo(j);
+      for (var h = j.from; h < held; h++) taken[h] = 1;
     });
     var out = [], start = null;
     for (var h = DAY_START; h <= DAY_END; h++){
@@ -4051,11 +4072,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (span) for (var oh = span.from; oh < span.to; oh++) offMap[oh] = true;
     jobsOn(ds, crewId).forEach(function(j){
       if (skipId && j.id === skipId) return;
-      for (var h=j.from; h<j.to; h++) busyMap[h] = true;
+      var held = heldTo(j);
+      for (var h=j.from; h<held; h++) busyMap[h] = true;
       if (!here.proj || samePlace(j.projectId, j.buildingId, here.proj, here.bld)) return;
       // Cannot start the hour he finishes elsewhere, cannot start the hour
       // before he is due there, and cannot still be working up to it.
-      travelStart[j.to] = j.buildingName;
+      travelStart[held] = j.buildingName;
       travelStart[j.from - 1] = j.buildingName;
       travelEnd[j.from] = j.buildingName;
     });
