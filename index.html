@@ -2310,6 +2310,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "סיבה: {why}",
     "Given by {who}.":
       "אושר על ידי {who}.",
+    "Still opening the calendar — that reached nobody. Wait a second and do it again.":
+      "הלוח עדיין נפתח — הפעולה לא הגיעה לאיש. המתינו רגע ונסו שוב.",
     "Opened again — {where}":
       "נפתח מחדש — {where}",
     "Cleared the clock — {where}, was in at {t}":
@@ -3249,6 +3251,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "{name} is off {a}\u2013{b}.": "{name} est absent de {a} \u00e0 {b}.",
     "Reason: {why}": "Motif\u00a0: {why}",
     "Given by {who}.": "Accord\u00e9 par {who}.",
+    "Still opening the calendar \u2014 that reached nobody. Wait a second and do it again.":
+      "Le calendrier s\u2019ouvre encore \u2014 \u00e7a n\u2019a atteint personne. Attendez une seconde et recommencez.",
     "Opened again \u2014 {where}": "R\u00e9ouvert \u2014 {where}",
     "Cleared the clock \u2014 {where}, was in at {t}":
       "Pointage effac\u00e9 \u2014 {where}, \u00e9tait point\u00e9 \u00e0 {t}",
@@ -3751,7 +3755,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v129";
+  var APP_VERSION = "v130";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3864,10 +3868,23 @@ dialog#callDlg::backdrop{background:#0b0f12}
      was on the phone that made it. "device" is a deliberate standalone with
      no database configured at all and still saves locally; "offline" means
      one was configured and could not be reached, and that must say so. */
+  /* A write with nowhere to go.
+
+     "offline" was covered. "loading" was not, and it is the dangerous one:
+     for the seconds between the app opening and the connection coming up,
+     jobRef() hands back nothing, so every write fell through to the phone's
+     own storage and reported success. A man who taps Clock in during those
+     seconds is told he is clocked in, the office is told nothing, and the
+     first snapshot to arrive wipes it — the phone showing a job the calendar
+     has never heard of.
+
+     "device" is the one case where the phone really is the calendar: no
+     config at all, nobody else to reach, and writing locally is the whole
+     point. That one still goes through. */
   function cannotShare(){
-    return state.mode === "offline"
-      ? Promise.reject({code: "__offline__"})
-      : null;
+    if (state.mode === "offline") return Promise.reject({code: "__offline__"});
+    if (state.mode === "loading") return Promise.reject({code: "__loading__"});
+    return null;
   }
   function saveJob(job){
     var ref = jobRef(job.id);
@@ -3900,6 +3917,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (c==="resource_exhausted") return tr("Too many changes at once. Wait a moment and try again.");
     if (c==="quota_exceeded") return tr("The calendar is full. Delete some old jobs first.");
     if (c==="__offline__") return tr("This phone cannot reach the calendar, so that reached nobody. It is not waiting to send \u2014 get a signal, reload, and do it again.");
+    if (c==="__loading__") return tr("Still opening the calendar \u2014 that reached nobody. Wait a second and do it again.");
     if (c==="unavailable") return tr("No connection right now. Try again in a moment.");
     if (c==="permission-denied") return tr("This calendar is not accepting changes. Check the Firebase rules.");
     if (err && err.message) return err.message;
