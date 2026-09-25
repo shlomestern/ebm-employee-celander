@@ -605,8 +605,14 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
         " from the address"
       : "";
     const parked = endedNow && !!after.parked;
+    /* Named when it was not the man himself, because "Rodrigo finished" when
+       Rodrigo did not touch it is how a crew member ends up asking the group
+       chat who stopped his hours. */
+    const byOut = after.outById && after.outById !== after.crewId ? after.outBy : "";
+    const byIn = after.inById && after.inById !== after.crewId ? after.inBy : "";
     const title = parked ? `${who} stopped for the day`
-                : endedNow ? `${who} finished` : `${who} clocked in`;
+                : endedNow ? (byOut ? `${byOut} clocked ${who} out` : `${who} finished`)
+                : (byIn ? `${byIn} clocked ${who} in` : `${who} clocked in`);
     /* What he said about finishing it. "Don't know" is carried through as
        plainly as a date: it is the case that wants somebody at the office to
        do something, and the app puts the question in their alerts. */

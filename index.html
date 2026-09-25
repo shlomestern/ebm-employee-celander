@@ -2312,6 +2312,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "אושר על ידי {who}.",
     "Still opening the calendar — that reached nobody. Wait a second and do it again.":
       "הלוח עדיין נפתח — הפעולה לא הגיעה לאיש. המתינו רגע ונסו שוב.",
+    "Clocked out by {who}":
+      "הוחתם יציאה על ידי {who}",
+    "Clocked in by {who}":
+      "הוחתמה כניסה על ידי {who}",
+    "Clocked {man} out":
+      "החתים יציאה עבור {man}",
+    "Clocked {man} in":
+      "החתים כניסה עבור {man}",
     "Opened again — {where}":
       "נפתח מחדש — {where}",
     "Cleared the clock — {where}, was in at {t}":
@@ -3253,6 +3261,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Given by {who}.": "Accord\u00e9 par {who}.",
     "Still opening the calendar \u2014 that reached nobody. Wait a second and do it again.":
       "Le calendrier s\u2019ouvre encore \u2014 \u00e7a n\u2019a atteint personne. Attendez une seconde et recommencez.",
+    "Clocked out by {who}": "Point\u00e9 sortant par {who}",
+    "Clocked in by {who}": "Point\u00e9 entrant par {who}",
+    "Clocked {man} out": "A point\u00e9 la sortie de {man}",
+    "Clocked {man} in": "A point\u00e9 l\u2019entr\u00e9e de {man}",
     "Opened again \u2014 {where}": "R\u00e9ouvert \u2014 {where}",
     "Cleared the clock \u2014 {where}, was in at {t}":
       "Pointage effac\u00e9 \u2014 {where}, \u00e9tait point\u00e9 \u00e0 {t}",
@@ -3755,7 +3767,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v131";
+  var APP_VERSION = "v132";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -7262,8 +7274,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }).then(function(){
         // The worked day keeps its hours and stops saying it is waiting:
         // what is left is on the calendar now, with a day against it.
-        return patchJob(j.id, {parked: true, backOn: ds,
-                               clockOut: j.clockOut || now});
+        return patchJob(j.id, Object.assign({parked: true, backOn: ds,
+                               clockOut: j.clockOut || now},
+                               j.clockOut ? {} : {outBy: meName(), outById: state.me}));
       }).then(function(){
         noteDown("change", tr("Going back to it on {d}",
           {d: F_MED.format(fromIso(ds))}), j.id);
@@ -7499,7 +7512,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function finishForToday(j, note){
     var now = new Date().toISOString();
     patchJob(j.id, {
-      clockOut: now,
+      clockOut: now, outBy: meName(), outById: state.me,
       breaks: onBreak(j) ? closedBreaks(j, now) : (j.breaks || []),
       parked: true,
       left: note || "",
@@ -7549,7 +7562,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var j = usedJob; if (!j) return;
     $("usedSave").disabled = true;
     var now = new Date().toISOString();
-    var patch = {used: list, clockOut: now};
+    var patch = {used: list, clockOut: now, outBy: meName(), outById: state.me};
     /* Tomorrow's job, done today. The calendar has to show the day it
        happened or the record is wrong from the moment it is finished —
        the hours, the workbook and anyone looking back all read the date.
@@ -8027,6 +8040,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
       var away = pausedMs(j, Date.parse(j.clockOut) || Date.now());
       if (away >= 60000) cs.textContent += " \u00b7 " + tr("paused {d}", {d: awayFor(away)});
       card.appendChild(cs);
+      /* Somebody other than the man on the job worked his clock. He should
+         not have to ask in a group chat who stopped his hours. */
+      if (j.outById && j.outById !== j.crewId){
+        var ob=document.createElement("div"); ob.className="job-hold";
+        ob.textContent = tr("Clocked out by {who}", {who: j.outBy || ""});
+        card.appendChild(ob);
+      } else if (j.inById && j.inById !== j.crewId){
+        var ib=document.createElement("div"); ib.className="job-sub";
+        ib.textContent = tr("Clocked in by {who}", {who: j.inBy || ""});
+        card.appendChild(ib);
+      }
       /* Where the phone said he was standing when he started. Said only when
          there is something to say: a building that has not learned its own
          spot yet cannot vouch for anybody, and silence is better than a line
@@ -9497,8 +9521,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
                 {d: j.movedFrom ? F_MED.format(fromIso(j.movedFrom)) : "?"}), j);
       ev(j.reopenedAt, j.reopenedBy, "change",
          j.clockIn ? tr("Opened again") : tr("Clock cleared"), j);
-      ev(j.clockIn, man, "clock",
-         (j.inAt && typeof j.inAt.away === "number" && j.inAt.away > TOO_FAR)
+      ev(j.clockIn, j.inBy || man, "clock",
+         (j.inById && j.inById !== j.crewId)
+           ? tr("Clocked {man} in", {man: man})
+           : (j.inAt && typeof j.inAt.away === "number" && j.inAt.away > TOO_FAR)
            ? tr("Arrived \u2014 phone said {d} from the address",
                 {d: farText(j.inAt.away)})
            : tr("Arrived"), j);
@@ -9506,7 +9532,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
         ev(br.from, man, "clock", tr("Paused \u2014 {why}", {why: whyLine(br)}), j);
         ev(br.to,   man, "clock", tr("Back on the job"), j);
       });
-      ev(j.clockOut, man, "clock", tr("Left"), j);
+      ev(j.clockOut, j.outBy || man, "clock",
+         (j.outById && j.outById !== j.crewId)
+           ? tr("Clocked {man} out", {man: man}) : tr("Left"), j);
       (j.notes || []).forEach(function(n){
         ev(n.at, n.by, "change", tr("Note: {t}", {t: n.text}), j);
       });
@@ -10208,7 +10236,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
   $("awayDlg").addEventListener("close", function(){ settleAway(false); });
 
   function startClock(j){
-    var patch = {clockIn: new Date().toISOString()};
+    /* Who pressed it, not who the job belongs to. The log worked the second
+       out from the job's own fields and put the crew member's name against
+       it, which is a guess — and it is the wrong guess in exactly the case
+       anybody ever asks about: "who stopped my hours?" */
+    var patch = {clockIn: new Date().toISOString(),
+                 inBy: meName(), inById: state.me};
     if (!GPS_ON) return patchJob(j.id, patch);
     return getFix().then(function(fix){
       // No fix at all is written down as plainly as a fix is. "Nothing here"
