@@ -3862,7 +3862,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v133";
+  var APP_VERSION = "v134";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4174,15 +4174,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
      means being in two places at once. Time is kept free for getting there,
      and two jobs in the same building can still run back to back.
 
-     How much time depends on how far it really is. Another building on the
-     same property is a walk across a car park; another project is a drive
-     across Montreal, at the wrong end of the morning, with a van to unload
-     at the other end. One hour for the first, two for the second. */
-  var GAP_SAME_PROJECT  = 1;
+     How much time depends on how far it really is. Two buildings on the same
+     property are a walk across a car park and need nothing — the office asked
+     for that plainly, and it is right: 2350 and 2354 Mariette are next door
+     to each other. Another project is a drive across Montreal, at the wrong
+     end of the morning, with a van to unload at the other end, so it takes
+     two hours. */
   var GAP_OTHER_PROJECT = 2;
   function gapFor(aProj, aBld, bProj, bBld){
-    if (samePlace(aProj, aBld, bProj, bBld)) return 0;
-    return aProj !== bProj ? GAP_OTHER_PROJECT : GAP_SAME_PROJECT;
+    return aProj === bProj ? 0 : GAP_OTHER_PROJECT;
   }
   function computeBusy(ds, crewId, skipId, here){
     busyMap = {}; travelStart = {}; travelEnd = {}; offMap = {};
