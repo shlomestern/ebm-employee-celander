@@ -1250,6 +1250,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
   </form>
 </dialog>
 
+<!-- Said before the booking is made, never instead of making it. Both of
+     these are judgements about a day, not rules about one — the office knows
+     things the calendar does not, and the last word is theirs. -->
+<dialog id="warnDlg">
+  <form method="dialog" class="dlg" id="warnForm">
+    <div class="eyebrow" data-t>Before you book it</div>
+    <h3 id="warnTitle" data-t>Worth a second look</h3>
+    <ul class="usedlist" id="warnList" style="margin:10px 0 0; padding-inline-start:18px"></ul>
+    <div class="actions">
+      <button type="button" class="btn" id="warnBack" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-primary" id="warnGo" data-t>Book it anyway</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="stkDlg">
   <form method="dialog" class="dlg" id="stkForm">
     <div class="eyebrow" data-t>Stock</div>
@@ -1595,7 +1611,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     </label>
     <label class="check" id="travelRow" hidden>
       <input type="checkbox" id="fTravelOverride">
-      <span data-th><b>Book back to back anyway</b>There is no hour left to travel between the two addresses.</span>
+      <span data-th><b>Book back to back anyway</b>There is no time left to travel between the two addresses.</span>
     </label>
     <p class="warn" id="travelWarn" hidden></p>
     <p class="warn" id="busyWarn" hidden></p>
@@ -2156,7 +2172,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "{h} — בדרך מ{where}",
     "{h} — due at {where}":
       "{h} — מצופה ב{where}",
-    "<b>Book back to back anyway</b>There is no hour left to travel between the two addresses.":
+    "<b>Book back to back anyway</b>There is no time left to travel between the two addresses.":
       "<b>לשבץ ברצף בכל זאת</b>לא נשארה שעה לנסיעה בין שתי הכתובות.",
     "No travel time — another job at {where} runs right up against this one.":
       "אין זמן נסיעה — עבודה אחרת ב{where} צמודה לזו.",
@@ -2312,6 +2328,24 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "אושר על ידי {who}.",
     "Still opening the calendar — that reached nobody. Wait a second and do it again.":
       "הלוח עדיין נפתח — הפעולה לא הגיעה לאיש. המתינו רגע ונסו שוב.",
+    "Before you book it":
+      "לפני ההזמנה",
+    "Worth a second look":
+      "כדאי לבדוק שוב",
+    "Book it anyway":
+      "להזמין בכל זאת",
+    "That would be {n} jobs for {name} in one day. Another day may go better.":
+      "זה יהיה {n} עבודות ל-{name} ביום אחד. אולי עדיף ביום אחר.",
+    "Candle lighting is {t}, and that job runs past it. He would not be finished in time.":
+      "הדלקת נרות ב-{t}, והעבודה נמשכת מעבר לכך. הוא לא יסיים בזמן.",
+    "Candle lighting is {t}, so finishing at {e} leaves him {h} to clear up and get home. He may not make it.":
+      "הדלקת נרות ב-{t}, ולכן סיום ב-{e} משאיר לו {h} לסדר ולהגיע הביתה. ייתכן שלא יספיק.",
+    "about an hour":
+      "כשעה",
+    "under an hour":
+      "פחות משעה",
+    "about {n} hours":
+      "כ-{n} שעות",
     "Clocked out by {who}":
       "הוחתם יציאה על ידי {who}",
     "Clocked in by {who}":
@@ -3164,7 +3198,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "{h} \u2014 taken": "{h} \u2014 occup\u00e9",
     "{h} \u2014 travelling from {where}": "{h} \u2014 en route depuis {where}",
     "{h} \u2014 due at {where}": "{h} \u2014 attendu \u00e0 {where}",
-    "<b>Book back to back anyway</b>There is no hour left to travel between the two addresses.":
+    "<b>Book back to back anyway</b>There is no time left to travel between the two addresses.":
       "<b>R\u00e9server \u00e0 la suite quand m\u00eame</b>Il ne reste aucune heure pour se rendre d\u2019une adresse \u00e0 l\u2019autre.",
     "No travel time \u2014 another job at {where} runs right up against this one.":
       "Aucun temps de d\u00e9placement \u2014 un autre travail \u00e0 {where} se colle \u00e0 celui-ci.",
@@ -3261,6 +3295,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Given by {who}.": "Accord\u00e9 par {who}.",
     "Still opening the calendar \u2014 that reached nobody. Wait a second and do it again.":
       "Le calendrier s\u2019ouvre encore \u2014 \u00e7a n\u2019a atteint personne. Attendez une seconde et recommencez.",
+    "Before you book it": "Avant de r\u00e9server",
+    "Worth a second look": "\u00c0 regarder deux fois",
+    "Book it anyway": "R\u00e9server quand m\u00eame",
+    "That would be {n} jobs for {name} in one day. Another day may go better.":
+      "\u00c7a ferait {n} travaux pour {name} en une journ\u00e9e. Un autre jour irait peut-\u00eatre mieux.",
+    "Candle lighting is {t}, and that job runs past it. He would not be finished in time.":
+      "L\u2019allumage des bougies est \u00e0 {t}, et ce travail va au-del\u00e0. Il n\u2019aurait pas fini \u00e0 temps.",
+    "Candle lighting is {t}, so finishing at {e} leaves him {h} to clear up and get home. He may not make it.":
+      "L\u2019allumage des bougies est \u00e0 {t}, donc finir \u00e0 {e} lui laisse {h} pour ranger et rentrer. Il pourrait ne pas y arriver.",
+    "about an hour": "environ une heure",
+    "under an hour": "moins d\u2019une heure",
+    "about {n} hours": "environ {n} heures",
     "Clocked out by {who}": "Point\u00e9 sortant par {who}",
     "Clocked in by {who}": "Point\u00e9 entrant par {who}",
     "Clocked {man} out": "A point\u00e9 la sortie de {man}",
@@ -3756,6 +3802,55 @@ dialog#callDlg::backdrop{background:#0b0f12}
     holidayCache[ds] = out;
     return out ? tr(out) : out;
   }
+  /* ---------- when Shabbos comes in ----------
+
+     Worked out here rather than asked of anybody: no key to look after, no
+     service to be down on a Friday afternoon, and a plumber in a basement
+     needs the answer whether or not his phone has signal.
+
+     Standard sunset arithmetic for Montreal, and candle lighting eighteen
+     minutes before it — which is the time that actually matters, because a
+     man still has to get home. */
+  var MTL = {lat: 45.5019, lng: -73.5674};
+  var CANDLES_BEFORE = 18;              // minutes before sunset
+  function sunsetOn(ds){
+    var d = fromIso(ds);
+    var n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+    var rad = Math.PI / 180, deg = 180 / Math.PI;
+    var lngHour = MTL.lng / 15;
+    var t = n + ((18 - lngHour) / 24);          // rising late in the day
+    var M = (0.9856 * t) - 3.289;
+    var L = M + (1.916 * Math.sin(rad * M)) + (0.020 * Math.sin(rad * 2 * M)) + 282.634;
+    L = (L + 360) % 360;
+    var RA = deg * Math.atan(0.91764 * Math.tan(rad * L));
+    RA = (RA + 360) % 360;
+    RA += (Math.floor(L / 90) * 90) - (Math.floor(RA / 90) * 90);
+    RA /= 15;
+    var sinDec = 0.39782 * Math.sin(rad * L);
+    var cosDec = Math.cos(Math.asin(sinDec));
+    // -0.833 degrees: the sun's own width and the bend of the air at the horizon.
+    var cosH = (Math.cos(rad * 90.833) - (sinDec * Math.sin(rad * MTL.lat))) /
+               (cosDec * Math.cos(rad * MTL.lat));
+    if (cosH > 1 || cosH < -1) return null;     // no sunset that far north
+    var H = (deg * Math.acos(cosH)) / 15;
+    var T = H + RA - (0.06571 * t) - 6.622;
+    var UT = (T - lngHour + 24) % 24;
+    var out = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    out.setUTCMinutes(out.getUTCMinutes() + Math.round(UT * 60));
+    return out;
+  }
+  /* The last minute of the working week. Friday, and the eve of a yom tov —
+     a man finishing at five on erev Sukkos has the same problem he has on a
+     Friday, and the calendar already knows which days those are. */
+  function shabbosIn(ds){
+    var d = fromIso(ds);
+    var eve = d.getDay() === 5 || !!holidayFor(iso(addDays(d, 1)));
+    if (!eve || holidayFor(ds)) return null;
+    var sun = sunsetOn(ds);
+    if (!sun) return null;
+    return new Date(sun.getTime() - CANDLES_BEFORE * 60000);
+  }
+
   function isWeekend(ds){
     var wd = fromIso(ds).getDay();
     return wd === 0 || wd === 6;
@@ -3767,7 +3862,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v132";
+  var APP_VERSION = "v133";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4076,8 +4171,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return aBld === bBld;
   }
   /* Two jobs at different addresses cannot touch: 8-10 then 10-12 across town
-     means being in two places at once. An hour is kept free for getting
-     there, and two jobs in the same building can still run back to back. */
+     means being in two places at once. Time is kept free for getting there,
+     and two jobs in the same building can still run back to back.
+
+     How much time depends on how far it really is. Another building on the
+     same property is a walk across a car park; another project is a drive
+     across Montreal, at the wrong end of the morning, with a van to unload
+     at the other end. One hour for the first, two for the second. */
+  var GAP_SAME_PROJECT  = 1;
+  var GAP_OTHER_PROJECT = 2;
+  function gapFor(aProj, aBld, bProj, bBld){
+    if (samePlace(aProj, aBld, bProj, bBld)) return 0;
+    return aProj !== bProj ? GAP_OTHER_PROJECT : GAP_SAME_PROJECT;
+  }
   function computeBusy(ds, crewId, skipId, here){
     busyMap = {}; travelStart = {}; travelEnd = {}; offMap = {};
     var span = offHoursOn(ds, crewId);
@@ -4086,12 +4192,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
       if (skipId && j.id === skipId) return;
       var held = heldTo(j);
       for (var h=j.from; h<held; h++) busyMap[h] = true;
-      if (!here.proj || samePlace(j.projectId, j.buildingId, here.proj, here.bld)) return;
-      // Cannot start the hour he finishes elsewhere, cannot start the hour
-      // before he is due there, and cannot still be working up to it.
-      travelStart[held] = j.buildingName;
-      travelStart[j.from - 1] = j.buildingName;
-      travelEnd[j.from] = j.buildingName;
+      if (!here.proj) return;
+      var gap = gapFor(j.projectId, j.buildingId, here.proj, here.bld);
+      if (!gap) return;
+      // Cannot start the hours after he finishes elsewhere, cannot start the
+      // hours before he is due there, and cannot still be working up to it.
+      for (var g = 0; g < gap; g++){
+        travelStart[held + g] = j.buildingName;
+        travelStart[j.from - 1 - g] = j.buildingName;
+        travelEnd[j.from - g] = j.buildingName;
+      }
     });
   }
   function travelOff(){ return !!$("fTravelOverride").checked; }
@@ -7603,7 +7713,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var moves = [], prev = {projectId: where.proj, buildingId: where.bld, to: to};
     for (var i = 0; i < later.length; i++){
       var x = later[i];
-      var gap = samePlace(prev.projectId, prev.buildingId, x.projectId, x.buildingId) ? 0 : 1;
+      var gap = gapFor(prev.projectId, prev.buildingId, x.projectId, x.buildingId);
       var earliest = prev.to + gap;
       if (x.from >= earliest){
         prev = {projectId: x.projectId, buildingId: x.buildingId, to: x.to};
@@ -7640,7 +7750,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var moves = [], prev = {projectId: j.projectId, buildingId: j.buildingId, to: j.late.until};
     for (var i = 0; i < later.length; i++){
       var x = later[i];
-      var gap = samePlace(prev.projectId, prev.buildingId, x.projectId, x.buildingId) ? 0 : 1;
+      var gap = gapFor(prev.projectId, prev.buildingId, x.projectId, x.buildingId);
       var earliest = prev.to + gap;
       if (x.from >= earliest){ prev = {projectId:x.projectId, buildingId:x.buildingId, to:x.to}; continue; }
       var shifted = {job: x, from: x.from + (earliest - x.from), to: x.to + (earliest - x.from)};
@@ -8732,6 +8842,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("formWhen").textContent = (editing ? tr("Edit \u2014 ") : "") + F_LONG.format(fromIso(ds));
     $("formErr").textContent=""; $("formSave").disabled=false;
     stockAsk = null;                     // asked afresh on every save
+    adviceSaid = false;                  // and so is the second look
     $("formSave").textContent = editing ? tr("Save changes") : tr("Save job");
     $("paneForm").reset();
     fillProjects();
@@ -8922,6 +9033,63 @@ dialog#callDlg::backdrop{background:#0b0f12}
      are the only way past this, so it cannot be clicked through out of habit.
      It is asked again on an edit, which is also the way to change the answer
      later. */
+  /* ---------- second thoughts, offered once ----------
+
+     Neither of these stops anybody. The office books around things the
+     calendar cannot see — a man who lives near that building, a tenant who
+     is only in on a Friday — so both are said plainly and then got out of
+     the way. */
+  var BUSY_DAY = 5;                 // jobs in one day before it is worth saying
+  var BEFORE_SHABBOS = 4;           // hours of grace a man needs to get home
+
+  function bookingAdvice(ds, crewId, from, to, skipId){
+    var out = [];
+    var already = jobsOn(ds, crewId).filter(function(j){ return j.id !== skipId; });
+    if (already.length + 1 >= BUSY_DAY){
+      out.push(tr("That would be {n} jobs for {name} in one day. Another day may go better.",
+        {n: already.length + 1, name: memberOr(crewId).name}));
+    }
+    /* Friday, or the eve of a yom tov. A job that ends inside the last few
+       hours is a man still on a roof when he should be driving home. */
+    var lights = shabbosIn(ds);
+    if (lights){
+      var endsAt = fromIso(ds); endsAt.setHours(to, 0, 0, 0);
+      var left = (lights - endsAt) / 3600000;
+      if (left < BEFORE_SHABBOS){
+        // F_TIME already ends in a full stop of its own — "6:17 p.m." — so
+        // nothing here may end a sentence on it.
+        out.push(left <= 0
+          ? tr("Candle lighting is {t}, and that job runs past it. He would not be finished in time.",
+               {t: F_TIME.format(lights)})
+          : tr("Candle lighting is {t}, so finishing at {e} leaves him {h} to clear up and get home. He may not make it.",
+               {t: F_TIME.format(lights), e: hourLong(to),
+                h: left < 1 ? tr("under an hour")
+                 : left < 2 ? tr("about an hour")
+                            : tr("about {n} hours", {n: Math.floor(left)})}));
+      }
+    }
+    return out;
+  }
+  var warnThen = null, adviceSaid = false;
+  function askAdvice(lines, then){
+    var host = $("warnList"); host.innerHTML = "";
+    lines.forEach(function(t){
+      var li = document.createElement("li");
+      li.style.marginBottom = "6px";
+      li.textContent = t; host.appendChild(li);
+    });
+    warnThen = then;
+    $("warnDlg").showModal();
+  }
+  $("warnGo").addEventListener("click", function(){
+    $("warnDlg").close();
+    var go = warnThen; warnThen = null;
+    if (go) go();
+  });
+  $("warnBack").addEventListener("click", function(){ $("warnDlg").close(); });
+  // Escape or the backdrop: nothing was agreed to, and the form is still there.
+  $("warnDlg").addEventListener("close", function(){ warnThen = null; });
+
   var stockAsk = null, stockThen = null;
 
   function askStock(b, then){
@@ -9006,6 +9174,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
               who: off.decidedBy || tr("the office")});
       $("offAnywayRow").hidden = false;
       return;
+    }
+
+    /* Before the stock, because these are about whether to book it at all.
+       Asked once per trip through the form: saying "book it anyway" and then
+       changing a field should not mean being asked again. */
+    if (!adviceSaid){
+      var advice = bookingAdvice(ds, crewId, from, to, editing ? editing.id : null);
+      if (advice.length){
+        askAdvice(advice, function(){ adviceSaid = true; saveFromForm(); });
+        return;
+      }
+      adviceSaid = true;
     }
 
     // Everything about the job is settled; the last question is the stock.
