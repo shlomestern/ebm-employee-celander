@@ -1362,6 +1362,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <div id="decBlock"></div>
     <div class="eyebrow" style="margin-top:14px" data-t>If you agree</div>
     <div class="whyrow" id="decHow"></div>
+    <div class="field" id="decDayRow" hidden style="margin-top:10px">
+      <label for="decDay" data-t>Which day</label>
+      <input type="date" id="decDay">
+    </div>
     <p class="sub" id="decWhat"></p>
     <p class="sub" id="decWhy" hidden></p>
     <p class="err" id="decErr"></p>
@@ -2737,6 +2741,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "לבטל את העבודה האחרת",
     "Take the hours out of it":
       "להוציא את השעות ממנה",
+    "Put it on another day":
+      "להעביר ליום אחר",
+    "{where} {a}–{b} moves to {d}":
+      "{where} {a}–{b} עובר ל־{d}",
+    "Pick a day for it.":
+      "בחרו יום.",
+    "{where} is already under way — it cannot go to another day.":
+      "{where} כבר בעבודה — אי אפשר להעביר ליום אחר.",
+    "{name} is off that day.":
+      "{name} בחופשה ביום הזה.",
+    "{name} is booked at {where} that day at {h}.":
+      "{name} משובץ ב{where} ביום הזה בשעה {h}.",
     "{where} becomes {a}–{b}":
       "{where} הופך ל־{a}–{b}",
     "{where} becomes {a}–{b} and {c}–{d}":
@@ -2773,6 +2789,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "העבודה האחרת נדחתה",
     "the hours came out of the other work":
       "השעות יצאו מהעבודה האחרת",
+    "the other work went to another day":
+      "העבודה האחרת עברה ליום אחר",
     "Got it":
       "הבנתי",
     "agreed by {name}":
@@ -3511,6 +3529,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Push the other work later": "D\u00e9caler l\u2019autre travail",
     "Drop the other work": "Annuler l\u2019autre travail",
     "Take the hours out of it": "Retirer ces heures de l\u2019autre travail",
+    "Put it on another day": "Le mettre \u00e0 un autre jour",
+    "{where} {a}–{b} moves to {d}": "{where} {a}–{b} passe au {d}",
+    "Pick a day for it.": "Choisissez un jour.",
+    "{where} is already under way — it cannot go to another day.":
+      "{where} est d\u00e9j\u00e0 commenc\u00e9 — il ne peut pas aller \u00e0 un autre jour.",
+    "{name} is off that day.": "{name} est en cong\u00e9 ce jour-l\u00e0.",
+    "{name} is booked at {where} that day at {h}.":
+      "{name} est r\u00e9serv\u00e9 \u00e0 {where} ce jour-l\u00e0 \u00e0 {h}.",
     "{where} becomes {a}–{b}": "{where} devient {a}–{b}",
     "{where} becomes {a}–{b} and {c}–{d}":
       "{where} devient {a}–{b} et {c}–{d}",
@@ -3531,6 +3557,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "the other work moved later": "l\u2019autre travail a \u00e9t\u00e9 d\u00e9cal\u00e9",
     "the hours came out of the other work":
       "ces heures ont \u00e9t\u00e9 retir\u00e9es de l\u2019autre travail",
+    "the other work went to another day":
+      "l\u2019autre travail est pass\u00e9 \u00e0 un autre jour",
     "Got it": "Compris", "agreed by {name}": "accept\u00e9 par {name}",
     "Pause": "Pause", "Paused": "En pause", "Break": "Pause",
     "Getting materials": "Chercher du mat\u00e9riel",
@@ -3877,7 +3905,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v135";
+  var APP_VERSION = "v136";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5315,6 +5343,34 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return tr("{where} becomes {a}–{b}",
       {where: j.buildingName, a: hourLong(keep.from), b: hourLong(keep.to)});
   }
+  /* Moving the whole of a blocking booking to another day. It is the plainest
+     answer of the four and often the right one \u2014 a day's work that has not
+     been started does not have to be cut up or lost to let an hour in. What it
+     cannot do is move a job a man is already standing on: those hours belong
+     to the day they were worked. */
+  function dayPlan(r, hit, ds){
+    if (!ds) return {ok: false, why: tr("Pick a day for it.")};
+    if (ds < todayIso) return {ok: false, why: tr("That day has gone.")};
+    var started = hit.filter(worked)[0];
+    if (started) return {ok: false, why: tr("{where} is already under way \u2014 it cannot go to another day.",
+      {where: started.buildingName})};
+    var off = offOn(ds, r.crewId);
+    if (off && wholeDayOff(off))
+      return {ok: false, why: tr("{name} is off that day.", {name: r.crewName})};
+    var moved = {};
+    hit.forEach(function(j){ moved[j.id] = 1; });
+    var busy = null;
+    hit.forEach(function(j){
+      if (busy) return;
+      var clash = collidesWith(ds, r.crewId, j.from, j.to).filter(function(x){
+        return !moved[x.id];
+      })[0];
+      if (clash) busy = clash;
+    });
+    if (busy) return {ok: false, why: tr("{name} is booked at {where} that day at {h}.",
+      {name: r.crewName, where: busy.buildingName, h: hourLong(busy.from)})};
+    return {ok: true};
+  }
   function decisionPlan(r){
     var where = {proj: r.projectId, bld: r.buildingId};
     return makeRoom(r.date, r.crewId, r.from, r.to, where);
@@ -5346,10 +5402,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
     hit.forEach(function(j){ host.appendChild(blockRow(j, {from: r.from, to: r.to})); });
 
     var plan = decisionPlan(r);
-    if (!plan.ok && decHow === "push") decHow = "carve";
+    // Nowhere to push it to on the day means the next plainest answer, which
+    // is the whole of it on another day \u2014 not cutting it up.
+    if (!plan.ok && decHow === "push") decHow = "day";
     if (!hit.length && decHow === "carve") decHow = "push";
     var how = $("decHow"); how.innerHTML = "";
     [["push", tr("Push the other work later")],
+     ["day", tr("Put it on another day")],
      ["carve", tr("Take the hours out of it")],
      ["cancel", tr("Drop the other work")]]
       .forEach(function(pair){
@@ -5362,6 +5421,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         how.appendChild(b);
       });
 
+    $("decDayRow").hidden = decHow !== "day";
     // A greyed-out option used to sit there saying nothing about itself.
     $("decWhy").hidden = plan.ok;
     $("decWhy").textContent = plan.ok ? "" :
@@ -5379,6 +5439,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
             : tr("Nothing has to move."))
         : tr("It will not fit — {where} would run past the end of the day.",
              {where: (plan.stuck || {}).buildingName || ""});
+    } else if (decHow === "day"){
+      var dp = dayPlan(r, hit, $("decDay").value);
+      says = dp.ok
+        ? hit.map(function(j){
+            return tr("{where} {a}–{b} moves to {d}", {
+              where: j.buildingName, a: hourLong(j.from), b: hourLong(j.to),
+              d: F_MED.format(fromIso($("decDay").value))});
+          }).join(" \u00b7 ")
+        : dp.why;
     } else if (decHow === "carve"){
       says = hit.length
         ? hit.map(function(j){ return carveSays(carveOf(j, r)); }).join(" \u00b7 ")
@@ -5392,10 +5461,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
         : tr("Nothing has to move.");
     }
     $("decWhat").textContent = says;
-    $("decYes").disabled = decHow === "push" && !plan.ok;
+    $("decYes").disabled = (decHow === "push" && !plan.ok) ||
+      (decHow === "day" && !dayPlan(r, hit, $("decDay").value).ok);
   }
   function openDecision(r){
     decReq = r; decHow = "push";
+    $("decDay").min = todayIso;
+    var next = iso(addDays(fromIso(r.date), 1));
+    $("decDay").value = next < todayIso ? todayIso : next;
     $("decErr").textContent = "";
     $("decYes").disabled = false; $("decNo").disabled = false;
     drawDecision();
@@ -5424,6 +5497,21 @@ dialog#callDlg::backdrop{background:#0b0f12}
                  " \u00b7 " + memberOr(j.crewId).name}), j.id);
         steps.push(removeJob(j.id));
       });
+    } else if (decHow === "day"){
+      var ds2 = $("decDay").value;
+      var dp = dayPlan(r, hit, ds2);
+      if (!dp.ok) return Promise.reject(new Error(dp.why));
+      hit.forEach(function(j){
+        noteDown("change", tr("Moved to {d} to let an emergency in \u2014 {what}",
+          {d: F_MED.format(fromIso(ds2)),
+           what: rangeShort(j) + " \u00b7 " + whereLine(j) +
+                 " \u00b7 " + memberOr(j.crewId).name}), j.id);
+        steps.push(patchJob(j.id, {
+          date: ds2, allDay: false, late: null,
+          movedBy: meName(), movedAt: new Date().toISOString(), movedFrom: j.date
+        }));
+      });
+      done.movedTo = ds2;
     } else if (decHow === "carve"){
       hit.forEach(function(j){
         var c = carveOf(j, r);
@@ -5483,6 +5571,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return Promise.all(steps).then(function(){ return saveJob(job); })
       .then(function(){ return replaceReq(done); });
   }
+  $("decDay").addEventListener("change", function(){ drawDecision(); });
   $("decClose").addEventListener("click", function(){ $("decDlg").close(); decReq = null; });
   [["decYes", true], ["decNo", false]].forEach(function(pair){
     $(pair[0]).addEventListener("click", function(){
@@ -5685,8 +5774,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
     {at:"2026-09-29T14:00:00Z", who:"office",
-     en:"Answering a request for one of your men has a third answer now: take the hours out of it. He keeps the rest of the day where he is and only those hours go to the emergency \u2014 a man booked all day in a building can give an hour without the booking being pushed or dropped. Pushing it later is greyed out when the day has no room left for it, and now says so.",
-     fr:"R\u00e9pondre \u00e0 une demande pour un de vos hommes a une troisi\u00e8me r\u00e9ponse\u00a0: retirer ces heures de l\u2019autre travail. Il garde le reste de sa journ\u00e9e sur place et seules ces heures vont \u00e0 l\u2019urgence. \u00ab\u00a0D\u00e9caler\u00a0\u00bb est gris\u00e9 quand la journ\u00e9e n\u2019a plus de place, et le dit maintenant."},
+     en:"Answering a request for one of your men has four answers now, not two: push the other work later, put the whole of it on another day, take only the asked-for hours out of it, or drop it. A man booked all day can give up an hour and keep the rest of his day, or the day's work can go to a day of its own \u2014 nothing has to be cancelled to let an emergency in. Pushing it later is greyed out when the day has no room left for it, and now says so.",
+     fr:"R\u00e9pondre \u00e0 une demande pour un de vos hommes a quatre r\u00e9ponses maintenant\u00a0: d\u00e9caler l\u2019autre travail, le mettre \u00e0 un autre jour, n\u2019en retirer que les heures demand\u00e9es, ou l\u2019annuler. Rien n\u2019a besoin d\u2019\u00eatre annul\u00e9 pour laisser entrer une urgence. \u00ab\u00a0D\u00e9caler\u00a0\u00bb est gris\u00e9 quand la journ\u00e9e n\u2019a plus de place, et le dit maintenant."},
     {at:"2026-09-10T01:00:00Z", who:"office",
      en:"At seven each weekday morning, the office is told who has no bookings at all that day, while there is still a day to fill.",
      fr:"\u00c0 sept heures chaque matin de semaine, le bureau apprend qui n\u2019a aucune r\u00e9servation ce jour-l\u00e0, quand il reste encore une journ\u00e9e \u00e0 remplir."}
@@ -8010,6 +8099,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       " \u00b7 " + r.buildingName +
       (yes ? " \u00b7 " + (r.how === "cancel" ? tr("the other work was dropped")
                           : r.how === "carve" ? tr("the hours came out of the other work")
+                          : r.how === "day" ? tr("the other work went to another day")
                                               : tr("the other work moved later")) : "");
     tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
     if (yes){

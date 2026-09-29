@@ -679,7 +679,9 @@ exports.notifyOnRequest = onDocumentWritten(
         ? "the other work was dropped"
         : r.how === "carve"
           ? "the hours came out of the other work"
-          : "the other work moved later";
+          : r.how === "day"
+            ? "the other work went to another day"
+            : "the other work moved later";
       const sent = await push(db, aud.map, tokens,
         yes
           ? `${r.decidedBy} agreed — ${r.crewName} is yours`
