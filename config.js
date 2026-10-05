@@ -21,13 +21,24 @@ self.EBM_CONFIG = {   /* self, not window: the service worker reads this file to
     appId:             "1:525924907190:web:5673ae7b2c8c7eecdb0e17"
   },
 
-  /* The office code. This one lives here, in the file, so a typo made inside
-     the app can never lock you out of your own calendar — it always works.
+  /* The office code. It always works, so a typo made inside the app can never
+     lock you out of your own calendar.
+
+     It is not written here any more. This file is served to every browser
+     that opens the calendar, so anybody who found the address could read the
+     one code that opens everything. What is here is a fingerprint of the
+     code: the app makes the same fingerprint out of what was typed and
+     compares the two. A fingerprint cannot be turned back into the code.
+
+     To change the office code, make the new fingerprint and paste it here:
+
+       node -e 'const c=require("crypto");console.log(
+         c.createHash("sha256").update("ebm-crew:"+"YOURCODE").digest("hex"))'
 
      Everyone else's name and code is managed inside the app: sign in as the
      office and use the "Crew & codes" button. */
   access: {
-    office: "empire65"
+    officeHash: "b28fbef61e838daf48867be3e6f06fbb1ee5f538d073c641af23c6257c55e00d"
   },
 
   /* Phone notifications. Paste the Web Push certificate key pair from

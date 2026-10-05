@@ -3911,7 +3911,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v137";
+  var APP_VERSION = "v138";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5798,6 +5798,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-05T21:30:00Z", who:"me",
+     en:"The office code was written in plain sight in config.js, and config.js is handed to every browser that opens the calendar \u2014 so anybody who found the address could read the one code that opens everything. The file carries a fingerprint of the code now. The code itself has not changed and nothing about signing in has changed; the file simply no longer says what it is.",
+     fr:"Le code du bureau \u00e9tait \u00e9crit en clair dans config.js, un fichier livr\u00e9 \u00e0 chaque navigateur qui ouvre le calendrier. Le fichier n\u2019en garde plus qu\u2019une empreinte. Le code n\u2019a pas chang\u00e9 et rien ne change pour se connecter."},
     {at:"2026-10-05T16:00:00Z", who:"office",
      en:"An ask for somebody else's man now has an end. It leaves everybody's screen once the hours it asked for have gone \u2014 one sat open all day for a job booked eight to ten in the morning \u2014 and whoever asked is told nobody answered. After twenty minutes with no answer they are told that too, and their own screen now shows the ask waiting with one button on it: I do not need it, which takes it back off the other screens.",
      fr:"Une demande pour l\u2019homme d\u2019un autre a maintenant une fin. Elle quitte tous les \u00e9crans une fois les heures demand\u00e9es pass\u00e9es, et celui qui a demand\u00e9 est averti que personne n\u2019a r\u00e9pondu. Apr\u00e8s vingt minutes sans r\u00e9ponse il est averti aussi, et son propre \u00e9cran montre la demande en attente avec un bouton\u00a0: Je n\u2019en ai plus besoin."},
@@ -10462,16 +10465,70 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (v) return v;
     return String((window.EBM_CONFIG && window.EBM_CONFIG.passcode) || "").trim();
   }
+  /* The office code used to sit in config.js in plain sight, and config.js is
+     served to every browser that opens the app — so anybody who found the
+     address could read the one code that opens the whole calendar. What is in
+     the file now is a fingerprint of it: the app takes what was typed, makes
+     the same fingerprint, and compares the two. The code still works and
+     nothing about signing in changed; the file simply no longer says what it
+     is. A fingerprint cannot be turned back into the code it came from.
+
+     It is held as a promise because the browser's own hashing is asynchronous,
+     and worked out once per code rather than on every keystroke. */
+  var MASTER_SALT = "ebm-crew:";
+  var hashSeen = {};
+  function hashCode(code){
+    var key = String(code || "");
+    if (hashSeen[key]) return hashSeen[key];
+    var sub = window.crypto && window.crypto.subtle;
+    var p;
+    if (!sub || !window.TextEncoder){
+      p = Promise.resolve("");           // too old to hash: fall back below
+    } else {
+      p = sub.digest("SHA-256", new TextEncoder().encode(MASTER_SALT + key))
+        .then(function(buf){
+          return Array.prototype.map.call(new Uint8Array(buf), function(b){
+            return ("0" + b.toString(16)).slice(-2);
+          }).join("");
+        }).catch(function(){ return ""; });
+    }
+    hashSeen[key] = p;
+    return p;
+  }
+  function masterOfficeHash(){
+    var a = window.EBM_CONFIG && window.EBM_CONFIG.access;
+    return String((a && a.officeHash) || "").trim().toLowerCase();
+  }
+  /* Is this the master office code? Answered against the fingerprint when
+     there is one, and against the plain code when a setup still carries it. */
+  function isMasterCode(code){
+    if (!code) return Promise.resolve(false);
+    var plain = masterOfficeCode();
+    if (plain) return Promise.resolve(code === plain);
+    var want = masterOfficeHash();
+    if (!want) return Promise.resolve(false);
+    return hashCode(code).then(function(h){ return !!h && h === want; });
+  }
+  /* There is a master code of some kind — plain or fingerprinted — so the
+     app asks for one rather than opening to anybody. */
+  function hasMaster(){ return !!masterOfficeCode() || !!masterOfficeHash(); }
+  /* Everybody but the master code, which has to be asked about separately
+     because answering it means hashing. */
   function whoFor(code){
     if (!code) return null;
-    // The code in config.js always works, so a mistyped office code in the app
-    // can never lock the office out of its own calendar.
-    if (code === masterOfficeCode()) return "office";
     if (state.officeCode && code === state.officeCode) return "office";
     for (var i=0;i<state.people.length;i++){
       if (String(state.people[i].code||"").trim() === code) return state.people[i].id;
     }
     return null;
+  }
+  /* The whole answer. The master code in config.js always works, so a
+     mistyped office code in the app can never lock the office out of its own
+     calendar. */
+  function whoForAsync(code){
+    var id = whoFor(code);
+    if (id) return Promise.resolve(id);
+    return isMasterCode(code).then(function(yes){ return yes ? "office" : null; });
   }
   function validPerson(id){ return id === "office" || !!member(id); }
 
@@ -10498,12 +10555,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function tryAutoOpen(){
     var saved = null;
     try{ saved = localStorage.getItem(LS_PASS); }catch(e){}
-    var id = whoFor(String(saved||"").trim());
+    var code = String(saved||"").trim();
+    var id = whoFor(code);
     if (id && validPerson(id)){ openAs(id); return true; }
+    // A phone signed in on the master code takes a moment longer, because
+    // the answer has to be hashed. It opens as soon as it comes back.
+    if (code) whoForAsync(code).then(function(x){
+      if (x && validPerson(x) && !state.opened){ $("gate").hidden = true; openAs(x); }
+    });
     return false;
   }
 
-  if (!masterOfficeCode()){
+  if (!hasMaster()){
     openAs("office");                    // no code configured — open to anyone
   } else if (!tryAutoOpen()) {
     $("gate").hidden = false;
@@ -10511,7 +10574,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("gateForm").addEventListener("submit", function(ev){
       ev.preventDefault();
       var typed = $("gateInput").value.trim();
-      var id = whoFor(typed);
+      whoForAsync(typed).then(function(id){
       if (!id || !validPerson(id)){
         $("gateErr").textContent = state.rosterReady
           ? tr("That code does not match. Check with the office.")
@@ -10521,6 +10584,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }
       try{ localStorage.setItem(LS_PASS, typed); }catch(e){}
       openAs(id);
+      });
     });
     // The page has to be able to reach the storage layer before it can check a
     // code against the live roster, so get that going even while locked.
