@@ -2779,6 +2779,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "זה לא עבר.",
     "{who} is asking for {name}":
       "{who} מבקש את {name}",
+    "Waiting on an answer about {name}":
+      "ממתינים לתשובה לגבי {name}",
+    "I do not need it":
+      "כבר לא צריך",
     "{who} agreed — {name} is yours":
       "{who} אישר — {name} שלכם",
     "{who} said no to {name}":
@@ -3551,6 +3555,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Agree": "Accepter", "Refuse": "Refuser", "Look at it": "Voir la demande",
     "That did not go through.": "\u00c7a n\u2019a pas fonctionn\u00e9.",
     "{who} is asking for {name}": "{who} demande {name}",
+    "Waiting on an answer about {name}": "En attente d\u2019une r\u00e9ponse pour {name}",
+    "I do not need it": "Je n\u2019en ai plus besoin",
     "{who} agreed \u2014 {name} is yours": "{who} a accept\u00e9 \u2014 {name} est \u00e0 vous",
     "{who} said no to {name}": "{who} a refus\u00e9 pour {name}",
     "the other work was dropped": "l\u2019autre travail a \u00e9t\u00e9 annul\u00e9",
@@ -3905,7 +3911,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v136";
+  var APP_VERSION = "v137";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5112,14 +5118,33 @@ dialog#callDlg::backdrop{background:#0b0f12}
   $("offDecNo").addEventListener("click", function(){ settleOff(false); });
   $("offDecClose").addEventListener("click", function(){ $("offDecDlg").close(); offDec = null; });
 
+  /* An ask is only worth answering while the hours it asks for are still
+     ahead. One sat on the office's screen for a whole day for hours that had
+     gone by at ten in the morning: nothing anybody pressed could have made it
+     happen, and it was in the way of the asks that could. The server marks
+     these expired and tells whoever asked; this is the same line drawn in the
+     app, so a phone that has not heard from the server yet agrees. */
+  function liveReq(r){
+    if (!r || r.date < todayIso) return false;
+    if (r.date > todayIso) return true;
+    return r.to > new Date().getHours();
+  }
   /* Open asks this person has to answer: theirs to answer if one of their own
      bookings is in the way, and the office answers for anybody. */
   function myAsks(){
     return (state.reqs || []).filter(function(r){
       if (!r || r.state !== "open") return false;
-      if (r.date < todayIso) return false;
+      if (!liveReq(r)) return false;
       if (r.byId === state.me) return false;
       return (r.askIds || []).indexOf(state.me) >= 0 || can("manage");
+    });
+  }
+  /* Your own ask, still waiting on somebody. It is here so that an ask you
+     no longer need can be taken back rather than left to go off on its own,
+     and so you can see that it has not been answered yet. */
+  function myWaits(){
+    return (state.reqs || []).filter(function(r){
+      return r && r.state === "open" && r.byId === state.me && liveReq(r);
     });
   }
   /* Answers waiting to be read by whoever asked. */
@@ -5773,6 +5798,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-05T16:00:00Z", who:"office",
+     en:"An ask for somebody else's man now has an end. It leaves everybody's screen once the hours it asked for have gone \u2014 one sat open all day for a job booked eight to ten in the morning \u2014 and whoever asked is told nobody answered. After twenty minutes with no answer they are told that too, and their own screen now shows the ask waiting with one button on it: I do not need it, which takes it back off the other screens.",
+     fr:"Une demande pour l\u2019homme d\u2019un autre a maintenant une fin. Elle quitte tous les \u00e9crans une fois les heures demand\u00e9es pass\u00e9es, et celui qui a demand\u00e9 est averti que personne n\u2019a r\u00e9pondu. Apr\u00e8s vingt minutes sans r\u00e9ponse il est averti aussi, et son propre \u00e9cran montre la demande en attente avec un bouton\u00a0: Je n\u2019en ai plus besoin."},
     {at:"2026-09-29T14:00:00Z", who:"office",
      en:"Answering a request for one of your men has four answers now, not two: push the other work later, put the whole of it on another day, take only the asked-for hours out of it, or drop it. A man booked all day can give up an hour and keep the rest of his day, or the day's work can go to a day of its own \u2014 nothing has to be cancelled to let an emergency in. Pushing it later is greyed out when the day has no room left for it, and now says so.",
      fr:"R\u00e9pondre \u00e0 une demande pour un de vos hommes a quatre r\u00e9ponses maintenant\u00a0: d\u00e9caler l\u2019autre travail, le mettre \u00e0 un autre jour, n\u2019en retirer que les heures demand\u00e9es, ou l\u2019annuler. Rien n\u2019a besoin d\u2019\u00eatre annul\u00e9 pour laisser entrer une urgence. \u00ab\u00a0D\u00e9caler\u00a0\u00bb est gris\u00e9 quand la journ\u00e9e n\u2019a plus de place, et le dit maintenant."},
@@ -8085,6 +8113,35 @@ dialog#callDlg::backdrop{background:#0b0f12}
     row.appendChild(op);
     return row;
   }
+  /* Your own ask, with the one thing you can do about it while it waits.
+     Taking it back is not an answer and nobody is asked about it: it simply
+     stops being a question on four other people's screens. */
+  function waitRow(r){
+    var row = document.createElement("div"); row.className = "alert ask";
+    var tx = document.createElement("div"); tx.className = "txt";
+    var hd = document.createElement("div"); hd.className = "hd";
+    hd.textContent = tr("Waiting on an answer about {name}", {name: r.crewName});
+    var dt = document.createElement("div"); dt.className = "dt";
+    dt.textContent = (r.date === todayIso ? tr("today") : F_MED.format(fromIso(r.date))) +
+      " \u00b7 " + hourLong(r.from) + "\u2013" + hourLong(r.to) +
+      " \u00b7 " + r.buildingName + (r.unit ? " \u00b7 " + tr("Unit {u}", {u: r.unit}) : "");
+    tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+    var no = document.createElement("button"); no.type = "button"; no.className = "btn";
+    no.textContent = tr("I do not need it");
+    no.addEventListener("click", function(){
+      no.disabled = true;
+      var done = {}; Object.keys(r).forEach(function(k){ done[k] = r[k]; });
+      done.state = "withdrawn";
+      done.decidedAt = new Date().toISOString();
+      done.decidedById = state.me; done.decidedBy = meName();
+      replaceReq(done).catch(function(e){
+        no.disabled = false;
+        alert(errText(e, tr("That did not go through.")));
+      });
+    });
+    row.appendChild(no);
+    return row;
+  }
   function answerRow(r){
     var yes = r.state === "approved";
     var row = document.createElement("div"); row.className = "alert ask";
@@ -8119,6 +8176,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return row;
   }
 
+  // An ask dies with the hour it asked for, and the screen should notice
+  // that by itself rather than at the next tap.
+  setInterval(function(){ if (!$("app").hidden) renderAlerts(); }, 120000);
   function renderAlerts(){
     var host = $("alerts"); host.innerHTML = "";
     var rows = [];
@@ -8130,6 +8190,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       rows.sort(function(a,b){ return a.date===b.date ? a.from-b.from : (a.date<b.date?-1:1); });
     }
     var asks = can("book") ? myAsks() : [];
+    var waits = can("book") ? myWaits() : [];
     var answers = can("book") ? myAnswers() : [];
     // Day off: the office sees every open ask, and everybody sees the answer
     // to their own until they have looked at it.
@@ -8152,12 +8213,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
       });
       loose.sort(function(a,b){ return a.date < b.date ? 1 : -1; });
     }
-    host.hidden = !rows.length && !asks.length && !answers.length
+    host.hidden = !rows.length && !asks.length && !answers.length && !waits.length
                   && !offAsks.length && !offAnswers.length && !loose.length;
     loose.forEach(function(j){ host.appendChild(looseRow(j)); });
     offAsks.forEach(function(r){ host.appendChild(offAskRow(r)); });
     offAnswers.forEach(function(r){ host.appendChild(offAnswerRow(r)); });
     asks.forEach(function(r){ host.appendChild(askRow(r)); });
+    waits.forEach(function(r){ host.appendChild(waitRow(r)); });
     answers.forEach(function(r){ host.appendChild(answerRow(r)); });
     rows.forEach(function(j){
       var m = memberOr(j.crewId);

@@ -640,6 +640,70 @@ exports.notifyOfficeOnClock = onDocumentUpdated(
  *  the new list and was not in the old one — by id, and by state, since a
  *  request is answered in place rather than replaced.
  */
+/** An ask nobody answers.
+ *
+ *  A request for a man somebody else has booked sat open on four screens for
+ *  a whole working day, for hours that had gone by at ten in the morning.
+ *  Nothing anybody pressed could have made it happen by then, and it was in
+ *  the way of the asks that still could.
+ *
+ *  So: twenty minutes with no answer and whoever asked is told, once, that
+ *  nobody has answered yet — they may have solved it another way, and can
+ *  take it back from their own screen. Once the hours themselves have gone,
+ *  the ask is closed as expired and the asker is told that too. The people
+ *  who were asked are not chased: they have the alert on their screen and a
+ *  notification already, and a second buzz would only be noise.
+ */
+exports.chaseRequests = onSchedule(
+  {schedule: "*/15 7-19 * * *", timeZone: ZONE, region: "northamerica-northeast1"},
+  async () => {
+    const db = getFirestore();
+    const ref = db.collection("config").doc("requests");
+    const snap = await ref.get();
+    const list = ((snap.exists && snap.data()) || {}).list || [];
+    const open = list.filter((r) => r && r.state === "open");
+    if (!open.length) return;
+
+    const date = DATE_IN_ZONE.format(new Date());
+    const mins = minutesNow();
+    const gone = (r) => r.date < date || (r.date === date && (r.to * 60) <= mins);
+    const waiting = (r) => (Date.now() - Date.parse(r.at || 0)) / 60000;
+
+    const expired = open.filter(gone);
+    const nudge = open.filter((r) => !gone(r) && !r.nudged && waiting(r) >= 20);
+    if (!expired.length && !nudge.length) return;
+
+    const touched = new Set(expired.map((r) => r.id));
+    const next = list.map((r) => {
+      if (touched.has(r.id)) {
+        return {...r, state: "expired", decidedAt: new Date().toISOString()};
+      }
+      if (nudge.some((n) => n.id === r.id)) return {...r, nudged: true};
+      return r;
+    });
+    await ref.set({list: next}, {merge: true});
+
+    const aud = await audience(db);
+    const where = (r) => r.buildingName + (r.unit ? ` · Unit ${r.unit}` : "");
+    for (const r of expired) {
+      const sent = await push(db, aud.map, aud.forPerson(r.byId),
+        `Nobody answered about ${r.crewName}`,
+        `${HOURS(r.from)}–${HOURS(r.to)} · ${where(r)} · ` +
+        "those hours have gone, so the request is closed",
+        `reqgone-${r.id}`);
+      logger.info(`request ${r.id} expired — told ${sent} phone(s)`);
+    }
+    for (const r of nudge) {
+      const sent = await push(db, aud.map, aud.forPerson(r.byId),
+        `Still no answer about ${r.crewName}`,
+        `${HOURS(r.from)}–${HOURS(r.to)} · ${where(r)} · ` +
+        "do you still need him? You can take the request back",
+        `reqwait-${r.id}`);
+      logger.info(`request ${r.id} unanswered — nudged ${sent} phone(s)`);
+    }
+  }
+);
+
 exports.notifyOnRequest = onDocumentWritten(
   {document: "config/requests", region: "northamerica-northeast1"},
   async (event) => {
@@ -649,7 +713,11 @@ exports.notifyOnRequest = onDocumentWritten(
     const fresh = now.filter((r) => !was.has(r.id) && r.state === "open");
     const answered = now.filter((r) => {
       const b = was.get(r.id);
-      return b && b.state === "open" && r.state !== "open";
+      // Expired and withdrawn are not answers. One is the clock running out
+      // and the other is the asker taking it back, and neither should reach
+      // a phone as "said no to Rodrigo".
+      return b && b.state === "open" &&
+        (r.state === "approved" || r.state === "refused");
     });
     if (!fresh.length && !answered.length) return;
 
