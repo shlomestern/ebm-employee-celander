@@ -946,6 +946,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55; cursor:pointer"></p>
 
     <div class="actions">
+      <button type="button" class="btn" id="meUndoBtn" hidden data-t>Undo something</button>
       <button type="button" class="btn" id="meLogBtn" hidden data-t>What happened</button>
       <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
       <button type="button" class="btn" id="meCrewBtn" hidden data-t>Crew &amp; codes</button>
@@ -1209,6 +1210,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
       <span class="spacer"></span>
       <button type="button" class="btn btn-danger" id="offDecNo" data-t>Say no</button>
       <button type="button" class="btn btn-go" id="offDecYes" data-t>Give the day off</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="undoDlg">
+  <form method="dialog" class="dlg" id="undoForm">
+    <div class="eyebrow" data-t>Last of all</div>
+    <h3 data-t>What you have just done</h3>
+    <p class="sub" data-t>Newest first. Undo puts things back the way they were before that one change — what has happened since stays.</p>
+    <div id="undoRows"></div>
+    <p class="sub" id="undoNone" hidden data-t>Nothing to undo yet.</p>
+    <div class="actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="undoClose" data-t>Close</button>
     </div>
   </form>
 </dialog>
@@ -2783,6 +2798,43 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "זה לא עבר.",
     "{who} is asking for {name}":
       "{who} מבקש את {name}",
+    "Undo something":
+      "לבטל פעולה",
+    "Last of all":
+      "האחרונות",
+    "What you have just done":
+      "מה עשיתם לאחרונה",
+    "Newest first. Undo puts things back the way they were before that one change — what has happened since stays.":
+      "החדש ראשון. ביטול מחזיר את המצב לפני אותו שינוי בלבד.",
+    "Nothing to undo yet.":
+      "אין מה לבטל עדיין.",
+    "Undo":
+      "בטל",
+    "Undoing\u2026":
+      "מבטלים…",
+    "Undone — {what}":
+      "בוטל — {what}",
+    "the photographs cannot come back":
+      "התמונות לא יחזרו",
+    "Edited {what}":
+      "עריכה של {what}",
+    "Booked {what}":
+      "שיבוץ {what}",
+    "Booked {what} over {n} days":
+      "שיבוץ {what} ל־{n} ימים",
+    "Cancelled {what}":
+      "ביטול {what}",
+    "Cancelled {n} days of {what}":
+      "ביטול {n} ימים של {what}",
+    "Moved {what} to {d}":
+      "העברת {what} ל־{d}",
+    "Changed the crew — {what}":
+      "שינוי בצוות — {what}",
+    "Saved the crew and their codes":
+      "שמירת הצוות והקודים",
+    "Let {who} have {name} — {where}":
+      "אישור ל{who} לקבל את {name} — {where}",
+
     "Waiting on an answer about {name}":
       "ממתינים לתשובה לגבי {name}",
     "I do not need it":
@@ -3562,6 +3614,25 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Agree": "Accepter", "Refuse": "Refuser", "Look at it": "Voir la demande",
     "That did not go through.": "\u00c7a n\u2019a pas fonctionn\u00e9.",
     "{who} is asking for {name}": "{who} demande {name}",
+    "Undo something": "Annuler une action",
+    "Last of all": "Les derni\u00e8res",
+    "What you have just done": "Ce que vous venez de faire",
+    "Newest first. Undo puts things back the way they were before that one change — what has happened since stays.":
+      "Le plus r\u00e9cent en premier. Annuler remet les choses comme elles \u00e9taient avant ce changement-l\u00e0 — ce qui s\u2019est pass\u00e9 depuis reste.",
+    "Nothing to undo yet.": "Rien \u00e0 annuler pour l\u2019instant.",
+    "Undo": "Annuler", "Undoing\u2026": "Annulation\u2026",
+    "Undone — {what}": "Annul\u00e9 — {what}",
+    "the photographs cannot come back": "les photos ne reviendront pas",
+    "Edited {what}": "Modification de {what}",
+    "Booked {what}": "R\u00e9servation de {what}",
+    "Booked {what} over {n} days": "R\u00e9servation de {what} sur {n} jours",
+    "Cancelled {what}": "Annulation de {what}",
+    "Cancelled {n} days of {what}": "Annulation de {n} jours de {what}",
+    "Moved {what} to {d}": "D\u00e9placement de {what} au {d}",
+    "Changed the crew — {what}": "\u00c9quipe modifi\u00e9e — {what}",
+    "Saved the crew and their codes": "\u00c9quipe et codes enregistr\u00e9s",
+    "Let {who} have {name} — {where}": "{who} obtient {name} — {where}",
+
     "Waiting on an answer about {name}": "En attente d\u2019une r\u00e9ponse pour {name}",
     "I do not need it": "Je n\u2019en ai plus besoin",
     "{who} agreed \u2014 {name} is yours": "{who} a accept\u00e9 \u2014 {name} est \u00e0 vous",
@@ -3918,7 +3989,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v139";
+  var APP_VERSION = "v140";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -3939,6 +4010,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     view: "month",
     jobs: {},                 // jobId -> job
     reqs: [],                 // asks for somebody else's worker
+    undos: [],                // changes that can still be put back
     offs: [],                 // asks for a day off, and what was said
     mode: "loading",          // shared | cloud | device
     db: null, fb: null, unsubs: [], seen: {},
@@ -4824,6 +4896,113 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function replaceReq(r){
     return putReqs((state.reqs || []).map(function(x){ return x.id === r.id ? r : x; }));
   }
+  /* ---------- undo ----------
+
+     Removing a man from Crew & codes took his whole calendar off the screen:
+     twenty-one jobs, his messages and his day off, all still in the database
+     and all pointing at an id that was no longer anybody. Putting him back
+     made a new id and matched none of it. Nothing was lost and there was no
+     way to say "put that back" — it took reading the database by hand.
+
+     So: every change that takes something away keeps a copy of what it took,
+     and the account sheet has a list of them with Undo against each. An undo
+     is a change of its own, recorded like any other, so an undo can be undone.
+
+     What is kept is the state of the things the change touched, before it
+     happened. Undoing writes them back as they were and deletes whatever the
+     change created. It does not rewind the calendar: anything else that has
+     happened since stays where it is. */
+  var LS_UNDO = "ebm-crew:undo:v1";
+  var UNDO_KEEP = 12;              // a dozen deep; beyond that is the log
+  var UNDO_BYTES = 600000;         // and never near the size a document may be
+  function undoRef(){
+    return state.fb ? state.fb.collection("config").doc("undo") : null;
+  }
+  function subscribeUndo(){
+    if (state.undoUnsub){ try{ state.undoUnsub(); }catch(e){} state.undoUnsub = null; }
+    var ref = undoRef();
+    if (!ref) return;
+    state.undoUnsub = ref.onSnapshot(function(snap){
+      var d = (snap.exists && snap.data()) || {};
+      state.undos = Array.isArray(d.list) ? d.list : [];
+      lsWrite(LS_UNDO, state.undos);
+      if ($("undoDlg").open) drawUndo();
+    }, function(){});
+  }
+  function putUndos(list){
+    state.undos = list;
+    lsWrite(LS_UNDO, list);
+    var ref = undoRef();
+    if (ref) return ref.set({list: list});
+    render();
+    return Promise.resolve();
+  }
+  function snapJob(id){
+    var j = state.jobs[id];
+    return j ? JSON.parse(JSON.stringify(j)) : null;
+  }
+  function snapJobs(ids){
+    return (ids || []).map(snapJob).filter(Boolean);
+  }
+  /* A photographed job is mostly photograph. Rather than carry a megabyte of
+     them in a list of a dozen changes, the copy drops them and says so, and
+     the undo tells whoever presses it what will not come back. */
+  function lighten(list){
+    var lost = false;
+    var out = (list || []).map(function(j){
+      if (!j || !(j.photos || []).length) return j;
+      if (JSON.stringify(j).length < 60000) return j;
+      var c = {}; Object.keys(j).forEach(function(k){ c[k] = j[k]; });
+      c.photos = []; lost = true;
+      return c;
+    });
+    return {jobs: out, lost: lost};
+  }
+  /* what: book | edit | move | cancel | crew | request */
+  function recordUndo(what, text, ids, before, roster){
+    var light = lighten(before);
+    var e = {
+      id: newId(), at: new Date().toISOString(),
+      by: meName(), byId: state.me,
+      what: what, text: text || "",
+      ids: (ids || []).slice(), jobs: light.jobs, lostShots: light.lost,
+      roster: roster || null, undone: false
+    };
+    var list = (state.undos || []).concat([e]);
+    while (list.length > UNDO_KEEP) list.shift();
+    while (list.length > 1 && JSON.stringify(list).length > UNDO_BYTES) list.shift();
+    return putUndos(list).catch(function(){});   // never fails the change itself
+  }
+  /* Yours to undo: your own, and the office code's over everything. */
+  function myUndos(){
+    return (state.undos || []).filter(function(e){
+      return e && !e.undone && (state.me === "office" || e.byId === state.me);
+    }).slice().reverse();
+  }
+  function applyUndo(e){
+    var steps = [];
+    if (e.roster){
+      steps.push(saveRoster(e.roster.people, e.roster.officeCode, e.roster.officeName));
+    }
+    var keep = {};
+    (e.jobs || []).forEach(function(j){ keep[j.id] = j; });
+    (e.ids || []).forEach(function(id){
+      if (keep[id]) return;                       // put back below
+      if (state.jobs[id]) steps.push(removeJob(id));   // the change made it
+    });
+    (e.jobs || []).forEach(function(j){ steps.push(saveJob(j)); });
+    return Promise.all(steps).then(function(){
+      var list = (state.undos || []).map(function(x){
+        if (x.id !== e.id) return x;
+        var c = {}; Object.keys(x).forEach(function(k){ c[k] = x[k]; });
+        c.undone = true; c.undoneBy = meName(); c.undoneAt = new Date().toISOString();
+        return c;
+      });
+      noteDown("change", tr("Undone \u2014 {what}", {what: e.text}), "");
+      return putUndos(list);
+    });
+  }
+
   /* ---------- asking for a day off ----------
      Anybody who signs in can ask — the men on the tools and the office staff
      alike — and only the master office code answers. A day off is a run of
@@ -5619,6 +5798,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
       clockIn: null, clockOut: null, breaks: [], notes: []
     };
     done.madeId = job.id;
+    // Agreeing is the one answer that rearranges the calendar: what it moved,
+    // cut up or cancelled is kept, along with the emergency it booked.
+    recordUndo("request", tr("Let {who} have {name} \u2014 {where}",
+      {who: r.by, name: r.crewName, where: r.buildingName}),
+      hit.map(function(x){ return x.id; }).concat([job.id]),
+      snapJobs(hit.map(function(x){ return x.id; })));
     return Promise.all(steps).then(function(){ return saveJob(job); })
       .then(function(){ return replaceReq(done); });
   }
@@ -5824,6 +6009,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-06T19:00:00Z", who:"office",
+     en:"Undo. Your account sheet has Undo something on it now, with the last dozen changes you made and a button against each: cancelling a job, booking one, editing one, moving one to another day, changing the crew, and letting an emergency take somebody. Undoing puts that one change back the way it was \u2014 what has happened since stays where it is \u2014 and the undo is itself a change, so it can be undone too. This came out of a man being removed from Crew & codes: his twenty-one jobs were never deleted, they were left pointing at an id that was no longer anybody, and there was no way in the app to say put that back.",
+     fr:"Annuler. Votre fiche de compte a maintenant \u00ab\u00a0Annuler une action\u00a0\u00bb\u00a0: vos douze derniers changements avec un bouton sur chacun \u2014 annuler un travail, en r\u00e9server un, le modifier, le d\u00e9placer, modifier l\u2019\u00e9quipe, ou laisser une urgence prendre quelqu\u2019un. Annuler remet ce changement-l\u00e0 comme il \u00e9tait\u00a0; ce qui s\u2019est pass\u00e9 depuis reste."},
     {at:"2026-10-06T13:00:00Z", who:"office",
      en:"An hour of today that has already run out now says so when you book. A job was booked at 8:53 for eight to nine \u2014 seven minutes of it left \u2014 because eight was the first hour the form offered and it was offered as though it were free. Those hours are marked gone, the form never opens on one, and picking one stops to tell you the time before it books. It still books: the office does sometimes write up work after it has happened.",
      fr:"Une heure d\u2019aujourd\u2019hui d\u00e9j\u00e0 pass\u00e9e le dit maintenant au moment de r\u00e9server. Ces heures sont marqu\u00e9es pass\u00e9es, le formulaire ne s\u2019ouvre jamais sur l\u2019une d\u2019elles, et en choisir une s\u2019arr\u00eate pour vous dire l\u2019heure qu\u2019il est. \u00c7a r\u00e9serve quand m\u00eame\u00a0: le bureau inscrit parfois un travail apr\u00e8s coup."},
@@ -7609,14 +7797,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (!ds || !(to > from)){ $("mvErr").textContent = tr("Pick a day and the hours."); return; }
     if (ds < todayIso){ $("mvErr").textContent = tr("That day has gone."); return; }
     $("mvSave").disabled = true;
+    // What it was before it moved, and \u2014 for a job carried over, which makes
+    // a second job rather than moving the first \u2014 the new one to delete.
+    var touched = [j.id], mvWas = snapJobs([j.id]);
     var done;
     if (worked(j)){
       /* Its hours belong to the day they were worked. Moving the job would
          drag them along and the old day would lose a morning's work off the
          books, so the rest of it goes as a job of its own instead. */
       var now = new Date().toISOString();
+      var restId = newId();
+      touched.push(restId);
       done = saveJob({
-        v: 2, id: newId(), date: ds, crewId: j.crewId,
+        v: 2, id: restId, date: ds, crewId: j.crewId,
         from: from, to: to, allDay: false,
         projectId: j.projectId, projectName: j.projectName,
         buildingId: j.buildingId, buildingName: j.buildingName,
@@ -7645,6 +7838,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
       });
     }
     done.then(function(){
+      recordUndo("move", tr("Moved {what} to {d}",
+        {what: whereLine(j) + " \u00b7 " + memberOr(j.crewId).name,
+         d: F_MED.format(fromIso(ds))}), touched, mvWas);
       $("mvDlg").close(); mvJob = null; render();
     }).catch(function(e){
       $("mvSave").disabled = false;
@@ -8585,6 +8781,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
         });
       function scrub(list, btn, label){
         btn.disabled = true;
+        recordUndo("cancel", list.length > 1
+          ? tr("Cancelled {n} days of {what}", {n: list.length, what:
+               list[0].buildingName + " \u00b7 " + memberOr(list[0].crewId).name})
+          : tr("Cancelled {what}", {what: whereLine(list[0]) +
+               " \u00b7 " + memberOr(list[0].crewId).name}),
+          list.map(function(x){ return x.id; }),
+          snapJobs(list.map(function(x){ return x.id; })));
         list.forEach(function(x){
           noteDown("cancel", tr("Cancelled \u2014 {what}",
             {what: rangeShort(x) + " \u00b7 " + x.buildingName +
@@ -9494,6 +9697,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       noteDown("edit", changed.length
         ? tr("Edited \u2014 {what}", {what: changed.join(", ")})
         : tr("Edited"), editing.id);
+      recordUndo("edit", tr("Edited {what}", {what: whereLine(editing) +
+        " \u00b7 " + memberOr(editing.crewId).name}), [editing.id], snapJobs([editing.id]));
       patchJob(editing.id, {
         from:from, to:to, allDay:allDay,
         projectId:p.id, projectName:p.name,
@@ -9545,7 +9750,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
     // middle in an unknown order is not.
     made.reduce(function(chain, x){
       return chain.then(function(){ return saveJob(x); });
-    }, Promise.resolve()).then(function(){ showDayPane(); })
+    }, Promise.resolve()).then(function(){
+      // Nothing was taken away, so there is nothing to put back: undoing a
+      // booking is deleting what it made.
+      recordUndo("book", made.length > 1
+        ? tr("Booked {what} over {n} days", {n: made.length, what:
+             b.name + " \u00b7 " + memberOr(crewId).name})
+        : tr("Booked {what}", {what: b.name + " \u00b7 " + memberOr(crewId).name}),
+        made.map(function(x){ return x.id; }), []);
+      showDayPane();
+    })
       .catch(function(e){ $("formSave").disabled=false; $("formErr").textContent=errText(e,tr("The job did not save.")); });
   }
 
@@ -9604,6 +9818,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("meCrewBtn").hidden = state.me !== "office";
     // Hours worked and the workbook behind it are the office code's alone.
     // Every admin with "manage" was getting the whole crew's hours.
+    $("meUndoBtn").hidden = !can("book") || !myUndos().length;
     $("meLogBtn").hidden = state.me !== "office";
     $("meRepBtn").hidden = state.me !== "office";
     $("meVersion").textContent = tr("EBM Crew Calendar") + " " + APP_VERSION;
@@ -10045,6 +10260,42 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return out;
   }
 
+  function drawUndo(){
+    var host = $("undoRows"); host.innerHTML = "";
+    var list = myUndos();
+    $("undoNone").hidden = !!list.length;
+    list.forEach(function(e){
+      var row = document.createElement("div"); row.className = "alert ask";
+      var tx = document.createElement("div"); tx.className = "txt";
+      var hd = document.createElement("div"); hd.className = "hd";
+      hd.textContent = e.text;
+      var dt = document.createElement("div"); dt.className = "dt";
+      var when = new Date(e.at);
+      dt.textContent = e.by + " \u00b7 " +
+        (iso(when) === todayIso ? tr("today") : F_MED.format(when)) +
+        " " + F_TIME.format(when) +
+        (e.lostShots ? " \u00b7 " + tr("the photographs cannot come back") : "");
+      tx.appendChild(hd); tx.appendChild(dt); row.appendChild(tx);
+      var go = document.createElement("button");
+      go.type = "button"; go.className = "btn btn-primary";
+      go.textContent = tr("Undo");
+      go.addEventListener("click", function(){
+        go.disabled = true; go.textContent = tr("Undoing\u2026");
+        applyUndo(e).then(function(){ drawUndo(); render(); })
+          .catch(function(err){
+            go.disabled = false; go.textContent = tr("Undo");
+            alert(errText(err, tr("That did not go through.")));
+          });
+      });
+      row.appendChild(go);
+      host.appendChild(row);
+    });
+  }
+  $("undoClose").addEventListener("click", function(){ $("undoDlg").close(); });
+  $("meUndoBtn").addEventListener("click", function(){
+    $("meDlg").close(); drawUndo(); $("undoDlg").showModal();
+  });
+
   var logFilter = "all";
   function drawLog(rows){
     var host = $("logRows"); host.innerHTML = "";
@@ -10165,6 +10416,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       subscribeChats();
       watchCalls();
       subscribeReqs();
+      subscribeUndo();
       /* Signing in happens before the connection is open, so the listener set
          up there attaches to nothing. Everything else is re-attached here,
          once there is a database to attach to, and this belongs with them —
@@ -10195,6 +10447,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
        end of a roster; now the one before it is always a document away. */
     var was = {people: state.people.slice(), officeCode: state.officeCode,
                officeName: state.officeName, at: new Date().toISOString(), by: meName()};
+    // Removing somebody takes his calendar off the screen \u2014 the jobs stay in
+    // the database pointing at an id that is no longer anybody's. This is the
+    // copy that puts the list back exactly as it was, ids and all.
+    if (was.people.length){
+      recordUndo("crew", came.length || gone.length
+        ? tr("Changed the crew \u2014 {what}", {what:
+            (came.length ? tr("added {who}", {who: came.join(", ")}) : "") +
+            (came.length && gone.length ? " \u00b7 " : "") +
+            (gone.length ? tr("removed {who}", {who: gone.join(", ")}) : "")})
+        : tr("Saved the crew and their codes"), [], [],
+        {people: was.people, officeCode: was.officeCode, officeName: was.officeName});
+    }
     state.people = people;
     state.officeCode = officeCode;
     state.officeName = officeName || "Office";
@@ -10479,6 +10743,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
   (function loadCachedRequests(){
     var r = lsRead(LS_REQS, null);
     if (Array.isArray(r)) state.reqs = r;
+    var u = lsRead(LS_UNDO, null);
+    if (Array.isArray(u)) state.undos = u;
   })();
 
   (function loadCachedOffs(){
@@ -10585,6 +10851,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     subscribeChats();
     watchCalls();
     subscribeReqs();
+    subscribeUndo();
     subscribeOff();
     setupPush();
     loadLangFor(id);
