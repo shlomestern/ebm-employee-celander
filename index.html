@@ -2173,6 +2173,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "למשל 3, או מרתף",
     "{h} — taken":
       "{h} — תפוס",
+    "{h} — gone":
+      "{h} — עברה",
+    "{h} has already gone — it is {now} now.":
+      "{h} כבר עברה — עכשיו {now}.",
     "{h} — travelling from {where}":
       "{h} — בדרך מ{where}",
     "{h} — due at {where}":
@@ -3228,6 +3232,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "e.g. 3, or Basement": "ex.\u00a0: 3, ou Sous-sol",
     "{h} \u2014 taken": "{h} \u2014 occup\u00e9",
     "{h} \u2014 travelling from {where}": "{h} \u2014 en route depuis {where}",
+    "{h} \u2014 gone": "{h} \u2014 pass\u00e9e",
+    "{h} has already gone \u2014 it is {now} now.":
+      "{h} est d\u00e9j\u00e0 pass\u00e9e \u2014 il est {now}.",
     "{h} \u2014 due at {where}": "{h} \u2014 attendu \u00e0 {where}",
     "<b>Book back to back anyway</b>There is no time left to travel between the two addresses.":
       "<b>R\u00e9server \u00e0 la suite quand m\u00eame</b>Il ne reste aucune heure pour se rendre d\u2019une adresse \u00e0 l\u2019autre.",
@@ -3911,7 +3918,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v138";
+  var APP_VERSION = "v139";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4253,6 +4260,22 @@ dialog#callDlg::backdrop{background:#0b0f12}
       }
     });
   }
+  /* An hour on today that has already run out. A job was booked at 8:53 for
+     eight to nine: a quarter of an hour that had seven minutes left in it,
+     and nobody meant to do that \u2014 eight was simply the first hour the form
+     offered and it was offered as though it were free.
+
+     Not a quarter past the hour but a quarter into it: at 8:05 somebody
+     sending a man out now is right to call it the eight o'clock job, and at
+     8:53 he is not. Booking one is still allowed, because the office does
+     sometimes write up work after it has happened; it is just no longer
+     silent, and it is never the hour the form lands on by itself. */
+  var HOUR_LOST = 15;
+  function hourGone(ds, h){
+    if (ds !== todayIso) return false;
+    var now = new Date();
+    return (now.getHours() * 60 + now.getMinutes()) >= (h * 60 + HOUR_LOST);
+  }
   function travelOff(){ return !!$("fTravelOverride").checked; }
   function offAnyway(){ return !!$("fOffAnyway").checked; }
   function blockedStart(h){
@@ -4263,7 +4286,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return travelStart[from] || travelEnd[to] || null;
   }
   function firstFreeHour(){
-    var h;
+    var h, ds = openDate || todayIso;
+    for (h=DAY_START; h<DAY_END; h++) if (!blockedStart(h) && !hourGone(ds, h)) return h;
     for (h=DAY_START; h<DAY_END; h++) if (!blockedStart(h)) return h;
     for (h=DAY_START; h<DAY_END; h++) if (!busyMap[h]) return h;
     return DAY_START;
@@ -4283,6 +4307,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         o.textContent = tr("{h} \u2014 travelling from {where}",
                            {h: hourLong(i), where: travelStart[i]});
         o.disabled = true;
+      } else if (hourGone(openDate || todayIso, i)){
+        o.textContent = tr("{h} \u2014 gone", {h: hourLong(i)});
       } else {
         o.textContent = hourLong(i);
       }
@@ -5798,6 +5824,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-06T13:00:00Z", who:"office",
+     en:"An hour of today that has already run out now says so when you book. A job was booked at 8:53 for eight to nine \u2014 seven minutes of it left \u2014 because eight was the first hour the form offered and it was offered as though it were free. Those hours are marked gone, the form never opens on one, and picking one stops to tell you the time before it books. It still books: the office does sometimes write up work after it has happened.",
+     fr:"Une heure d\u2019aujourd\u2019hui d\u00e9j\u00e0 pass\u00e9e le dit maintenant au moment de r\u00e9server. Ces heures sont marqu\u00e9es pass\u00e9es, le formulaire ne s\u2019ouvre jamais sur l\u2019une d\u2019elles, et en choisir une s\u2019arr\u00eate pour vous dire l\u2019heure qu\u2019il est. \u00c7a r\u00e9serve quand m\u00eame\u00a0: le bureau inscrit parfois un travail apr\u00e8s coup."},
     {at:"2026-10-05T21:30:00Z", who:"me",
      en:"The office code was written in plain sight in config.js, and config.js is handed to every browser that opens the calendar \u2014 so anybody who found the address could read the one code that opens everything. The file carries a fingerprint of the code now. The code itself has not changed and nothing about signing in has changed; the file simply no longer says what it is.",
      fr:"Le code du bureau \u00e9tait \u00e9crit en clair dans config.js, un fichier livr\u00e9 \u00e0 chaque navigateur qui ouvre le calendrier. Le fichier n\u2019en garde plus qu\u2019une empreinte. Le code n\u2019a pas chang\u00e9 et rien ne change pour se connecter."},
@@ -7486,6 +7515,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
         o.textContent = tr("{h} \u2014 travelling from {where}",
                            {h: hourLong(i), where: travelStart[i]});
         o.disabled = true;
+      } else if (hourGone(ds, i)){
+        o.textContent = tr("{h} \u2014 gone", {h: hourLong(i)});
       } else o.textContent = hourLong(i);
       f.appendChild(o);
     }
@@ -9220,7 +9251,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     fillFrom();
     if (kept) $("fFrom").value = kept;
     var opt = $("fFrom").options[$("fFrom").selectedIndex];
-    if (!opt || opt.disabled) $("fFrom").value = String(firstFreeHour());
+    // An hour of today that has gone can still be picked, but the form never
+    // opens on one: the first hour of the list was being offered at ten to
+    // nine as though the morning were still ahead.
+    if (!opt || opt.disabled ||
+        (!kept && hourGone(openDate || todayIso, parseInt($("fFrom").value, 10))))
+      $("fFrom").value = String(firstFreeHour());
     fillTo(keepTo);
     refreshAllDay();
     refreshTravelUi();
@@ -9295,6 +9331,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
   function bookingAdvice(ds, crewId, from, to, skipId){
     var out = [];
+    if (hourGone(ds, from)){
+      out.push(tr("{h} has already gone \u2014 it is {now} now.",
+        {h: hourLong(from), now: F_TIME.format(new Date())}));
+    }
     var already = jobsOn(ds, crewId).filter(function(j){ return j.id !== skipId; });
     if (already.length + 1 >= BUSY_DAY){
       out.push(tr("That would be {n} jobs for {name} in one day. Another day may go better.",
