@@ -2865,6 +2865,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "עבודה אחת בפרויקט מחוייב בלי שעות שעון, ולכן אינה בשום חשבונית.",
     "{n} jobs on charged projects have no clocked hours, so they are on no invoice.":
       "ל־{n} עבודות בפרויקטים מחוייבים אין שעות שעון, ולכן הן בלא חשבונית.",
+    "The work in these dates is on":
+      "העבודה בתאריכים האלו היא ב־",
+    "{what} {list} — not on the charged list.":
+      "{what} {list} — שאינם ברשימת החיוב.",
+    "One job on a charged project has no clocked hours, so there is nothing to charge for it.":
+      "עבודה אחת בפרויקט מחוייב בלי שעות שעון, אז אין מה לחייב עליה.",
+    "{n} jobs on charged projects have no clocked hours, so there is nothing to charge for them.":
+      "ל־{n} עבודות בפרויקטים מחוייבים אין שעות שעון, אז אין מה לחייב עליהן.",
+    "{list} has no wage on file, so his hours are charged to nobody.":
+      "ל־{list} אין שכר רשום, אז השעות שלו לא מחוייבות לאיש.",
+    "Nothing was clocked on a charged project in these dates.":
+      "לא נרשמו שעות בפרויקט מחוייב בתאריכים האלו.",
+    "Rates and taxes is where the charged projects and the wages are set.":
+      "תעריפים ומסים הוא המקום שבו נקבעים הפרויקטים המחוייבים והשכר.",
     "To invoice":
       "לחיוב",
     "Invoice lines":
@@ -3818,6 +3832,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Un travail sur un projet factur\u00e9 n\u2019a aucune heure point\u00e9e, il n\u2019est donc sur aucune facture.",
     "{n} jobs on charged projects have no clocked hours, so they are on no invoice.":
       "{n} travaux sur des projets factur\u00e9s n\u2019ont aucune heure point\u00e9e, ils ne sont sur aucune facture.",
+    "The work in these dates is on": "Le travail de ces dates est sur",
+    "{what} {list} — not on the charged list.":
+      "{what} {list} — qui ne sont pas sur la liste \u00e0 facturer.",
+    "One job on a charged project has no clocked hours, so there is nothing to charge for it.":
+      "Un travail sur un projet factur\u00e9 n\u2019a aucune heure point\u00e9e, il n\u2019y a donc rien \u00e0 facturer pour lui.",
+    "{n} jobs on charged projects have no clocked hours, so there is nothing to charge for them.":
+      "{n} travaux sur des projets factur\u00e9s n\u2019ont aucune heure point\u00e9e, il n\u2019y a donc rien \u00e0 facturer pour eux.",
+    "{list} has no wage on file, so his hours are charged to nobody.":
+      "{list} n\u2019a aucun salaire enregistr\u00e9, ses heures ne sont donc factur\u00e9es \u00e0 personne.",
+    "Nothing was clocked on a charged project in these dates.":
+      "Aucune heure point\u00e9e sur un projet factur\u00e9 pour ces dates.",
+    "Rates and taxes is where the charged projects and the wages are set.":
+      "Tarifs et taxes est l\u00e0 o\u00f9 se r\u00e8glent les projets factur\u00e9s et les salaires.",
     "To invoice": "\u00c0 facturer",
     "Invoice lines": "Lignes de facture",
     "{n} invoices, ${t} in all, taxes in. The Excel file carries a sheet of them and a sheet of their lines.":
@@ -4235,7 +4262,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v144";
+  var APP_VERSION = "v145";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5006,11 +5033,39 @@ dialog#callDlg::backdrop{background:#0b0f12}
        typed once rather than a second screen of its own. */
     repBill = billWork(repLines.map(function(r){ return r.job; }),
                        {from: repSpan[0], to: repSpan[1]});
+    var ttl = document.createElement("div"); ttl.className = "eyebrow";
+    ttl.style.margin = "18px 0 2px";
+    ttl.textContent = tr("To invoice");
+    host.appendChild(ttl);
+    if (!repBill.projects.length){
+      // Nothing came out. Say which of the three reasons it was.
+      var why = document.createElement("p"); why.className = "sub";
+      why.style.margin = "2px 0 0";
+      var skipped = Object.keys(repBill.passed).map(function(k){ return repBill.passed[k]; });
+      var unpaid = Object.keys(repBill.nopay).map(function(k){ return repBill.nopay[k]; });
+      var bits = [];
+      if (skipped.length)
+        bits.push(tr("{what} {list} \u2014 not on the charged list.",
+          {what: skipped.length === 1 ? tr("The work in these dates is on")
+                                      : tr("The work in these dates is on"),
+           list: skipped.join(", ")}));
+      if (repBill.loose.length)
+        bits.push(repBill.loose.length === 1
+          ? tr("One job on a charged project has no clocked hours, so there is nothing to charge for it.")
+          : tr("{n} jobs on charged projects have no clocked hours, so there is nothing to charge for them.",
+               {n: repBill.loose.length}));
+      if (unpaid.length)
+        bits.push(tr("{list} has no wage on file, so his hours are charged to nobody.",
+          {list: unpaid.join(", ")}));
+      why.textContent = bits.length ? bits.join(" ")
+        : tr("Nothing was clocked on a charged project in these dates.");
+      host.appendChild(why);
+      var fix = document.createElement("p"); fix.className = "sub";
+      fix.style.margin = "4px 0 0";
+      fix.textContent = tr("Rates and taxes is where the charged projects and the wages are set.");
+      host.appendChild(fix);
+    }
     if (repBill.projects.length){
-      var ttl = document.createElement("div"); ttl.className = "eyebrow";
-      ttl.style.margin = "18px 0 2px";
-      ttl.textContent = tr("To invoice");
-      host.appendChild(ttl);
       var due = 0;
       repBill.projects.forEach(function(pr){
         due += taxesOn(pr.net).total;
@@ -5323,11 +5378,19 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function billWork(jobs, per){
     var b = bill(), want = {};
     (b.projects || []).forEach(function(id){ want[String(id)] = true; });
-    var out = {}, loose = [];
+    var out = {}, loose = [], passed = {}, nopay = {};
     jobs.forEach(function(j){
       if (!j || j.v !== 2) return;
       if (j.date < per.from || j.date > per.to) return;
-      if (!want[String(j.projectId)] || !billable(j.crewId)) return;
+      /* Why nothing came out is as much use as what did: a fortnight with no
+         invoices in it is either a fortnight on projects nobody charges, or a
+         fortnight of men with no wage on file, or a fortnight nobody clocked.
+         All three used to look the same \u2014 an empty space. */
+      if (!want[String(j.projectId)]){
+        passed[String(j.projectId)] = j.projectName || String(j.projectId);
+        return;
+      }
+      if (!billable(j.crewId)){ nopay[j.crewId] = memberOr(j.crewId).name; return; }
       var h = round2(Math.max(0, hoursBetween(j.clockIn, j.clockOut) - pausedHours(j)));
       if (!h){ loose.push(j); return; }
       var k = String(j.projectId);
@@ -5346,7 +5409,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       p.men.forEach(function(m){ m.lines.sort(function(a, c){ return a.date < c.date ? -1 : 1; }); });
     });
     list.sort(function(a, c){ return c.net - a.net; });
-    return {projects: list, loose: loose};
+    return {projects: list, loose: loose, passed: passed, nopay: nopay};
   }
   function money(n){
     return (Math.round(n * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -6465,6 +6528,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-08T01:00:00Z", who:"me",
+     en:"To invoice says why when it has nothing to say. A week of real work came back blank, and rightly \u2014 the hours were on projects that are not charged, and the two jobs that were on charged ones had no clock on them \u2014 but blank is not an answer. It now names the projects the work was on and says they are not on the list, counts the jobs on charged projects that nobody clocked, and names anybody working without a wage on file.",
+     fr:"\u00ab\u00a0\u00c0 facturer\u00a0\u00bb dit maintenant pourquoi quand il n\u2019a rien \u00e0 dire\u00a0: les projets sur lesquels le travail a \u00e9t\u00e9 fait et qui ne sont pas sur la liste, les travaux sur des projets factur\u00e9s que personne n\u2019a point\u00e9s, et ceux qui travaillent sans salaire enregistr\u00e9."},
     {at:"2026-10-07T23:30:00Z", who:"me",
      en:"Charging the hours back is part of Hours worked now rather than a button of its own, and what comes out is the Excel file rather than a printed invoice. Under the hours for those dates it says what each project owes, taxes in, and the workbook carries two more sheets: one row per invoice to make, and one row per line of it \u2014 customer, date, activity, description, hours, rate, amount and the tax code. No invoice numbers: the books are QuickBooks\u2019 and the numbering is Nithin\u2019s.",
      fr:"La refacturation fait partie d\u2019Heures travaill\u00e9es plut\u00f4t que d\u2019un bouton \u00e0 part, et ce qui en sort est le fichier Excel plut\u00f4t qu\u2019une facture imprim\u00e9e\u00a0: deux feuilles de plus, une ligne par facture \u00e0 faire et une ligne par ligne de facture. Sans num\u00e9ros\u00a0: la num\u00e9rotation appartient aux livres."},
