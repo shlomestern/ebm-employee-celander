@@ -233,9 +233,17 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .billrow .bw b{display:block; font-size:15px}
 .billrow .bw span{display:block; font-size:12.5px; color:var(--ink-2)}
 .billrow .bm{font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap}
-#paper{background:#fff; color:#000; padding:28px 30px; font-size:13px; line-height:1.45}
-#paper h1{font-family:"Archivo",sans-serif; font-size:22px; margin:0 0 2px}
-#paper .co{font-size:12px; color:#333; white-space:pre-line}
+#paper{background:#fff; color:#000; padding:28px 30px; font-size:12.5px; line-height:1.4}
+#paper h1{font-family:"Archivo",sans-serif; font-size:19px; margin:0 0 3px; letter-spacing:.01em}
+#paper .co{font-size:11.5px; color:#333; white-space:pre-line}
+#paper .ihead{display:flex; justify-content:space-between; gap:24px; align-items:flex-start}
+#paper .itax{text-align:right; white-space:pre-line}
+#paper .lab{font-size:10.5px; letter-spacing:.1em; color:#555; margin-bottom:3px}
+#paper .inos{text-align:right; font-variant-numeric:tabular-nums}
+#paper .inos div:first-child{font-family:"Archivo",sans-serif; font-size:15px; font-weight:700}
+#paper .due{margin-top:10px; text-align:right; font-family:"Archivo",sans-serif;
+  font-size:15px; font-weight:700}
+#paper table.tsum{width:auto; min-width:260px; margin-left:auto; margin-top:14px; font-size:11.5px}
 #paper .meta{margin:18px 0 6px; display:flex; justify-content:space-between; gap:20px}
 #paper table{width:100%; border-collapse:collapse; margin-top:10px}
 #paper th{text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
@@ -2906,6 +2914,52 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "עבודה אחת בפרויקט מחוייב בלי שעות שעון, ולכן אינה בשום חשבונית.",
     "{n} jobs on charged projects have no clocked hours, so they are on no invoice.":
       "ל־{n} עבודות בפרויקטים מחוייבים אין שעות שעון, ולכן הן בלא חשבונית.",
+    "Generate invoice":
+      "הפק חשבונית",
+    "GST {g}":
+      "GST {g}",
+    "PST {q}":
+      "PST {q}",
+    "BILL TO":
+      "לכבוד",
+    "INVOICE {no}":
+      "חשבונית {no}",
+    "DATE {d}":
+      "תאריך {d}",
+    "TERMS Net {n}":
+      "תנאים: שוט׳ {n}",
+    "DUE DATE {d}":
+      "לתשלום עד {d}",
+    "DATE":
+      "תאריך",
+    "ACTIVITY":
+      "פעילות",
+    "DESCRIPTION":
+      "תיאור",
+    "QTY":
+      "כמות",
+    "RATE":
+      "תעריף",
+    "AMOUNT":
+      "סכום",
+    "Labour":
+      "עבודה",
+    "SUBTOTAL":
+      "סה״כ ביניים",
+    "PST @ {p}%":
+      "PST {p}%",
+    "GST @ {p}%":
+      "GST {p}%",
+    "TOTAL":
+      "סה״כ",
+    "TOTAL DUE":
+      "לתשלום",
+    "TAX SUMMARY":
+      "סיכום מסים",
+    "TAX":
+      "מס",
+    "NET":
+      "נטו",
     "Invoice":
       "חשבונית",
     "Rates and taxes":
@@ -3783,6 +3837,18 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Un travail sur un projet factur\u00e9 n\u2019a aucune heure point\u00e9e, il n\u2019est donc sur aucune facture.",
     "{n} jobs on charged projects have no clocked hours, so they are on no invoice.":
       "{n} travaux sur des projets factur\u00e9s n\u2019ont aucune heure point\u00e9e, ils ne sont sur aucune facture.",
+    "Generate invoice": "G\u00e9n\u00e9rer la facture",
+    "GST {g}": "TPS {g}", "PST {q}": "TVQ {q}",
+    "BILL TO": "FACTURER \u00c0",
+    "INVOICE {no}": "FACTURE {no}", "DATE {d}": "DATE {d}",
+    "TERMS Net {n}": "CONDITIONS Net {n}", "DUE DATE {d}": "\u00c9CH\u00c9ANCE {d}",
+    "DATE": "DATE", "ACTIVITY": "ACTIVIT\u00c9", "DESCRIPTION": "DESCRIPTION",
+    "QTY": "QT\u00c9", "RATE": "TAUX", "AMOUNT": "MONTANT",
+    "Labour": "Main-d\u2019\u0153uvre",
+    "SUBTOTAL": "SOUS-TOTAL",
+    "PST @ {p}%": "TVQ @ {p}\u00a0%", "GST @ {p}%": "TPS @ {p}\u00a0%",
+    "TOTAL": "TOTAL", "TOTAL DUE": "SOLDE D\u00db",
+    "TAX SUMMARY": "SOMMAIRE DES TAXES", "TAX": "TAXE", "NET": "NET",
     "Invoice": "Facture",
     "Rates and taxes": "Tarifs et taxes",
     "A man's hourly rate is his salary over a year of forty-hour weeks. On top of it goes what he costs the company beyond his wage.":
@@ -4177,7 +4243,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v142";
+  var APP_VERSION = "v143";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5098,15 +5164,26 @@ dialog#callDlg::backdrop{background:#0b0f12}
      The whole of it is the master office code's and nobody else's: rates are
      wages, and wages are not an admin's business. */
   var LS_BILL = "ebm-crew:bill:v1";
+  /* Filled in from the payroll and from EBM's own invoices rather than left
+     empty to be typed: the two men this is for, what they earn, the tax
+     numbers that are on every invoice the company sends, and the way
+     QuickBooks writes the taxes \u2014 QST at 9.5% of the amount with GST already
+     in it, which is the same money as 9.975% of the amount without. All of it
+     can be changed; none of it has to be. */
   var BILL_DEF = {
-    salary: {},                       // crew id -> what he earns in a year
+    salary: {zion: 70000, rodrigo: 75000.12},
     hoursYear: 2080,                  // forty hours, fifty-two weeks
-    loadPct: 15,                      // on top of the wage
+    loadPct: 40,                      // on top of the wage
     projects: ["12","13","14","17","26","28","30"],
-    gst: 5, qst: 9.975, gstNo: "", qstNo: "",
+    gst: 5, gstNo: "873107502RT0001",
+    qst: 9.5, qstNo: "1205069778TQ0001",   // 9.5% of the GST-included amount
+    terms: 30,                        // net 30
+    nextNo: 3900,                     // where EBM's own numbering is up to
+    numbers: {},                      // fortnight and project -> the number it got
     anchor: "",                       // a day some pay period began on
-    company: "Empire Building Management",
-    address: "6750 Parc Ave. #220\nMontreal, Quebec H3N 1W7"
+    company: "EMPIRE BUILDING MANAGEMENT INC.",
+    address: "6750 Parc Ave.\nMontreal QC  H3N 1W7\n514-278-9996\nebm@empirebm.com",
+    billTo: "6750 Parc Ave. Suite 220\nMontreal, Quebec\nH3N 1W7"
   };
   function bill(){
     var b = {}; Object.keys(BILL_DEF).forEach(function(k){ b[k] = BILL_DEF[k]; });
@@ -6318,6 +6395,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-07T22:00:00Z", who:"me",
+     en:"Charge back hours arrives filled in now rather than empty: both wages, forty per cent on top, EBM's own GST and PST numbers, the office address, net thirty, and the invoice numbering carrying on from 3900. The invoice is laid out the way EBM's QuickBooks invoices are, taxes and tax summary included \u2014 GST on the labour, then PST on the labour with the GST already in it, which is what the company's own invoices do. The button says Generate invoice.",
+     fr:"Refacturer les heures arrive d\u00e9j\u00e0 rempli\u00a0: les deux salaires, quarante pour cent en sus, les num\u00e9ros de TPS et de TVQ d\u2019EBM, l\u2019adresse, Net 30, et la num\u00e9rotation qui reprend \u00e0 3900. La facture est pr\u00e9sent\u00e9e comme celles de QuickBooks, sommaire des taxes compris."},
     {at:"2026-10-07T20:00:00Z", who:"me",
      en:"Charging the crew's hours back to the projects. Your account sheet has Charge back hours: a payroll fortnight at a time, what each project owes for the men who worked on it, and an invoice to print for each. The rate is the man's salary over a year of forty-hour weeks plus what he costs beyond his wage, the hours are what the clock recorded rather than what anybody booked, and only the projects you name are charged. A job on a charged project that nobody clocked is named at the bottom rather than quietly billed or quietly dropped. Wages are nobody else's business: the whole of it is behind the office code.",
      fr:"Refacturer les heures de l\u2019\u00e9quipe aux projets. Votre fiche de compte a \u00ab\u00a0Refacturer les heures\u00a0\u00bb\u00a0: une quinzaine de paie \u00e0 la fois, ce que chaque projet doit, et une facture \u00e0 imprimer. Le taux est le salaire annuel sur des semaines de quarante heures plus ce que l\u2019employ\u00e9 co\u00fbte en sus, et les heures sont celles point\u00e9es."},
@@ -10607,7 +10687,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       amt.textContent = "$" + money(p.net);
       var go = document.createElement("button");
       go.type = "button"; go.className = "btn btn-primary";
-      go.textContent = tr("Invoice");
+      go.textContent = tr("Generate invoice");
       go.addEventListener("click", function(){ printInvoice(p); });
       row.appendChild(tx); row.appendChild(amt); row.appendChild(go);
       host.appendChild(row);
@@ -10650,71 +10730,125 @@ dialog#callDlg::backdrop{background:#0b0f12}
   $("billClose").addEventListener("click", function(){ $("billDlg").close(); });
   $("meBillBtn").addEventListener("click", function(){ $("meDlg").close(); openBill(); });
 
-  /* One project's bill, on paper. The number is worked out from the period
-     and the project rather than counted, so printing the same fortnight twice
-     cannot invent a second invoice number for the same work. */
+  /* One project's bill, on paper, laid out the way EBM's own invoices are:
+     the company at the top with both tax numbers, the project billed at the
+     office address, net thirty, and the taxes worked out as QuickBooks works
+     them \u2014 GST on the labour, then QST on the labour with the GST already in
+     it, which is why the invoices say 9.5% and the money comes to 9.975% of
+     the work. */
+  function taxesOn(net){
+    var b = bill();
+    var gst = net * (Number(b.gst) || 0) / 100;
+    var qst = (net + gst) * (Number(b.qst) || 0) / 100;
+    return {gst: gst, qst: qst, net: net, total: net + gst + qst};
+  }
+  /* The number on the invoice. EBM's own numbering runs on, so the next one
+     is taken from the settings and kept against that fortnight and project:
+     printing the same bill twice does not spend a second number, and the next
+     project gets the one after. */
   function invoiceNo(p, per){
-    return "EBM-" + per.from.replace(/-/g, "") + "-" + p.id;
+    var b = bill(), key = per.from + ":" + p.id;
+    var had = (b.numbers || {})[key];
+    if (had) return Promise.resolve(had);
+    var no = Number(b.nextNo) || 3900;
+    var next = {};
+    Object.keys(b).forEach(function(k){ next[k] = b[k]; });
+    next.numbers = {};
+    Object.keys(b.numbers || {}).forEach(function(k){ next.numbers[k] = b.numbers[k]; });
+    next.numbers[key] = no;
+    next.nextNo = no + 1;
+    return putBill(next).then(function(){ return no; }).catch(function(){ return no; });
+  }
+  function el(tag, cls, text){
+    var x = document.createElement(tag);
+    if (cls) x.className = cls;
+    if (text !== undefined) x.textContent = text;
+    return x;
   }
   function printInvoice(p){
-    var b = bill(), per = billPer;
+    invoiceNo(p, billPer).then(function(no){ drawInvoice(p, billPer, bill(), no); });
+  }
+  function drawInvoice(p, per, b, no){
     var paper = $("paper"); paper.innerHTML = "";
-    function el(tag, cls, text){
-      var x = document.createElement(tag);
-      if (cls) x.className = cls;
-      if (text !== undefined) x.textContent = text;
-      return x;
-    }
-    paper.appendChild(el("h1", null, b.company));
-    paper.appendChild(el("div", "co", b.address +
-      (b.gstNo ? "\nGST " + b.gstNo : "") + (b.qstNo ? "    QST " + b.qstNo : "")));
 
+    var head = el("div", "ihead");
+    var co = el("div");
+    co.appendChild(el("h1", null, b.company));
+    co.appendChild(el("div", "co", b.address));
+    var tax = el("div", "co itax");
+    tax.textContent = tr("GST {g}", {g: b.gstNo}) + "\n" + tr("PST {q}", {q: b.qstNo});
+    head.appendChild(co); head.appendChild(tax);
+    paper.appendChild(head);
+
+    var issued = new Date();
+    var due = addDays(issued, Number(b.terms) || 30);
     var meta = el("div", "meta");
-    var left = el("div");
-    left.appendChild(el("div", null, tr("To: {name}", {name: p.id + " \u2014 " + p.name})));
-    left.appendChild(el("div", null, tr("For: wages of the crew who worked on it")));
-    var right = el("div");
-    right.appendChild(el("div", null, tr("Invoice {no}", {no: invoiceNo(p, per)})));
-    right.appendChild(el("div", null, periodText(per)));
-    right.appendChild(el("div", null, tr("Issued {d}", {d: F_LONG.format(new Date())})));
-    meta.appendChild(left); meta.appendChild(right);
+    var to = el("div");
+    to.appendChild(el("div", "lab", tr("BILL TO")));
+    to.appendChild(el("div", "co", p.name + "\n" + b.billTo));
+    var nos = el("div", "inos");
+    nos.appendChild(el("div", null, tr("INVOICE {no}", {no: no})));
+    nos.appendChild(el("div", null, tr("DATE {d}", {d: F_MED.format(issued)})));
+    nos.appendChild(el("div", null, tr("TERMS Net {n}", {n: b.terms})));
+    nos.appendChild(el("div", null, tr("DUE DATE {d}", {d: F_MED.format(due)})));
+    nos.appendChild(el("div", null, periodText(per)));
+    meta.appendChild(to); meta.appendChild(nos);
     paper.appendChild(meta);
 
     var tb = el("table");
     var hr = el("tr");
-    [tr("Day"), tr("Where"), tr("Hours"), tr("Rate"), tr("Amount")].forEach(function(h, i){
-      var th = el("th", i >= 2 ? "n" : null, h); hr.appendChild(th);
+    [[tr("DATE"), ""], [tr("ACTIVITY"), ""], [tr("DESCRIPTION"), ""],
+     [tr("QTY"), "n"], [tr("RATE"), "n"], [tr("AMOUNT"), "n"]].forEach(function(h){
+      hr.appendChild(el("th", h[1], h[0]));
     });
     tb.appendChild(hr);
     p.men.forEach(function(m){
-      var wr = el("tr");
-      var wc = el("td", "who", m.name + " \u2014 " + tr("{n} hours at ${r}",
-        {n: m.hours, r: (Math.round(m.rate * 10000) / 10000).toFixed(4)}));
-      wc.colSpan = 5; wr.appendChild(wc); tb.appendChild(wr);
       m.lines.forEach(function(L){
         var r = el("tr");
         r.appendChild(el("td", null, F_MED.format(fromIso(L.date))));
-        r.appendChild(el("td", null, L.where + (L.what ? " \u00b7 " + L.what : "")));
+        r.appendChild(el("td", null, tr("Labour")));
+        r.appendChild(el("td", null, m.name + " \u00b7 " + L.where +
+          (L.what ? " \u00b7 " + L.what : "")));
         r.appendChild(el("td", "n", String(L.hours)));
         r.appendChild(el("td", "n", money(m.rate)));
         r.appendChild(el("td", "n", money(L.amount)));
         tb.appendChild(r);
       });
     });
+    var t = taxesOn(p.net);
     function sum(label, amount, cls){
       var r = el("tr", cls || "sub");
-      var pad = el("td"); pad.colSpan = 3; r.appendChild(pad);
+      var pad = el("td"); pad.colSpan = 4; r.appendChild(pad);
       r.appendChild(el("td", "n", label));
       r.appendChild(el("td", "n", money(amount)));
       tb.appendChild(r);
     }
-    var gst = p.net * (Number(b.gst) || 0) / 100;
-    var qst = p.net * (Number(b.qst) || 0) / 100;
-    sum(tr("Subtotal"), p.net);
-    if (b.gst) sum(tr("GST {p}%", {p: b.gst}), gst);
-    if (b.qst) sum(tr("QST {p}%", {p: b.qst}), qst);
-    sum(tr("Total"), p.net + gst + qst, "tot");
+    sum(tr("SUBTOTAL"), p.net);
+    if (t.qst) sum(tr("PST @ {p}%", {p: b.qst}), t.qst);
+    if (t.gst) sum(tr("GST @ {p}%", {p: b.gst}), t.gst);
+    sum(tr("TOTAL"), t.total, "tot");
     paper.appendChild(tb);
+
+    var dueLine = el("div", "due");
+    dueLine.textContent = tr("TOTAL DUE") + "   $" + money(t.total);
+    paper.appendChild(dueLine);
+
+    var ts = el("table", "tsum");
+    var tr1 = el("tr");
+    [[tr("TAX SUMMARY"), ""], [tr("TAX"), "n"], [tr("NET"), "n"]].forEach(function(h){
+      tr1.appendChild(el("th", h[1], h[0]));
+    });
+    ts.appendChild(tr1);
+    function taxRow(label, amount, net){
+      var r = el("tr");
+      r.appendChild(el("td", null, label));
+      r.appendChild(el("td", "n", money(amount)));
+      r.appendChild(el("td", "n", money(net)));
+      ts.appendChild(r);
+    }
+    if (t.qst) taxRow(tr("PST @ {p}%", {p: b.qst}), t.qst, p.net + t.gst);
+    if (t.gst) taxRow(tr("GST @ {p}%", {p: b.gst}), t.gst, p.net);
+    paper.appendChild(ts);
 
     paper.hidden = false;
     window.print();
