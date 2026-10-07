@@ -223,6 +223,33 @@ body.nocrewbar .layout{grid-template-columns:minmax(0,1fr)}
 .cell.out{background:var(--surface-2); cursor:default}
 .cell.out .dnum{opacity:.35}
 .cell.past{background:var(--surface-2)}
+/* Charging hours back to the projects. The paper is built outside every
+   dialog, because a <dialog> prints as an overlay or not at all. */
+.billnav{display:flex; align-items:center; gap:12px; margin:12px 0 10px}
+.billnav b{flex:1; text-align:center; font-family:"Archivo",sans-serif; font-size:16px}
+.billrow{display:flex; align-items:center; gap:10px; padding:11px 2px;
+  border-bottom:1px solid var(--line)}
+.billrow .bw{flex:1; min-width:0}
+.billrow .bw b{display:block; font-size:15px}
+.billrow .bw span{display:block; font-size:12.5px; color:var(--ink-2)}
+.billrow .bm{font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap}
+#paper{background:#fff; color:#000; padding:28px 30px; font-size:13px; line-height:1.45}
+#paper h1{font-family:"Archivo",sans-serif; font-size:22px; margin:0 0 2px}
+#paper .co{font-size:12px; color:#333; white-space:pre-line}
+#paper .meta{margin:18px 0 6px; display:flex; justify-content:space-between; gap:20px}
+#paper table{width:100%; border-collapse:collapse; margin-top:10px}
+#paper th{text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  border-bottom:1.5px solid #000; padding:6px 4px}
+#paper td{padding:5px 4px; border-bottom:1px solid #ddd; vertical-align:top}
+#paper td.n, #paper th.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+#paper tr.sub td{border:0; padding-top:4px}
+#paper tr.tot td{border-top:1.5px solid #000; font-weight:700}
+#paper .who{font-weight:700; padding-top:12px}
+@media print{
+  body > *{display:none !important}
+  body > #paper{display:block !important; padding:0}
+  @page{margin:16mm}
+}
 .cell.off{background:var(--surface-2)}
 .cell.yomtov{box-shadow:inset 3px 0 0 var(--mark)}
 /* beats .cell.off .freehint, which would otherwise grey and italicise it */
@@ -946,6 +973,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     <p class="sub" id="meVersion" style="margin:14px 0 0; opacity:.55; cursor:pointer"></p>
 
     <div class="actions">
+      <button type="button" class="btn" id="meBillBtn" hidden data-t>Charge back hours</button>
       <button type="button" class="btn" id="meUndoBtn" hidden data-t>Undo something</button>
       <button type="button" class="btn" id="meLogBtn" hidden data-t>What happened</button>
       <button type="button" class="btn" id="meRepBtn" hidden data-t>Hours worked</button>
@@ -1214,6 +1242,70 @@ dialog#callDlg::backdrop{background:#0b0f12}
   </form>
 </dialog>
 
+<dialog id="billDlg">
+  <form method="dialog" class="dlg" id="billForm">
+    <div class="eyebrow" data-t>Office only</div>
+    <h3 data-t>Charging the hours back</h3>
+    <p class="sub" data-t>The two weeks of a payroll, and what each project owes for the men who worked on it. Hours actually clocked, never hours merely booked.</p>
+    <div class="billnav">
+      <button type="button" class="nav" id="billPrev" aria-label="Earlier">&#8249;</button>
+      <b id="billWhen"></b>
+      <button type="button" class="nav" id="billNext" aria-label="Later">&#8250;</button>
+    </div>
+    <div id="billRows"></div>
+    <p class="sub" id="billNone" hidden data-t>Nothing to charge for those two weeks.</p>
+    <p class="sub" id="billLoose" hidden></p>
+    <div class="actions">
+      <button type="button" class="btn" id="billSet" data-t>Rates and taxes</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="billClose" data-t>Close</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="billSetDlg">
+  <form method="dialog" class="dlg" id="billSetForm">
+    <div class="eyebrow" data-t>Office only</div>
+    <h3 data-t>Rates and taxes</h3>
+    <p class="sub" data-t>A man's hourly rate is his salary over a year of forty-hour weeks. On top of it goes what he costs the company beyond his wage.</p>
+    <div id="billPay"></div>
+    <div class="row2">
+      <div class="field">
+        <label for="billLoad" data-t>On top of the wage (%)</label>
+        <input type="number" id="billLoad" min="0" max="100" step="0.01" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="billYear" data-t>Hours in a year</label>
+        <input type="number" id="billYear" min="1" step="1" inputmode="numeric">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="billGstNo" data-t>GST number</label>
+        <input id="billGstNo" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="billQstNo" data-t>QST number</label>
+        <input id="billQstNo" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label for="billAnchor" data-t>A day a pay period started on</label>
+      <input type="date" id="billAnchor">
+    </div>
+    <div class="field">
+      <label data-t>Projects to charge</label>
+      <div class="whyrow" id="billProjs"></div>
+    </div>
+    <p class="err" id="billSetErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="billSetCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="billSetSave" data-t>Save</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="undoDlg">
   <form method="dialog" class="dlg" id="undoForm">
     <div class="eyebrow" data-t>Last of all</div>
@@ -1227,6 +1319,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     </div>
   </form>
 </dialog>
+
+<div id="paper" hidden></div>
 
 <dialog id="logDlg">
   <form method="dialog" class="dlg" id="logForm">
@@ -2798,6 +2892,70 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "זה לא עבר.",
     "{who} is asking for {name}":
       "{who} מבקש את {name}",
+    "Charge back hours":
+      "חיוב שעות לפרויקטים",
+    "Charging the hours back":
+      "חיוב השעות חזרה",
+    "The two weeks of a payroll, and what each project owes for the men who worked on it. Hours actually clocked, never hours merely booked.":
+      "שבועיים של משכורת, ומה כל פרויקט חייב עבור העובדים שעבדו בו. שעות שנרשמו בשעון, לא שעות שרק שובצו.",
+    "Nothing to charge for those two weeks.":
+      "אין מה לחייב בשבועיים האלו.",
+    "No wages on file yet — open Rates and taxes first.":
+      "אין עדיין שכר רשום — פתחו תחילה תעריפים ומסים.",
+    "One job on a charged project has no clocked hours, so it is not on any invoice.":
+      "עבודה אחת בפרויקט מחוייב בלי שעות שעון, ולכן אינה בשום חשבונית.",
+    "{n} jobs on charged projects have no clocked hours, so they are on no invoice.":
+      "ל־{n} עבודות בפרויקטים מחוייבים אין שעות שעון, ולכן הן בלא חשבונית.",
+    "Invoice":
+      "חשבונית",
+    "Rates and taxes":
+      "תעריפים ומסים",
+    "A man's hourly rate is his salary over a year of forty-hour weeks. On top of it goes what he costs the company beyond his wage.":
+      "תעריף לשעה הוא השכר השנתי לפי שבוע של ארבעים שעות, ועליו מה שהעובד עולה מעבר לשכרו.",
+    "On top of the wage (%)":
+      "תוספת על השכר (%)",
+    "Hours in a year":
+      "שעות בשנה",
+    "GST number":
+      "מספר GST",
+    "QST number":
+      "מספר QST",
+    "A day a pay period started on":
+      "יום שבו התחילה תקופת שכר",
+    "Projects to charge":
+      "פרויקטים לחיוב",
+    "{name} — a year":
+      "{name} — לשנה",
+    "${h} an hour, ${c} charged":
+      "{h}$ לשעה, {c}$ בחיוב",
+    "Not charged to anybody.":
+      "לא מחוייב לאיש.",
+    "To: {name}":
+      "לכבוד: {name}",
+    "For: wages of the crew who worked on it":
+      "עבור: שכר העובדים שעבדו בו",
+    "Invoice {no}":
+      "חשבונית {no}",
+    "Issued {d}":
+      "הופקה {d}",
+    "Day":
+      "יום",
+    "Where":
+      "היכן",
+    "Rate":
+      "תעריף",
+    "Amount":
+      "סכום",
+    "{n} hours at ${r}":
+      "{n} שעות לפי {r}$",
+    "Subtotal":
+      "סה״כ ביניים",
+    "GST {p}%":
+      "GST {p}%",
+    "QST {p}%":
+      "QST {p}%",
+    "Total":
+      "סה״כ לתשלום",
     "Undo something":
       "לבטל פעולה",
     "Last of all":
@@ -3614,6 +3772,36 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Agree": "Accepter", "Refuse": "Refuser", "Look at it": "Voir la demande",
     "That did not go through.": "\u00c7a n\u2019a pas fonctionn\u00e9.",
     "{who} is asking for {name}": "{who} demande {name}",
+    "Charge back hours": "Refacturer les heures",
+    "Charging the hours back": "Refacturation des heures",
+    "The two weeks of a payroll, and what each project owes for the men who worked on it. Hours actually clocked, never hours merely booked.":
+      "Les deux semaines d\u2019une paie, et ce que chaque projet doit pour les hommes qui y ont travaill\u00e9. Les heures point\u00e9es, jamais les heures seulement r\u00e9serv\u00e9es.",
+    "Nothing to charge for those two weeks.": "Rien \u00e0 facturer pour ces deux semaines.",
+    "No wages on file yet — open Rates and taxes first.":
+      "Aucun salaire enregistr\u00e9 — ouvrez d\u2019abord Tarifs et taxes.",
+    "One job on a charged project has no clocked hours, so it is not on any invoice.":
+      "Un travail sur un projet factur\u00e9 n\u2019a aucune heure point\u00e9e, il n\u2019est donc sur aucune facture.",
+    "{n} jobs on charged projects have no clocked hours, so they are on no invoice.":
+      "{n} travaux sur des projets factur\u00e9s n\u2019ont aucune heure point\u00e9e, ils ne sont sur aucune facture.",
+    "Invoice": "Facture",
+    "Rates and taxes": "Tarifs et taxes",
+    "A man's hourly rate is his salary over a year of forty-hour weeks. On top of it goes what he costs the company beyond his wage.":
+      "Le taux horaire est le salaire annuel sur des semaines de quarante heures. S\u2019y ajoute ce que l\u2019employ\u00e9 co\u00fbte \u00e0 l\u2019entreprise au-del\u00e0 de son salaire.",
+    "On top of the wage (%)": "En sus du salaire (%)",
+    "Hours in a year": "Heures dans l\u2019ann\u00e9e",
+    "GST number": "Num\u00e9ro de TPS", "QST number": "Num\u00e9ro de TVQ",
+    "A day a pay period started on": "Un jour o\u00f9 une p\u00e9riode de paie a commenc\u00e9",
+    "Projects to charge": "Projets \u00e0 facturer",
+    "{name} — a year": "{name} — par ann\u00e9e",
+    "${h} an hour, ${c} charged": "{h}\u00a0$ l\u2019heure, {c}\u00a0$ factur\u00e9",
+    "Not charged to anybody.": "Factur\u00e9 \u00e0 personne.",
+    "To: {name}": "\u00c0\u00a0: {name}",
+    "For: wages of the crew who worked on it": "Pour\u00a0: salaires de l\u2019\u00e9quipe qui y a travaill\u00e9",
+    "Invoice {no}": "Facture {no}", "Issued {d}": "\u00c9mise le {d}",
+    "Day": "Jour", "Where": "O\u00f9", "Rate": "Taux", "Amount": "Montant",
+    "{n} hours at ${r}": "{n} heures \u00e0 {r}\u00a0$",
+    "Subtotal": "Sous-total", "GST {p}%": "TPS {p}\u00a0%", "QST {p}%": "TVQ {p}\u00a0%",
+    "Total": "Total",
     "Undo something": "Annuler une action",
     "Last of all": "Les derni\u00e8res",
     "What you have just done": "Ce que vous venez de faire",
@@ -3989,7 +4177,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v141";
+  var APP_VERSION = "v142";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4011,6 +4199,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     jobs: {},                 // jobId -> job
     reqs: [],                 // asks for somebody else's worker
     undos: [],                // changes that can still be put back
+    bill: null,               // wages and taxes, the office code's alone
     offs: [],                 // asks for a day off, and what was said
     mode: "loading",          // shared | cloud | device
     db: null, fb: null, unsubs: [], seen: {},
@@ -4896,6 +5085,126 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function replaceReq(r){
     return putReqs((state.reqs || []).map(function(x){ return x.id === r.id ? r : x; }));
   }
+  /* ---------- charging the hours back ----------
+
+     EBM pays Zion and Rodrigo every two weeks and gets it back from the
+     buildings they actually worked on \u2014 some of them, not all. A man's rate
+     is his salary over a year of forty-hour weeks, plus what he costs the
+     company on top of his wage; what is charged is what the clock recorded,
+     never what somebody booked, because a booking is a plan and an invoice
+     is a bill. A job nobody clocked is named at the bottom of the screen
+     rather than quietly charged or quietly dropped.
+
+     The whole of it is the master office code's and nobody else's: rates are
+     wages, and wages are not an admin's business. */
+  var LS_BILL = "ebm-crew:bill:v1";
+  var BILL_DEF = {
+    salary: {},                       // crew id -> what he earns in a year
+    hoursYear: 2080,                  // forty hours, fifty-two weeks
+    loadPct: 15,                      // on top of the wage
+    projects: ["12","13","14","17","26","28","30"],
+    gst: 5, qst: 9.975, gstNo: "", qstNo: "",
+    anchor: "",                       // a day some pay period began on
+    company: "Empire Building Management",
+    address: "6750 Parc Ave. #220\nMontreal, Quebec H3N 1W7"
+  };
+  function bill(){
+    var b = {}; Object.keys(BILL_DEF).forEach(function(k){ b[k] = BILL_DEF[k]; });
+    var live = state.bill || {};
+    Object.keys(live).forEach(function(k){ if (live[k] !== undefined) b[k] = live[k]; });
+    return b;
+  }
+  function billRef(){
+    return state.fb ? state.fb.collection("config").doc("billing") : null;
+  }
+  function subscribeBill(){
+    if (state.me !== "office") return;
+    if (state.billUnsub){ try{ state.billUnsub(); }catch(e){} state.billUnsub = null; }
+    var ref = billRef();
+    if (!ref) return;
+    state.billUnsub = ref.onSnapshot(function(snap){
+      state.bill = (snap.exists && snap.data()) || {};
+      lsWrite(LS_BILL, state.bill);
+      if ($("billDlg").open) drawBill();
+    }, function(){});
+  }
+  function putBill(next){
+    state.bill = next;
+    lsWrite(LS_BILL, next);
+    var ref = billRef();
+    if (ref) return ref.set(next);
+    var no = cannotShare(); if (no) return no;
+    return Promise.resolve();
+  }
+  /* What one hour of him costs the project. */
+  function rateFor(crewId){
+    var b = bill();
+    var year = Number(b.salary[crewId] || 0);
+    if (!year) return 0;
+    var hourly = year / (Number(b.hoursYear) || 2080);
+    return hourly * (1 + (Number(b.loadPct) || 0) / 100);
+  }
+  function billable(crewId){ return rateFor(crewId) > 0; }
+
+  /* The two weeks a day falls in, counted from a day the office says a pay
+     period began on. Without one, this week and the one before it. */
+  function periodOf(ds){
+    var b = bill();
+    var anchor = b.anchor && /^\d{4}-\d{2}-\d{2}$/.test(b.anchor) ? b.anchor : null;
+    var day = fromIso(ds);
+    if (!anchor){
+      var back = (day.getDay() + 6) % 7;         // to the Monday
+      var from0 = addDays(day, -back - 7);
+      return {from: iso(from0), to: iso(addDays(from0, 13))};
+    }
+    var a = fromIso(anchor);
+    var steps = Math.floor((day - a) / 86400000 / 14);
+    var start = addDays(a, steps * 14);
+    return {from: iso(start), to: iso(addDays(start, 13))};
+  }
+  function periodShift(per, n){
+    var start = addDays(fromIso(per.from), n * 14);
+    return {from: iso(start), to: iso(addDays(start, 13))};
+  }
+  function periodText(per){
+    return F_MED.format(fromIso(per.from)) + " \u2013 " +
+           F_MED.format(fromIso(per.to)) + " " + fromIso(per.to).getFullYear();
+  }
+  /* Everything chargeable in a period, project by project. Also what was
+     worked on a chargeable project but never clocked, which is nobody's to
+     charge and everybody's to chase. */
+  function billWork(jobs, per){
+    var b = bill(), want = {};
+    (b.projects || []).forEach(function(id){ want[String(id)] = true; });
+    var out = {}, loose = [];
+    jobs.forEach(function(j){
+      if (!j || j.v !== 2) return;
+      if (j.date < per.from || j.date > per.to) return;
+      if (!want[String(j.projectId)] || !billable(j.crewId)) return;
+      var h = round2(Math.max(0, hoursBetween(j.clockIn, j.clockOut) - pausedHours(j)));
+      if (!h){ loose.push(j); return; }
+      var k = String(j.projectId);
+      var p = out[k] || (out[k] = {id: k, name: j.projectName, men: {}, hours: 0, net: 0});
+      var m = p.men[j.crewId] ||
+              (p.men[j.crewId] = {id: j.crewId, name: memberOr(j.crewId).name,
+                                  rate: rateFor(j.crewId), hours: 0, net: 0, lines: []});
+      var amount = h * m.rate;
+      m.lines.push({date: j.date, where: whereLine(j), what: j.job || "", hours: h, amount: amount});
+      m.hours = round2(m.hours + h); m.net += amount;
+      p.hours = round2(p.hours + h); p.net += amount;
+    });
+    var list = Object.keys(out).map(function(k){ return out[k]; });
+    list.forEach(function(p){
+      p.men = Object.keys(p.men).map(function(k){ return p.men[k]; });
+      p.men.forEach(function(m){ m.lines.sort(function(a, c){ return a.date < c.date ? -1 : 1; }); });
+    });
+    list.sort(function(a, c){ return c.net - a.net; });
+    return {projects: list, loose: loose};
+  }
+  function money(n){
+    return (Math.round(n * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   /* ---------- undo ----------
 
      Removing a man from Crew & codes took his whole calendar off the screen:
@@ -6009,6 +6318,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-07T20:00:00Z", who:"me",
+     en:"Charging the crew's hours back to the projects. Your account sheet has Charge back hours: a payroll fortnight at a time, what each project owes for the men who worked on it, and an invoice to print for each. The rate is the man's salary over a year of forty-hour weeks plus what he costs beyond his wage, the hours are what the clock recorded rather than what anybody booked, and only the projects you name are charged. A job on a charged project that nobody clocked is named at the bottom rather than quietly billed or quietly dropped. Wages are nobody else's business: the whole of it is behind the office code.",
+     fr:"Refacturer les heures de l\u2019\u00e9quipe aux projets. Votre fiche de compte a \u00ab\u00a0Refacturer les heures\u00a0\u00bb\u00a0: une quinzaine de paie \u00e0 la fois, ce que chaque projet doit, et une facture \u00e0 imprimer. Le taux est le salaire annuel sur des semaines de quarante heures plus ce que l\u2019employ\u00e9 co\u00fbte en sus, et les heures sont celles point\u00e9es."},
     {at:"2026-10-07T14:00:00Z", who:"office",
      en:"Cancel is back on a job from a day that has gone, as long as nobody ever clocked in on it. A booking nobody got to used to sit on yesterday for good: the card kept Reschedule and Edit and lost Cancel, so whoever booked it had no way to clear it. A job with hours on it still cannot be cancelled \u2014 those are his hours \u2014 and every cancellation is in the log and can be undone.",
      fr:"Annuler revient sur un travail d\u2019un jour pass\u00e9, tant que personne n\u2019a point\u00e9 dessus. Une r\u00e9servation que personne n\u2019a faite restait sur hier pour toujours. Un travail avec des heures point\u00e9es ne peut toujours pas \u00eatre annul\u00e9."},
@@ -9831,6 +10143,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("meCrewBtn").hidden = state.me !== "office";
     // Hours worked and the workbook behind it are the office code's alone.
     // Every admin with "manage" was getting the whole crew's hours.
+    $("meBillBtn").hidden = state.me !== "office";
     $("meUndoBtn").hidden = !can("book") || !myUndos().length;
     $("meLogBtn").hidden = state.me !== "office";
     $("meRepBtn").hidden = state.me !== "office";
@@ -10273,6 +10586,230 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return out;
   }
 
+  /* ---------- the screen, and the paper ---------- */
+  var billPer = null, billWhat = null;
+  function drawBill(){
+    $("billWhen").textContent = periodText(billPer);
+    var host = $("billRows"); host.innerHTML = "";
+    var w = billWhat || {projects: [], loose: []};
+    $("billNone").hidden = !!w.projects.length;
+    var b = bill();
+    w.projects.forEach(function(p){
+      var row = document.createElement("div"); row.className = "billrow";
+      var tx = document.createElement("div"); tx.className = "bw";
+      var nm = document.createElement("b"); nm.textContent = p.id + " \u2014 " + p.name;
+      var sub = document.createElement("span");
+      sub.textContent = p.men.map(function(m){
+        return m.name + " " + m.hours + "h";
+      }).join(" \u00b7 ");
+      tx.appendChild(nm); tx.appendChild(sub);
+      var amt = document.createElement("span"); amt.className = "bm";
+      amt.textContent = "$" + money(p.net);
+      var go = document.createElement("button");
+      go.type = "button"; go.className = "btn btn-primary";
+      go.textContent = tr("Invoice");
+      go.addEventListener("click", function(){ printInvoice(p); });
+      row.appendChild(tx); row.appendChild(amt); row.appendChild(go);
+      host.appendChild(row);
+    });
+    var loose = $("billLoose");
+    loose.hidden = !w.loose.length;
+    if (w.loose.length)
+      loose.textContent = w.loose.length === 1
+        ? tr("One job on a charged project has no clocked hours, so it is not on any invoice.")
+        : tr("{n} jobs on charged projects have no clocked hours, so they are on no invoice.",
+             {n: w.loose.length});
+    // Nothing to bill and nobody has a wage on file: say what is missing.
+    if (!w.projects.length && !Object.keys(b.salary || {}).length)
+      $("billNone").textContent = tr("No wages on file yet \u2014 open Rates and taxes first.");
+    else
+      $("billNone").textContent = tr("Nothing to charge for those two weeks.");
+  }
+  function loadBill(){
+    $("billRows").innerHTML = ""; $("billNone").hidden = true;
+    $("billWhen").textContent = periodText(billPer);
+    return reportRows(billPer.from, billPer.to, null).then(function(jobs){
+      billWhat = billWork(jobs, billPer);
+      drawBill();
+    }).catch(function(){
+      billWhat = billWork(Object.keys(state.jobs).map(function(k){ return state.jobs[k]; }), billPer);
+      drawBill();
+    });
+  }
+  function openBill(){
+    if (state.me !== "office") return;
+    billPer = periodOf(todayIso); billWhat = null;
+    $("billDlg").showModal();
+    loadBill();
+  }
+  [["billPrev", -1], ["billNext", 1]].forEach(function(pair){
+    $(pair[0]).addEventListener("click", function(){
+      billPer = periodShift(billPer, pair[1]); loadBill();
+    });
+  });
+  $("billClose").addEventListener("click", function(){ $("billDlg").close(); });
+  $("meBillBtn").addEventListener("click", function(){ $("meDlg").close(); openBill(); });
+
+  /* One project's bill, on paper. The number is worked out from the period
+     and the project rather than counted, so printing the same fortnight twice
+     cannot invent a second invoice number for the same work. */
+  function invoiceNo(p, per){
+    return "EBM-" + per.from.replace(/-/g, "") + "-" + p.id;
+  }
+  function printInvoice(p){
+    var b = bill(), per = billPer;
+    var paper = $("paper"); paper.innerHTML = "";
+    function el(tag, cls, text){
+      var x = document.createElement(tag);
+      if (cls) x.className = cls;
+      if (text !== undefined) x.textContent = text;
+      return x;
+    }
+    paper.appendChild(el("h1", null, b.company));
+    paper.appendChild(el("div", "co", b.address +
+      (b.gstNo ? "\nGST " + b.gstNo : "") + (b.qstNo ? "    QST " + b.qstNo : "")));
+
+    var meta = el("div", "meta");
+    var left = el("div");
+    left.appendChild(el("div", null, tr("To: {name}", {name: p.id + " \u2014 " + p.name})));
+    left.appendChild(el("div", null, tr("For: wages of the crew who worked on it")));
+    var right = el("div");
+    right.appendChild(el("div", null, tr("Invoice {no}", {no: invoiceNo(p, per)})));
+    right.appendChild(el("div", null, periodText(per)));
+    right.appendChild(el("div", null, tr("Issued {d}", {d: F_LONG.format(new Date())})));
+    meta.appendChild(left); meta.appendChild(right);
+    paper.appendChild(meta);
+
+    var tb = el("table");
+    var hr = el("tr");
+    [tr("Day"), tr("Where"), tr("Hours"), tr("Rate"), tr("Amount")].forEach(function(h, i){
+      var th = el("th", i >= 2 ? "n" : null, h); hr.appendChild(th);
+    });
+    tb.appendChild(hr);
+    p.men.forEach(function(m){
+      var wr = el("tr");
+      var wc = el("td", "who", m.name + " \u2014 " + tr("{n} hours at ${r}",
+        {n: m.hours, r: (Math.round(m.rate * 10000) / 10000).toFixed(4)}));
+      wc.colSpan = 5; wr.appendChild(wc); tb.appendChild(wr);
+      m.lines.forEach(function(L){
+        var r = el("tr");
+        r.appendChild(el("td", null, F_MED.format(fromIso(L.date))));
+        r.appendChild(el("td", null, L.where + (L.what ? " \u00b7 " + L.what : "")));
+        r.appendChild(el("td", "n", String(L.hours)));
+        r.appendChild(el("td", "n", money(m.rate)));
+        r.appendChild(el("td", "n", money(L.amount)));
+        tb.appendChild(r);
+      });
+    });
+    function sum(label, amount, cls){
+      var r = el("tr", cls || "sub");
+      var pad = el("td"); pad.colSpan = 3; r.appendChild(pad);
+      r.appendChild(el("td", "n", label));
+      r.appendChild(el("td", "n", money(amount)));
+      tb.appendChild(r);
+    }
+    var gst = p.net * (Number(b.gst) || 0) / 100;
+    var qst = p.net * (Number(b.qst) || 0) / 100;
+    sum(tr("Subtotal"), p.net);
+    if (b.gst) sum(tr("GST {p}%", {p: b.gst}), gst);
+    if (b.qst) sum(tr("QST {p}%", {p: b.qst}), qst);
+    sum(tr("Total"), p.net + gst + qst, "tot");
+    paper.appendChild(tb);
+
+    paper.hidden = false;
+    window.print();
+    setTimeout(function(){ paper.hidden = true; }, 500);
+  }
+
+  /* Rates and taxes. A wage goes against a man rather than a trade, because
+     the two men this is for are paid differently and anybody else on the list
+     is simply not charged until somebody says what he earns. */
+  var billPick = [];
+  function drawBillSet(){
+    var b = bill();
+    var host = $("billPay"); host.innerHTML = "";
+    crewPeople().forEach(function(pp){
+      var f = document.createElement("div"); f.className = "field";
+      var lab = document.createElement("label");
+      lab.setAttribute("for", "billPay-" + pp.id);
+      lab.textContent = tr("{name} \u2014 a year", {name: pp.name});
+      var inp = document.createElement("input");
+      inp.type = "number"; inp.min = "0"; inp.step = "0.01"; inp.inputMode = "decimal";
+      inp.id = "billPay-" + pp.id; inp.dataset.who = pp.id;
+      inp.value = (b.salary || {})[pp.id] || "";
+      var hint = document.createElement("p"); hint.className = "sub";
+      hint.style.margin = "4px 0 0";
+      function say(){
+        var y = Number(inp.value || 0);
+        hint.textContent = y
+          ? tr("${h} an hour, ${c} charged", {
+              h: (y / (Number($("billYear").value) || 2080)).toFixed(4),
+              c: ((y / (Number($("billYear").value) || 2080)) *
+                  (1 + (Number($("billLoad").value) || 0) / 100)).toFixed(4)})
+          : tr("Not charged to anybody.");
+      }
+      inp.addEventListener("input", say);
+      f.appendChild(lab); f.appendChild(inp); f.appendChild(hint);
+      host.appendChild(f);
+      say();
+    });
+    var pr = $("billProjs"); pr.innerHTML = "";
+    PROJECTS.forEach(function(x){
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.textContent = x.id + " \u2014 " + x.name;
+      btn.setAttribute("aria-pressed", billPick.indexOf(String(x.id)) >= 0 ? "true" : "false");
+      btn.addEventListener("click", function(){
+        var i = billPick.indexOf(String(x.id));
+        if (i < 0) billPick.push(String(x.id)); else billPick.splice(i, 1);
+        drawBillSet();
+      });
+      pr.appendChild(btn);
+    });
+  }
+  function openBillSet(){
+    var b = bill();
+    $("billLoad").value = b.loadPct;
+    $("billYear").value = b.hoursYear;
+    $("billGstNo").value = b.gstNo || "";
+    $("billQstNo").value = b.qstNo || "";
+    $("billAnchor").value = b.anchor || "";
+    billPick = (b.projects || []).map(String);
+    $("billSetErr").textContent = "";
+    drawBillSet();
+    $("billSetDlg").showModal();
+  }
+  ["billLoad", "billYear"].forEach(function(id){
+    $(id).addEventListener("input", drawBillSet);
+  });
+  $("billSet").addEventListener("click", openBillSet);
+  $("billSetCancel").addEventListener("click", function(){ $("billSetDlg").close(); });
+  $("billSetForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var b = bill(), pay = {};
+    Array.prototype.forEach.call($("billPay").querySelectorAll("input"), function(inp){
+      var v = Number(inp.value || 0);
+      if (v > 0) pay[inp.dataset.who] = v;
+    });
+    var next = {};
+    Object.keys(BILL_DEF).forEach(function(k){ next[k] = b[k]; });
+    next.salary = pay;
+    next.loadPct = Number($("billLoad").value || 0);
+    next.hoursYear = Number($("billYear").value || 2080) || 2080;
+    next.gstNo = $("billGstNo").value.trim();
+    next.qstNo = $("billQstNo").value.trim();
+    next.anchor = $("billAnchor").value || "";
+    next.projects = billPick.slice();
+    $("billSetSave").disabled = true;
+    putBill(next).then(function(){
+      $("billSetSave").disabled = false;
+      $("billSetDlg").close();
+      if ($("billDlg").open) loadBill();
+    }).catch(function(e){
+      $("billSetSave").disabled = false;
+      $("billSetErr").textContent = errText(e, tr("The changes did not save."));
+    });
+  });
+
   function drawUndo(){
     var host = $("undoRows"); host.innerHTML = "";
     var list = myUndos();
@@ -10430,6 +10967,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       watchCalls();
       subscribeReqs();
       subscribeUndo();
+      subscribeBill();
       /* Signing in happens before the connection is open, so the listener set
          up there attaches to nothing. Everything else is re-attached here,
          once there is a database to attach to, and this belongs with them —
@@ -10758,6 +11296,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (Array.isArray(r)) state.reqs = r;
     var u = lsRead(LS_UNDO, null);
     if (Array.isArray(u)) state.undos = u;
+    var bl = lsRead(LS_BILL, null);
+    if (bl && typeof bl === "object") state.bill = bl;
   })();
 
   (function loadCachedOffs(){
@@ -10865,6 +11405,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     watchCalls();
     subscribeReqs();
     subscribeUndo();
+    subscribeBill();
     subscribeOff();
     setupPush();
     loadLangFor(id);
