@@ -3989,7 +3989,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v140";
+  var APP_VERSION = "v141";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6009,6 +6009,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-07T14:00:00Z", who:"office",
+     en:"Cancel is back on a job from a day that has gone, as long as nobody ever clocked in on it. A booking nobody got to used to sit on yesterday for good: the card kept Reschedule and Edit and lost Cancel, so whoever booked it had no way to clear it. A job with hours on it still cannot be cancelled \u2014 those are his hours \u2014 and every cancellation is in the log and can be undone.",
+     fr:"Annuler revient sur un travail d\u2019un jour pass\u00e9, tant que personne n\u2019a point\u00e9 dessus. Une r\u00e9servation que personne n\u2019a faite restait sur hier pour toujours. Un travail avec des heures point\u00e9es ne peut toujours pas \u00eatre annul\u00e9."},
     {at:"2026-10-06T19:00:00Z", who:"office",
      en:"Undo. Your account sheet has Undo something on it now, with the last dozen changes you made and a button against each: cancelling a job, booking one, editing one, moving one to another day, changing the crew, and letting an emergency take somebody. Undoing puts that one change back the way it was \u2014 what has happened since stays where it is \u2014 and the undo is itself a change, so it can be undone too. This came out of a man being removed from Crew & codes: his twenty-one jobs were never deleted, they were left pointing at an id that was no longer anybody, and there was no way in the app to say put that back.",
      fr:"Annuler. Votre fiche de compte a maintenant \u00ab\u00a0Annuler une action\u00a0\u00bb\u00a0: vos douze derniers changements avec un bouton sur chacun \u2014 annuler un travail, en r\u00e9server un, le modifier, le d\u00e9placer, modifier l\u2019\u00e9quipe, ou laisser une urgence prendre quelqu\u2019un. Annuler remet ce changement-l\u00e0 comme il \u00e9tait\u00a0; ce qui s\u2019est pass\u00e9 depuis reste."},
@@ -8768,7 +8771,17 @@ dialog#callDlg::backdrop{background:#0b0f12}
       acts.appendChild(ed);
     }
     acts.appendChild(Object.assign(document.createElement("span"), {className:"spacer"}));
-    if (opts.remove && !dayIsPast(j.date)){
+    /* A day that has gone used to take Cancel off the card altogether, on the
+       reasoning that work which was supposed to have happened cannot be
+       un-booked. But the job that wants cancelling is often exactly the one
+       nobody got to: it sits on yesterday for good, and whoever booked it is
+       left looking at a card with no way to clear it.
+
+       So the line is not the day any more, it is whether anybody worked it.
+       A job with a clock on it stays, because those are his hours and they
+       are not somebody's to delete; a job nobody ever started can go,
+       whatever day it is on. Cancelling is in the log and can be undone. */
+    if (opts.remove && (!dayIsPast(j.date) || !j.clockIn)){
       /* The rest of a run of days that has not been worked yet. Cancelling
          one Wednesday out of a week of drains and leaving the Thursday and
          the Friday standing is almost never what was meant, but sometimes
