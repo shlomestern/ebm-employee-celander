@@ -4262,7 +4262,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v145";
+  var APP_VERSION = "v146";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -5298,7 +5298,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
      in it, which is the same money as 9.975% of the amount without. All of it
      can be changed; none of it has to be. */
   var BILL_DEF = {
-    salary: {zion: 70000, rodrigo: 75000.12},
+    /* No wages here. This file is served to every browser that opens the
+       calendar, so a salary written into it is a salary published. They are
+       typed once into Rates and taxes and kept in the database instead. */
+    salary: {},
     hoursYear: 2080,                  // forty hours, fifty-two weeks
     loadPct: 40,                      // on top of the wage
     projects: ["12","13","14","17","26","28","30"],
@@ -6528,6 +6531,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-09T15:00:00Z", who:"me",
+     en:"The two wages are out of the app's own file. It is served to every browser that opens the calendar, so a salary written into it is a salary published \u2014 mine to answer for: I put them there as a convenience. They are typed once into Rates and taxes now and kept in the database. Charging back needs them entered before it can work out a rate.",
+     fr:"Les deux salaires ne sont plus dans le fichier de l\u2019application, qui est livr\u00e9 \u00e0 chaque navigateur. Ils se saisissent une fois dans Tarifs et taxes et sont gard\u00e9s dans la base de donn\u00e9es."},
     {at:"2026-10-08T01:00:00Z", who:"me",
      en:"To invoice says why when it has nothing to say. A week of real work came back blank, and rightly \u2014 the hours were on projects that are not charged, and the two jobs that were on charged ones had no clock on them \u2014 but blank is not an answer. It now names the projects the work was on and says they are not on the list, counts the jobs on charged projects that nobody clocked, and names anybody working without a wage on file.",
      fr:"\u00ab\u00a0\u00c0 facturer\u00a0\u00bb dit maintenant pourquoi quand il n\u2019a rien \u00e0 dire\u00a0: les projets sur lesquels le travail a \u00e9t\u00e9 fait et qui ne sont pas sur la liste, les travaux sur des projets factur\u00e9s que personne n\u2019a point\u00e9s, et ceux qui travaillent sans salaire enregistr\u00e9."},
