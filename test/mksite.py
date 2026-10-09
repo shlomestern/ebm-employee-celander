@@ -48,6 +48,15 @@ def build():
             '?"./fakefb/":"https://www.gstatic.com/firebasejs/10.12.5/";',
             "the stand-in database")
 
+    # Notifications fetch their own copy of Firebase from Google. Against the
+    # stand-in that real script finds a firebase object it does not recognise
+    # and throws, which showed up in every suite as a page error that had
+    # nothing to do with the app.
+    s = sub('    var base = "https://www.gstatic.com/firebasejs/10.12.5/";',
+            '    var base = (location.search.indexOf("fake=1") >= 0)\n'
+            '      ? "./fakefb/" : "https://www.gstatic.com/firebasejs/10.12.5/";',
+            "no real messaging in the test copy")
+
     s = sub("""  function lsRead(k,f){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):f; }catch(e){ return f; } }
   function lsWrite(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }""",
             """  var LS_TAG = (function(){

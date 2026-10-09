@@ -51,7 +51,7 @@ self.EBM_CONFIG = {   /* self, not window: the service worker reads this file to
 
      Firebase console → App Check → the web app → reCAPTCHA Enterprise.
      Leave it "" and the app runs exactly as before. */
-  appCheckKey: "6LfV9OYtAAAAAMkQf4ONd6Ereb7pijY4bNLcK72s",
+  appCheckKey: "6LfV9OYtAAAAAMkQf40Nd6Ereb7pijY4bNLcK72s",
 
   /* Phone notifications. Paste the Web Push certificate key pair from
      Firebase console → Project settings → Cloud Messaging → Web Push
