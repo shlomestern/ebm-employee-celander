@@ -1701,6 +1701,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
 <script src="config.js"></script>
 <script src="projects.js"></script>
+<script>window.__noSW = true;</script>
 <script>
 (function(){
   "use strict";
@@ -4262,7 +4263,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v147";
+  var APP_VERSION = "v146";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4356,8 +4357,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
   var $ = function(id){ return document.getElementById(id); };
 
   /* ---------- storage ---------- */
-  function lsRead(k,f){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):f; }catch(e){ return f; } }
-  function lsWrite(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } }
+  var LS_TAG = (function(){
+    var m = /[?&]who=([A-Za-z0-9]+)/.exec(location.search);
+    return m ? m[1] + ":" : "";
+  })();
+  function lsRead(k,f){ try{ var r=localStorage.getItem(LS_TAG+k); return r?JSON.parse(r):f; }catch(e){ return f; } }
+  function lsWrite(k,v){ try{ localStorage.setItem(LS_TAG+k,JSON.stringify(v)); return true; }catch(e){ return false; } }
 
   function newId(){
     return String(Date.now().toString(36)) + "-" + Math.random().toString(36).slice(2,8);
@@ -6531,9 +6536,6 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
-    {at:"2026-10-09T18:00:00Z", who:"me",
-     en:"App Check is in the app. Every request to the database now carries a token proving it came from this app and not from somebody who read the public key out of the page \u2014 which anybody can, and which is how the database has been open to the whole internet since the day it went up. Nothing changes on any screen. The token is only asked for; once every phone is on this version, the database will be set to refuse requests without one.",
-     fr:"App Check est dans l\u2019application\u00a0: chaque requ\u00eate \u00e0 la base de donn\u00e9es porte maintenant un jeton prouvant qu\u2019elle vient bien de cette application. Rien ne change \u00e0 l\u2019\u00e9cran. Une fois tous les t\u00e9l\u00e9phones \u00e0 jour, la base refusera les requ\u00eates sans jeton."},
     {at:"2026-10-09T15:00:00Z", who:"me",
      en:"The two wages are out of the app's own file. It is served to every browser that opens the calendar, so a salary written into it is a salary published \u2014 mine to answer for: I put them there as a convenience. They are typed once into Rates and taxes now and kept in the database. Charging back needs them entered before it can work out a rate.",
      fr:"Les deux salaires ne sont plus dans le fichier de l\u2019application, qui est livr\u00e9 \u00e0 chaque navigateur. Ils se saisissent une fois dans Tarifs et taxes et sont gard\u00e9s dans la base de donn\u00e9es."},
@@ -10613,7 +10615,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
     return (c && c.apiKey && c.projectId) ? c : null;
   }
   function bootFirebase(cfg){
-    var base="https://www.gstatic.com/firebasejs/10.12.5/";
+    var base=(location.search.indexOf("fake=1")>=0)?"./fakefb/":"https://www.gstatic.com/firebasejs/10.12.5/";
     var settled=false;
     // A phone on bad signal can leave these script requests hanging rather than
     // failing, which would strand the app on "Loading…" with nothing on screen.
@@ -11550,7 +11552,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   }
   function tryAutoOpen(){
     var saved = null;
-    try{ saved = localStorage.getItem(LS_PASS); }catch(e){}
+    try{ saved = localStorage.getItem(LS_TAG+LS_PASS); }catch(e){}
     var code = String(saved||"").trim();
     var id = whoFor(code);
     if (id && validPerson(id)){ openAs(id); return true; }
@@ -11578,7 +11580,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
         $("gateInput").select();
         return;
       }
-      try{ localStorage.setItem(LS_PASS, typed); }catch(e){}
+      try{ localStorage.setItem(LS_TAG+LS_PASS, typed); }catch(e){}
       openAs(id);
       });
     });
@@ -11780,6 +11782,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     });
   }
 
+  window.__state = state;   // test copy
+  window.__patchJob = patchJob;
+  window.__saveRoster = saveRoster;
+  window.__errText = errText;
+  window.__todayIso = todayIso;
+  window.__repBill = function(){ return repBill; };
   /* ---------- phone notifications ---------- */
   /* The office books a job, the crew member's phone buzzes — even with the app
      closed. Needs a vapidKey in config.js and the Cloud Function deployed.
@@ -12016,6 +12024,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       markUpdate("sw");
     });
     window.addEventListener("load", function(){
+      if (window.__noSW) return;   // test copy
       navigator.serviceWorker.register("sw.js").then(function(reg){
         function look(){ try { reg.update(); } catch(e){} }
         look();

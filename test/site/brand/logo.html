@@ -1,0 +1,38 @@
+<style>
+  html,body{margin:0;padding:0;background:transparent}
+  svg{display:block;width:100vw;height:100vh}
+</style>
+<!-- The app icon: the real EBM oval on the company brown. The symbol is the
+     one from the letterhead (brand/symbol.png), cropped out of the full
+     logo — the words beside it are unreadable at icon size, so only the mark
+     is used. Add ?plain=1 to the URL for the maskable version, which drops
+     the wordmark and pulls the oval in, because Android crops a maskable
+     icon to a circle and eats anything near the edge. -->
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ground" cx="34%" cy="26%" r="92%">
+      <stop offset="0%"   stop-color="#5A3A1E"/>
+      <stop offset="55%"  stop-color="#3C2612"/>
+      <stop offset="100%" stop-color="#241608"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#ground)"/>
+
+  <!-- 451x353 in its own pixels, so the height follows from the width -->
+  <image id="mark" href="symbol.png" x="56" y="88" width="400" height="313"/>
+
+  <text id="word" x="256" y="452" text-anchor="middle"
+        font-family="Liberation Sans, Arial, sans-serif" font-weight="700"
+        font-size="33" letter-spacing="4" fill="#E7C273">MAINTENANCE</text>
+</svg>
+<script>
+  // The maskable icon has to survive a circular crop: no wordmark, and the
+  // oval sits inside the middle 80% that Android promises not to cut.
+  if (location.search.indexOf("plain=1") >= 0) {
+    document.getElementById("word").remove();
+    var m = document.getElementById("mark");
+    m.setAttribute("x", 96); m.setAttribute("y", 131);
+    m.setAttribute("width", 320); m.setAttribute("height", 250);
+  }
+</script>
