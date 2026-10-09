@@ -6,8 +6,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(HERE, "site")
 PORT = 8981
 
+class Quiet(http.server.SimpleHTTPRequestHandler):
+    """The server's own chatter buries the one line that matters."""
+    def log_message(self, *a): pass
+
 def serve():
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=SITE)
+    handler = functools.partial(Quiet, directory=SITE)
     socketserver.TCPServer.allow_reuse_address = True
     httpd = socketserver.TCPServer(("127.0.0.1", PORT), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
