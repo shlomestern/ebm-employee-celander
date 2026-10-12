@@ -3085,6 +3085,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "להפסיק את העבודה",
     "Could not pause the job.":
       "לא הצלחנו להפסיק.",
+    "Back on this job":
+      "חוזר לעבודה הזו",
+    "Back on {where} — carried from {d}":
+      "חזרה ל{where} — הועבר מ־{d}",
     "Back on the job":
       "חזרה לעבודה",
     "Could not start again.":
@@ -3927,6 +3931,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Anything to add": "Quelque chose \u00e0 ajouter", "Optional": "Facultatif",
     "Pause the job": "Mettre en pause",
     "Could not pause the job.": "Impossible de mettre en pause.",
+    "Back on this job": "Reprendre ce travail",
+    "Back on {where} — carried from {d}":
+      "Retour \u00e0 {where} — report\u00e9 du {d}",
     "Back on the job": "De retour au travail",
     "Could not start again.": "Impossible de reprendre.",
     "Paused since {t} \u00b7 {why}": "En pause depuis {t}\u00a0\u00b7 {why}",
@@ -4263,7 +4270,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v149";
+  var APP_VERSION = "v150";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6536,6 +6543,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-12T16:30:00Z", who:"all",
+     en:"Stopped a job for the day and come back to it? Open it and tap Back on this job. It carries what is left onto today and puts you on the clock straight away. The day you worked keeps its own hours. Until now only the office could reopen it, which meant ringing them to be let back onto your own work.",
+     fr:"Vous avez arr\u00eat\u00e9 un travail pour la journ\u00e9e et vous y revenez\u00a0? Ouvrez-le et touchez Reprendre ce travail. Ce qui reste passe \u00e0 aujourd\u2019hui et vous \u00eates point\u00e9 tout de suite. La journ\u00e9e travaill\u00e9e garde ses heures."},
     {at:"2026-10-12T15:00:00Z", who:"me",
      en:"Each phone now writes down which version it is running, every time the app opens. App Check reports a percentage of requests it cannot verify, and a percentage names nobody \u2014 there was no way to tell a phone still on an old copy from any other source of traffic without asking fifteen people to read a number off a screen.",
      fr:"Chaque t\u00e9l\u00e9phone note d\u00e9sormais la version qu\u2019il ex\u00e9cute, \u00e0 chaque ouverture. App Check indique un pourcentage de requ\u00eates non v\u00e9rifi\u00e9es, et un pourcentage ne nomme personne."},
@@ -9287,6 +9297,23 @@ dialog#callDlg::backdrop{background:#0b0f12}
         acts.appendChild(la);
       }
     }
+    /* Stopped for the day and not finished: his to pick up again, whatever
+       day it was. The office keeps its own way of doing this \u2014 Go back to it,
+       which asks which day \u2014 and this is the same move with today already
+       answered, because a man standing at the building is not choosing a date. */
+    if (opts.clock && j.parked && !j.backOn && j.crewId === state.me){
+      var bk = document.createElement("button");
+      bk.type = "button"; bk.className = "btn btn-go";
+      bk.textContent = tr("Back on this job");
+      bk.addEventListener("click", function(){
+        bk.disabled = true; bk.textContent = tr("One moment\u2026");
+        carryBackToday(j).then(function(){ render(); }).catch(function(e){
+          bk.disabled = false; bk.textContent = tr("Back on this job");
+          alert(errText(e, tr("Could not start again.")));
+        });
+      });
+      acts.appendChild(bk);
+    }
     if (grantable(j)) acts.appendChild(grantButton(j));
     /* Clocked out by mistake, or it turned out not to be finished after all.
        Only the people who could have cancelled it can undo that, and the
@@ -11825,6 +11852,44 @@ dialog#callDlg::backdrop{background:#0b0f12}
      old copy from any other source of traffic without asking fifteen people
      to read a number off a screen. Each device now says which version it is
      on and when it last said so. */
+  /* A job he stopped for the day, picked up again by the man himself.
+
+     Stopping for the day leaves a job clocked out and marked not finished,
+     and from that moment the crew card had nothing on it but Note or photo:
+     reopening was the office's to do, or whoever booked it. So the one state
+     that exists because a man intends to come back was the one state he could
+     not come back from. He would ring the office to be let back onto his own
+     work.
+
+     What the hours already say stays said. The day he worked keeps its clock
+     and its record, exactly as when the office carries a job over; what is
+     left of the work arrives on today as a job of its own, and he is clocked
+     in on it from the moment he presses. */
+  function carryBackToday(j){
+    var now = new Date();
+    var from = Math.min(Math.max(now.getHours(), DAY_START), DAY_END - 1);
+    var id = newId();
+    return saveJob({
+      v: 2, id: id, date: todayIso, crewId: j.crewId,
+      from: from, to: Math.min(DAY_END, from + 1), allDay: false,
+      projectId: j.projectId, projectName: j.projectName,
+      buildingId: j.buildingId, buildingName: j.buildingName,
+      unit: j.unit || "", job: j.job,
+      photos: [], stock: j.stock || "", tight: false,
+      manager: j.manager || "", managerPhone: j.managerPhone || "",
+      carriedFrom: j.id, carriedDate: j.date,
+      createdAt: now.toISOString(),
+      createdBy: j.createdBy, createdById: j.createdById,
+      bookedBy: meName(),
+      clockIn: now.toISOString(), inBy: meName(), inById: state.me,
+      clockOut: null, breaks: [], notes: [], used: []
+    }).then(function(){
+      return patchJob(j.id, {parked: true, backOn: todayIso});
+    }).then(function(){
+      noteDown("clock", tr("Back on {where} \u2014 carried from {d}",
+        {where: whereLine(j), d: F_MED.format(fromIso(j.date))}), id);
+    });
+  }
   function rememberToken(token){
     if (!state.fb) return Promise.resolve();
     var tokens = {}; tokens[token] = state.me;
