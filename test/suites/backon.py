@@ -87,10 +87,11 @@ with sync_playwright() as pw:
     # The office looks at one man's calendar at a time; these are Rodrigo's.
     pg.evaluate("() => { window.__state.who = 'rodrigo'; }")
     openDay(pg, d(0))
-    check("on site right now: finish it another day",
-          "Finish another day" in (buttons(pg, "400-210") or []), True)
-    check("and not go back to it, which he never left",
-          "Go back to it" in (buttons(pg, "400-210") or []), False)
+    # A job he is standing on is not the office's to move: he pauses it and
+    # comes back to it himself.
+    check("on site right now: nothing to move it with",
+          [x for x in (buttons(pg, "400-210") or [])
+           if x in ("Go back to it", "Reschedule", "Finish another day")], [])
     openDay(pg, d(1))
     check("not started yet: reschedule",
           "Reschedule" in (buttons(pg, "7") or []), True)

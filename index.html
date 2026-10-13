@@ -2437,8 +2437,6 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "ניקה את השעון — {where}, היה רשום כניסה ב-{t}",
     "Cancelled to let an emergency in — {what}":
       "בוטל כדי לפנות מקום לקריאת חירום — {what}",
-    "Finish another day":
-      "לסיים ביום אחר",
     "Go back to it":
       "חזרה לעבודה",
     "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
@@ -3620,7 +3618,6 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Cancelled to let an emergency in \u2014 {what}":
       "Annul\u00e9 pour laisser passer une urgence \u2014 {what}",
     "Go back to it": "Y retourner",
-    "Finish another day": "Finir un autre jour",
     "The hours already worked stay on {d}. This puts the rest of it on the day you pick.":
       "Les heures d\u00e9j\u00e0 faites restent au {d}. Ceci place le reste au jour que vous choisissez.",
     "Going back to it on {d}": "Retour au travail le {d}",
@@ -4272,7 +4269,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v151";
+  var APP_VERSION = "v152";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6541,6 +6538,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     {at:"2026-09-10T02:00:00Z", who:"all",
      en:"Have to leave a job and come back? Tap Pause, say why, and the clock stops until you tap Back on the job.",
      fr:"Vous devez quitter un travail et revenir\u00a0? Touchez Pause, dites pourquoi, et le compteur s\u2019arr\u00eate jusqu\u2019\u00e0 ce que vous touchiez De retour au travail."},
+    {at:"2026-10-13T14:30:00Z", who:"office",
+     en:"A job somebody is standing on is no longer the office's to move. The card used to offer it while a man was on site, which raised a question with no good answer \u2014 he is there, and if he runs out of day he pauses it, says he is done for today, and comes back to it himself. Reschedule is still on a job nobody has started, and Go back to it on one stopped for the day.",
+     fr:"Un travail en cours ne se d\u00e9place plus depuis le bureau. L\u2019homme est sur place\u00a0; s\u2019il manque de temps il met en pause, dit qu\u2019il a fini pour la journ\u00e9e, et y revient lui-m\u00eame. Replanifier reste sur un travail non commenc\u00e9, et Y retourner sur un travail arr\u00eat\u00e9 pour la journ\u00e9e."},
     {at:"2026-10-13T13:00:00Z", who:"office",
      en:"The button that moves a job to another day now says what it means. A job nobody has started reads Reschedule, as before. A job somebody is standing on right now reads Finish another day \u2014 it used to say Go back to it, on a man who had been on site since twenty to nine and had never left. Go back to it is kept for what it describes: a job stopped for the day and not finished.",
      fr:"Le bouton qui d\u00e9place un travail dit maintenant ce qu\u2019il fait. Pas commenc\u00e9\u00a0: Replanifier. En cours\u00a0: Finir un autre jour \u2014 il disait \u00ab\u00a0Y retourner\u00a0\u00bb \u00e0 un homme qui n\u2019\u00e9tait jamais parti. \u00ab\u00a0Y retourner\u00a0\u00bb reste pour un travail arr\u00eat\u00e9 pour la journ\u00e9e et non termin\u00e9."},
@@ -8213,6 +8213,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
   function movable(j){
     // Finished is finished. Stopped for the day is not finished.
     if (!j || (j.clockOut && !j.parked)) return false;
+    /* A job somebody is standing on is not moved from the office. The man is
+       there; if he runs out of day he pauses it, says he is done for today,
+       and comes back to it himself. Offering the office a way to send the
+       rest of it elsewhere while he works only invited the question of what
+       it meant \u2014 which is the whole reason it is gone. */
+    if (j.clockIn && !j.parked) return false;
     /* A day that has gone is the whole point. The first cut of this refused
        to move anything dated before today, on the reasoning that you cannot
        change the past — but the job that needs moving is exactly the one
@@ -9332,16 +9338,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     if (movable(j)){
       var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
-      /* Three states, three different things to say. Nothing is being
-         rescheduled on a job that has been worked, and a man standing on the
-         job right now is not going back to anything: his card said "Go back to
-         it" at twenty to nine with him on site since 8:43. What the button
-         does in both of those cases is the same \u2014 the rest of the work goes
-         to another day and the hours worked stay where they were \u2014 but what
-         it means depends on whether he is still there. */
-      mv.textContent = j.parked  ? tr("Go back to it")
-                     : j.clockIn ? tr("Finish another day")
-                     :             tr("Reschedule");
+      /* Two states left, and they mean different things. Nothing is being
+         rescheduled on a job that was worked and stopped: he is being sent
+         back to finish it. */
+      mv.textContent = j.parked ? tr("Go back to it") : tr("Reschedule");
       mv.addEventListener("click", function(){ openMove(j); });
       acts.appendChild(mv);
     }
