@@ -75,6 +75,29 @@ with sync_playwright() as pw:
     check("is not his to pick up",
           "Back on this job" in (buttons(pg, "4") or []), False)
 
+    print("\n--- what the move button says depends on the state ---")
+    ON = job("s3", d(0), "rodrigo", 8, 17, "30", "Chateau St Bruno Inc.",
+             "30-1669-310", "1669-310", "400-210", "Drain in the lockers",
+             by="Andre Bilodeau", byid="andre",
+             cin=pg.evaluate("() => new Date().toISOString()"))
+    SOON = job("s4", d(1), "rodrigo", 8, 10, "30", "Chateau St Bruno Inc.",
+               "30-1669-310", "1669-310", "7", "Tap",
+               by="Andre Bilodeau", byid="andre")
+    boot(pg, OFFICE, [STOPPED, ON, SOON])
+    # The office looks at one man's calendar at a time; these are Rodrigo's.
+    pg.evaluate("() => { window.__state.who = 'rodrigo'; }")
+    openDay(pg, d(0))
+    check("on site right now: finish it another day",
+          "Finish another day" in (buttons(pg, "400-210") or []), True)
+    check("and not go back to it, which he never left",
+          "Go back to it" in (buttons(pg, "400-210") or []), False)
+    openDay(pg, d(1))
+    check("not started yet: reschedule",
+          "Reschedule" in (buttons(pg, "7") or []), True)
+    openDay(pg, d(-3))
+    check("stopped for the day: go back to it",
+          "Go back to it" in (buttons(pg, "bureau") or []), True)
+
     print("\n--- and the office still has its own way ---")
     boot(pg, OFFICE, [THEIRS])
     openDay(pg, d(-3))

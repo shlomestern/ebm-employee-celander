@@ -11,9 +11,17 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 def serve():
+    """Serve the test copy, or use whatever is already serving it.
+
+    A suite run by hand leaves a server behind, and the next run of everything
+    then died on the port rather than using it."""
     handler = functools.partial(Quiet, directory=SITE)
     socketserver.TCPServer.allow_reuse_address = True
-    httpd = socketserver.TCPServer(("127.0.0.1", PORT), handler)
+    try:
+        httpd = socketserver.TCPServer(("127.0.0.1", PORT), handler)
+    except OSError:
+        print("(a server is already on %d; using it)" % PORT)
+        return None
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd
 
@@ -31,7 +39,7 @@ def main(only=None):
         tail = [l for l in p.stdout.splitlines() if l.startswith("FAILURES")]
         print("%-12s %s" % (n + ":", tail[-1] if tail else "DID NOT FINISH"))
         if p.returncode: bad.append((n, p.stdout, p.stderr))
-    httpd.shutdown()
+    if httpd: httpd.shutdown()
     for n, out, err in bad:
         print("\n===== %s =====" % n)
         print("\n".join(l for l in out.splitlines() if "FAIL" in l or "got " in l))
