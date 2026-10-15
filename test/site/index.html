@@ -4270,7 +4270,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v152";
+  var APP_VERSION = "v153";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -11916,7 +11916,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
      above would be written once and then never corrected. This says what is
      running now, on every open, whether or not notifications are on. */
   function noteVersion(){
-    if (!state.fb || state.verNoted) return;
+    // Not before somebody has signed in. The connection is opened while the
+    // gate is still up, so a phone sitting on the code screen was writing
+    // itself down under a person called "null".
+    if (!state.fb || state.verNoted || !state.me) return;
     state.verNoted = true;
     var seen = {}; seen[state.me] =
       {ver: APP_VERSION, kind: deviceKind(), at: new Date().toISOString()};
