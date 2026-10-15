@@ -1160,6 +1160,31 @@ dialog#callDlg::backdrop{background:#0b0f12}
   </form>
 </dialog>
 
+<dialog id="hrsDlg">
+  <form method="dialog" class="dlg" id="hrsForm">
+    <div class="eyebrow" data-t>Hours worked</div>
+    <h3 data-t>Set the hours on this job</h3>
+    <p class="sub" id="hrsWhat"></p>
+    <div class="row2">
+      <div class="field">
+        <label for="hrsIn" data-t>Started</label>
+        <input type="time" id="hrsIn">
+      </div>
+      <div class="field">
+        <label for="hrsOut" data-t>Finished</label>
+        <input type="time" id="hrsOut">
+      </div>
+    </div>
+    <p class="sub" id="hrsSum" style="margin:2px 0 0"></p>
+    <p class="err" id="hrsErr"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="hrsCancel" data-t>Back</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn btn-primary" id="hrsSave" data-t>Save the hours</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="offDlg">
   <form method="dialog" class="dlg" id="offForm">
     <div class="eyebrow" data-t>Time off</div>
@@ -2577,6 +2602,36 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "בשימוש: ",
     "Hours worked":
       "שעות עבודה",
+    "Set the hours on this job":
+      "לקבוע את השעות בעבודה הזו",
+    "Started":
+      "התחיל",
+    "Save the hours":
+      "לשמור את השעות",
+    "Fix the hours":
+      "לתקן את השעות",
+    "Put in the hours":
+      "להזין שעות",
+    "{n} h on the books":
+      "{n} שעות לתשלום",
+    "No finish time — the job stays open and bills nothing.":
+      "אין שעת סיום — העבודה נשארת פתוחה ולא מחויבת.",
+    "Fill in what time he started.":
+      "יש למלא באיזו שעה הוא התחיל.",
+    "He cannot finish before he started.":
+      "אי אפשר לסיים לפני שהתחיל.",
+    "That time has not come yet.":
+      "השעה הזו עוד לא הגיעה.",
+    "Those hours are not yours to change.":
+      "השעות האלו אינן שלך לשינוי.",
+    "Could not save the hours.":
+      "לא הצלחנו לשמור את השעות.",
+    "Hours on {what}":
+      "שעות על {what}",
+    "Hours set — {where}, {t} to {u}":
+      "נקבעו שעות — {where}, {t} עד {u}",
+    "Hours set — {where}, in at {t}":
+      "נקבעו שעות — {where}, כניסה ב-{t}",
     "Hours booked":
       "שעות משובצות",
     "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
@@ -3705,6 +3760,20 @@ dialog#callDlg::backdrop{background:#0b0f12}
     "Nothing used": "Rien utilis\u00e9", "Save and finish": "Enregistrer et terminer",
     "Used: ": "Utilis\u00e9\u00a0: ",
     "Hours worked": "Heures travaill\u00e9es", "Hours booked": "Heures r\u00e9serv\u00e9es",
+    "Set the hours on this job": "D\u00e9finir les heures de ce travail",
+    "Started": "D\u00e9but", "Save the hours": "Enregistrer les heures",
+    "Fix the hours": "Corriger les heures", "Put in the hours": "Entrer les heures",
+    "{n} h on the books": "{n}\u00a0h compt\u00e9es",
+    "No finish time — the job stays open and bills nothing.":
+      "Pas d\u2019heure de fin — le travail reste ouvert et ne facture rien.",
+    "Fill in what time he started.": "Indiquez \u00e0 quelle heure il a commenc\u00e9.",
+    "He cannot finish before he started.": "Il ne peut pas finir avant d\u2019avoir commenc\u00e9.",
+    "That time has not come yet.": "Cette heure n\u2019est pas encore arriv\u00e9e.",
+    "Those hours are not yours to change.": "Ces heures ne sont pas \u00e0 vous de modifier.",
+    "Could not save the hours.": "Impossible d\u2019enregistrer les heures.",
+    "Hours on {what}": "Heures sur {what}",
+    "Hours set — {where}, {t} to {u}": "Heures d\u00e9finies — {where}, {t} \u00e0 {u}",
+    "Hours set — {where}, in at {t}": "Heures d\u00e9finies — {where}, arriv\u00e9e \u00e0 {t}",
     "What each person actually clocked, and where. Booked hours are shown beside them so you can see the difference.":
       "Ce que chacun a r\u00e9ellement point\u00e9, et o\u00f9. Les heures r\u00e9serv\u00e9es sont \u00e0 c\u00f4t\u00e9 pour voir l\u2019\u00e9cart.",
     "What changed in the app, and what this phone was told.":
@@ -4269,7 +4338,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v153";
+  var APP_VERSION = "v154";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -8209,6 +8278,107 @@ dialog#callDlg::backdrop{background:#0b0f12}
      happened and they stay there. What the office is really asking for is
      another day to go back and finish it, so that is what it gets: a fresh
      job on the chosen day, and the worked day left exactly as it was. */
+  /* ---------- the hours he actually worked ----------
+     The clock is a button on a phone, and phones get forgotten. He walks off
+     the job at four and the card still says ON SITE the next morning \u2014 wrong
+     in Hours worked, and invisible to the chargeback, because a job that was
+     never clocked out has no hours at all. The only two answers the card had
+     were to wipe the clock altogether or to leave it lying there, so the
+     office gets the obvious third one: type in the two times.
+
+     The same box sets hours that were never there. A booking nobody clocked
+     into can be given a start and a finish from the office, which is how a
+     day worked without the app gets onto the books.
+
+     Nothing here is hidden from the man. Whichever side the office touches
+     is stamped with the office's name, and the card in his hand says so. */
+  function fixHours(j){
+    return !!(j && ownsJob(j) && j.date <= todayIso);
+  }
+  function two(n){ return (n < 10 ? "0" : "") + n; }
+  function clockBox(x){
+    if (!x) return "";
+    var d = new Date(x);
+    return isNaN(d.getTime()) ? "" : two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+  function clockAt(ds, hhmm){
+    if (!ds || !hhmm) return null;
+    var p = String(hhmm).split(":");
+    var d = fromIso(ds);
+    d.setHours(parseInt(p[0], 10) || 0, parseInt(p[1], 10) || 0, 0, 0);
+    return d;
+  }
+  var hrsJob = null;
+  /* What those two times are worth once the breaks come off, said while he
+     types them rather than after he saves. The number under the boxes is the
+     number the invoice will carry. */
+  function hrsSum(){
+    var j = hrsJob; if (!j) return;
+    var a = clockAt(j.date, $("hrsIn").value), b = clockAt(j.date, $("hrsOut").value);
+    var line = "";
+    if (a && b && b > a){
+      var off = pausedMs(j, b.getTime());
+      var net = Math.max(0, (b - a - off) / 3600000);
+      line = tr("{n} h on the books", {n: round2(net)});
+      if (off >= 60000) line += " \u00b7 " + tr("paused {d}", {d: awayFor(off)});
+    } else if (a){
+      line = tr("No finish time \u2014 the job stays open and bills nothing.");
+    }
+    $("hrsSum").textContent = line;
+  }
+  function openHours(j){
+    if (!fixHours(j)) return;
+    hrsJob = j;
+    $("hrsWhat").textContent = F_MED.format(fromIso(j.date)) + " \u00b7 " +
+      whereLine(j) + " \u00b7 " + memberOr(j.crewId).name;
+    $("hrsIn").value  = clockBox(j.clockIn);
+    $("hrsOut").value = clockBox(j.clockOut);
+    $("hrsErr").textContent = "";
+    $("hrsSave").disabled = false;
+    hrsSum();
+    $("hrsDlg").showModal();
+  }
+  $("hrsIn").addEventListener("input", hrsSum);
+  $("hrsOut").addEventListener("input", hrsSum);
+  $("hrsCancel").addEventListener("click", function(){ $("hrsDlg").close(); hrsJob = null; });
+  $("hrsForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var j = hrsJob; if (!j) return;
+    // The button is only drawn for the people who may. Worth asking again
+    // here rather than trusting a button.
+    if (!fixHours(j)){ $("hrsErr").textContent = tr("Those hours are not yours to change."); return; }
+    var a = clockAt(j.date, $("hrsIn").value), b = clockAt(j.date, $("hrsOut").value);
+    if (!a){ $("hrsErr").textContent = tr("Fill in what time he started."); return; }
+    if (b && b <= a){ $("hrsErr").textContent = tr("He cannot finish before he started."); return; }
+    var now = new Date();
+    if (a > now || (b && b > now)){ $("hrsErr").textContent = tr("That time has not come yet."); return; }
+    $("hrsSave").disabled = true;
+    var was = snapJobs([j.id]);
+    var inIso = a.toISOString(), outIso = b ? b.toISOString() : null;
+    var patch = {clockIn: inIso, clockOut: outIso,
+                 hoursBy: meName(), hoursById: state.me, hoursAt: now.toISOString()};
+    /* Only the side that actually moved carries the office's name. A man who
+       clocked himself in at 7:02 and forgot to clock out should go on reading
+       his own start time as his own. */
+    if (inIso !== j.clockIn){ patch.inBy = meName(); patch.inById = state.me; }
+    if (outIso !== (j.clockOut || null)){
+      patch.outBy   = outIso ? meName()  : null;
+      patch.outById = outIso ? state.me  : null;
+    }
+    patchJob(j.id, patch).then(function(){
+      recordUndo("hours", tr("Hours on {what}",
+        {what: whereLine(j) + " \u00b7 " + memberOr(j.crewId).name}), [j.id], was);
+      noteDown("clock", b
+        ? tr("Hours set \u2014 {where}, {t} to {u}",
+             {where: whereLine(j), t: F_TIME.format(a), u: F_TIME.format(b)})
+        : tr("Hours set \u2014 {where}, in at {t}",
+             {where: whereLine(j), t: F_TIME.format(a)}), j.id);
+      $("hrsDlg").close(); hrsJob = null; render();
+    }).catch(function(e){
+      $("hrsSave").disabled = false;
+      $("hrsErr").textContent = errText(e, tr("Could not save the hours."));
+    });
+  });
   function worked(j){ return !!(j && (j.clockIn || j.parked)); }
   function movable(j){
     // Finished is finished. Stopped for the day is not finished.
@@ -9335,6 +9505,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
          it was cancelled and booked again, which throws away the booking to
          fix the clock. */
       acts.appendChild(undoClock(j, opts, "start"));
+    }
+    /* Typing the hours in. Not only when they are wrong: a booking nobody
+       ever clocked into gets its start and its finish here too. */
+    if (fixHours(j)){
+      var hb = document.createElement("button");
+      hb.type = "button"; hb.className = "btn";
+      hb.textContent = j.clockIn ? tr("Fix the hours") : tr("Put in the hours");
+      hb.addEventListener("click", function(){ openHours(j); });
+      acts.appendChild(hb);
     }
     if (movable(j)){
       var mv=document.createElement("button"); mv.type="button"; mv.className="btn";
