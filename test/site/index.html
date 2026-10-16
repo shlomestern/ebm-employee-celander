@@ -4339,7 +4339,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v154";
+  var APP_VERSION = "v155";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6486,6 +6486,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
      inside the release and shows up in the thread; the only notifications are
      the ones the server actually sends about jobs and messages. */
   var RELEASES = [
+    {at:"2026-10-16T12:00:00Z", who:"all",
+     en:"The bar at the top saying a newer version is ready could get stuck on, from yesterday afternoon until this morning: the app had the new version already and a file on the server had been left behind saying otherwise, so the bar went up, the page reloaded, came back the same, and said it again. Tapping Load it was never going to clear it. It is cleared now, and the bar will not go up for a version the phone is already running.",
+     fr:"La barre en haut annon\u00e7ant une nouvelle version pouvait rester coll\u00e9e, d\u2019hier apr\u00e8s-midi \u00e0 ce matin\u00a0: l\u2019application avait d\u00e9j\u00e0 la nouvelle version et un fichier sur le serveur disait le contraire, donc la barre montait, la page se rechargeait, revenait pareille, et le redisait. Toucher \u00ab\u00a0La charger\u00a0\u00bb n\u2019y pouvait rien. C\u2019est corrig\u00e9, et la barre ne monte plus pour une version que le t\u00e9l\u00e9phone a d\u00e9j\u00e0."},
+    {at:"2026-10-15T20:00:00Z", who:"office",
+     en:"You can type in the hours a man worked. A phone gets forgotten \u2014 he walks off at four and the card still says ON SITE the next morning, which is wrong in Hours worked and worth nothing to the chargeback, because a job that was never clocked out has no hours at all. The card now has Fix the hours: a start time and a finish time, typed in. A booking nobody ever clocked into says Put in the hours instead, which is how a day worked without the app gets onto the books. It refuses a finish before the start and a time that has not come yet, it takes the breaks off and shows what the two times are worth before you save, and it is in the log and in Undo. Only the end you actually moved carries your name, so a man who clocked himself in at 7:02 and forgot to clock out still reads his own start time as his own.",
+     fr:"Vous pouvez saisir les heures travaill\u00e9es. Un t\u00e9l\u00e9phone s\u2019oublie\u00a0: il part \u00e0 seize heures et la fiche dit encore SUR PLACE le lendemain matin \u2014 faux dans Heures travaill\u00e9es et sans valeur pour la refacturation, car un travail jamais point\u00e9 en sortie n\u2019a aucune heure. La fiche a maintenant \u00ab\u00a0Corriger les heures\u00a0\u00bb\u00a0: une heure de d\u00e9but et une heure de fin, saisies. Une r\u00e9servation que personne n\u2019a point\u00e9e dit plut\u00f4t \u00ab\u00a0Entrer les heures\u00a0\u00bb. Une fin avant le d\u00e9but est refus\u00e9e, les pauses sont retir\u00e9es et le total s\u2019affiche avant d\u2019enregistrer, et tout est dans le journal et dans Annuler. Seul le bout que vous avez vraiment chang\u00e9 porte votre nom."},
     {at:"2026-09-08T14:00:00Z", who:"all",
      en:"The app is in French as well. Change it under Language in your account.",
      fr:"L\u2019application est aussi en fran\u00e7ais. Changez-la sous Langue dans votre compte."},
@@ -12290,7 +12296,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }).then(function(txt){
       if (!txt) return;
       var live = String(txt).trim();
-      if (/^v\d+$/.test(live) && live !== APP_VERSION) markUpdate(live);
+      /* Newer, not merely different. The bar used to go up on any mismatch,
+         which made a version file left behind at a release into a bar that
+         could not be got rid of: the page reloads, comes back as the version
+         it already was, finds the same older number on the server, and says
+         a newer version is ready all over again. A phone ahead of the file
+         is not a phone that needs anything. */
+      if (!/^v\d+$/.test(live)) return;
+      if (parseInt(live.slice(1), 10) > parseInt(APP_VERSION.slice(1), 10)) markUpdate(live);
     }).catch(function(){});
   }
   $("updBtn").addEventListener("click", function(){ location.reload(); });
