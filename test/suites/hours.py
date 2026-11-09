@@ -8,7 +8,7 @@ in — on a job he clocked into and on a booking nobody ever clocked into."""
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from playwright.sync_api import sync_playwright
-from common import CHROME, ARGS, boot, job, d, OFFICE, Check, openDay
+from common import CHROME, ARGS, boot, job, d, at, OFFICE, Check, openDay
 
 check = Check()
 
@@ -16,7 +16,7 @@ check = Check()
 OPEN = job("h1", d(-2), "zion", 8, 17, "30", "Chateau St Bruno Inc.",
            "30-1669-310", "1669-310", "400-210", "Drain in the lockers",
            by="Shlome Stern", byid="office",
-           cin=d(-2) + "T12:43:00.000Z")
+           cin=at(d(-2), "08:43"))
 # Same day, never clocked into at all.
 NEVER = job("h2", d(-2), "rodrigo", 9, 12, "26", "Les Jardins Chambly Inc.",
             "26-5790-chambly", "5790 Chambly", "bureau", "Tap",

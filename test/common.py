@@ -39,6 +39,23 @@ except Exception:
 def d(n):
     return (TODAY + datetime.timedelta(days=n)).isoformat()
 
+def at(day, hhmm):
+    """A wall-clock time in Montreal, as the UTC instant a clock is stored as.
+
+    Fixtures used to carry the UTC instant directly \u2014 "T12:43:00.000Z" for a
+    quarter to nine \u2014 and every one of them went an hour out the night the
+    clocks changed, failing as though the app had broken. Say the time the
+    office would say and let the zone work it out."""
+    h, m = (hhmm.split(":") + ["0"])[:2]
+    y, mo, dd = [int(x) for x in day.split("-")]
+    naive = datetime.datetime(y, mo, dd, int(h), int(m))
+    try:
+        from zoneinfo import ZoneInfo
+        when = naive.replace(tzinfo=ZoneInfo("America/Toronto"))
+    except Exception:
+        when = naive.replace(tzinfo=datetime.timezone.utc)
+    return when.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:00.000Z")
+
 OFFICE = "test65"
 PEOPLE = [
   {"id": "zion",    "name": "Zion",    "trade": "plumbing",   "code": "zn0001"},

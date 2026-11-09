@@ -7,7 +7,7 @@ had nothing on it but Note or photo: reopening belonged to whoever booked it."""
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from playwright.sync_api import sync_playwright
-from common import CHROME, ARGS, boot, job, d, OFFICE, Check, openDay
+from common import CHROME, ARGS, boot, job, d, at, OFFICE, Check, openDay
 
 check = Check()
 
@@ -15,14 +15,14 @@ check = Check()
 STOPPED = job("s1", d(-3), "rodrigo", 9, 15, "36", "Les Jardins Chambly Inc.",
               "36-5790-chambly", "5790 Chambly", "bureau", "Drains",
               by="Galit Knafou", byid="galit",
-              cin=d(-3) + "T12:51:00.000Z", cout=d(-3) + "T19:00:00.000Z")
+              cin=at(d(-3), "08:51"), cout=at(d(-3), "15:00"))
 STOPPED["parked"] = True
 STOPPED["left"] = "Going home"
 # Somebody else's, same state, to be sure it is his own he can pick up.
 THEIRS = job("s2", d(-3), "zion", 9, 15, "36", "Les Jardins Chambly Inc.",
              "36-5790-chambly", "5790 Chambly", "4", "Panel",
              by="Galit Knafou", byid="galit",
-             cin=d(-3) + "T12:00:00.000Z", cout=d(-3) + "T17:00:00.000Z")
+             cin=at(d(-3), "08:00"), cout=at(d(-3), "13:00"))
 THEIRS["parked"] = True
 
 def buttons(pg, unit):
