@@ -4339,7 +4339,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v155";
+  var APP_VERSION = "v156";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6486,6 +6486,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
      inside the release and shows up in the thread; the only notifications are
      the ones the server actually sends about jobs and messages. */
   var RELEASES = [
+    {at:"2026-11-09T18:00:00Z", who:"office",
+     en:"Typing in hours of today that have not come yet is allowed. A job going three thirty to five, written up at lunchtime, was refused with \u201cthat time has not come yet\u201d \u2014 which is no use to somebody who already knows when the man is going. The line under the boxes says still to come instead, and it saves.",
+     fr:"Saisir des heures d\u2019aujourd\u2019hui qui ne sont pas encore arriv\u00e9es est maintenant permis. Un travail de quinze heures trente \u00e0 dix-sept heures, inscrit \u00e0 midi, \u00e9tait refus\u00e9 \u2014 ce qui ne sert \u00e0 rien quand on sait d\u00e9j\u00e0 quand l\u2019homme y va. La ligne sous les cases dit \u00ab\u00a0\u00e0 venir\u00a0\u00bb, et \u00e7a enregistre."},
     {at:"2026-10-16T12:00:00Z", who:"all",
      en:"The bar at the top saying a newer version is ready could get stuck on, from yesterday afternoon until this morning: the app had the new version already and a file on the server had been left behind saying otherwise, so the bar went up, the page reloaded, came back the same, and said it again. Tapping Load it was never going to clear it. It is cleared now, and the bar will not go up for a version the phone is already running.",
      fr:"La barre en haut annon\u00e7ant une nouvelle version pouvait rester coll\u00e9e, d\u2019hier apr\u00e8s-midi \u00e0 ce matin\u00a0: l\u2019application avait d\u00e9j\u00e0 la nouvelle version et un fichier sur le serveur disait le contraire, donc la barre montait, la page se rechargeait, revenait pareille, et le redisait. Toucher \u00ab\u00a0La charger\u00a0\u00bb n\u2019y pouvait rien. C\u2019est corrig\u00e9, et la barre ne monte plus pour une version que le t\u00e9l\u00e9phone a d\u00e9j\u00e0."},
