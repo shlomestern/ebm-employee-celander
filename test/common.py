@@ -6,7 +6,23 @@ repository and must never be put in it.
 """
 import datetime, os
 
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+def _chrome():
+    """Wherever this machine keeps Chromium.
+
+    It was pinned to one build number, and the container is rebuilt from time
+    to time with a newer one: every suite then died on a path that no longer
+    existed, which looks exactly like the app being broken."""
+    import glob
+    seen = ["/opt/pw-browsers/chromium"]
+    seen += sorted(glob.glob("/opt/pw-browsers/chromium-*/chrome-linux*/chrome"),
+                   reverse=True)
+    seen += sorted(glob.glob(os.path.expanduser(
+        "~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome")), reverse=True)
+    for x in seen:
+        if os.path.exists(x): return x
+    return seen[0]
+
+CHROME = _chrome()
 ARGS = ["--no-sandbox", "--force-device-scale-factor=1", "--hide-scrollbars"]
 HERE = os.path.dirname(os.path.abspath(__file__))
 URL  = "http://127.0.0.1:8981/"

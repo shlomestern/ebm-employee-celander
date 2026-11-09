@@ -110,7 +110,40 @@ with sync_playwright() as pw:
           pg.evaluate("() => [window.__state.jobs.h2.inBy, window.__state.jobs.h2.outBy]"),
           ["Office", "Office"])
 
+    print("\n--- hours of today that have not come yet ---")
+    # The office writes work up before it happens as well as after: a job
+    # going three thirty to five, typed in at lunchtime.
+    LATER = job("h4", d(0), "zion", 15, 17, "30", "Chateau St Bruno Inc.",
+                "30-1669-310", "1669-310", "600-110", "Pierrefonds",
+                by="Shlome Stern", byid="office")
+    boot(pg, OFFICE, [LATER])
+    pg.evaluate("() => { window.__state.who = 'zion'; }")
+    openDay(pg, d(0))
+    press(pg, "600-110", "Put in the hours")
+    # An hour of today still ahead of the browser's own clock, whatever time
+    # of day the suite is run at. Only the last hour of the night has none.
+    ahead = pg.evaluate("""() => {
+      const n = new Date(), p = x => (x < 10 ? '0' : '') + x;
+      const a = new Date(n.getTime() + 30*60000), b = new Date(n.getTime() + 75*60000);
+      return [a, b].map(t => t.getDate() !== n.getDate() ? null
+                            : p(t.getHours()) + ':' + p(t.getMinutes()));
+    }""")
+    if all(ahead):
+        pg.fill("#hrsIn", ahead[0])
+        pg.fill("#hrsOut", ahead[1])
+        pg.wait_for_timeout(200)
+        check("the line says they are still ahead",
+              "still to come" in pg.text_content("#hrsSum"), True)
+        pg.eval_on_selector("#hrsSave", "e=>e.click()")
+        pg.wait_for_timeout(900)
+        check("and it saves them anyway",
+              [hhmm(pg, "h4", "clockIn"), hhmm(pg, "h4", "clockOut")],
+              [d(0) + " " + ahead[0], d(0) + " " + ahead[1]])
+    else:
+        print("  ----  run too close to midnight for hours still to come")
+
     print("\n--- where it is not offered ---")
+    boot(pg, OFFICE, [OPEN, NEVER, SOON])
     pg.evaluate("() => { window.__state.who = 'zion'; }")
     openDay(pg, d(2))
     check("a booking still to come", [x for x in (buttons(pg, "7") or [])

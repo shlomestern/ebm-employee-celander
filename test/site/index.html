@@ -2621,8 +2621,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "יש למלא באיזו שעה הוא התחיל.",
     "He cannot finish before he started.":
       "אי אפשר לסיים לפני שהתחיל.",
-    "That time has not come yet.":
-      "השעה הזו עוד לא הגיעה.",
+    "still to come":
+      "עוד לפנינו",
     "Those hours are not yours to change.":
       "השעות האלו אינן שלך לשינוי.",
     "Could not save the hours.":
@@ -3769,7 +3769,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "Pas d\u2019heure de fin — le travail reste ouvert et ne facture rien.",
     "Fill in what time he started.": "Indiquez \u00e0 quelle heure il a commenc\u00e9.",
     "He cannot finish before he started.": "Il ne peut pas finir avant d\u2019avoir commenc\u00e9.",
-    "That time has not come yet.": "Cette heure n\u2019est pas encore arriv\u00e9e.",
+    "still to come": "\u00e0 venir",
     "Those hours are not yours to change.": "Ces heures ne sont pas \u00e0 vous de modifier.",
     "Could not save the hours.": "Impossible d\u2019enregistrer les heures.",
     "Hours on {what}": "Heures sur {what}",
@@ -8335,6 +8335,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
     } else if (a){
       line = tr("No finish time \u2014 the job stays open and bills nothing.");
     }
+    /* Said, not refused. Written up at lunchtime for a job going three thirty
+       to five, the hours are real enough \u2014 they simply have not been worked
+       yet, and whoever is typing them should be able to see that they are
+       looking at the afternoon rather than the morning. */
+    var ahead = new Date();
+    if (line && ((b || a) > ahead)) line += " \u00b7 " + tr("still to come");
     $("hrsSum").textContent = line;
   }
   function openHours(j){
@@ -8361,8 +8367,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var a = clockAt(j.date, $("hrsIn").value), b = clockAt(j.date, $("hrsOut").value);
     if (!a){ $("hrsErr").textContent = tr("Fill in what time he started."); return; }
     if (b && b <= a){ $("hrsErr").textContent = tr("He cannot finish before he started."); return; }
+    /* An hour of today that has not come yet used to be refused outright, on
+       the reasoning that nobody can have worked hours that have not happened.
+       But the office writes work up before it happens as well as after \u2014 a
+       job going three thirty to five, written up at lunchtime \u2014 and being
+       told the time has not come yet when you already know when the man is
+       going helps nobody. It is said rather than refused: the line under the
+       boxes points out that those hours are still ahead, and it saves. */
     var now = new Date();
-    if (a > now || (b && b > now)){ $("hrsErr").textContent = tr("That time has not come yet."); return; }
     $("hrsSave").disabled = true;
     var was = snapJobs([j.id]);
     var inIso = a.toISOString(), outIso = b ? b.toISOString() : null;
