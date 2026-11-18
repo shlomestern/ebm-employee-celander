@@ -1151,6 +1151,15 @@ dialog#callDlg::backdrop{background:#0b0f12}
     </div>
     <p class="sub" id="mvNote" style="margin:2px 0 0"></p>
     <p class="warn" id="mvWarn" hidden></p>
+    <label class="check" id="mvClashRow" hidden>
+      <input type="checkbox" id="mvClashAnyway">
+      <span data-th><b>Move it anyway</b>He would have two jobs at once.</span>
+    </label>
+    <p class="warn" id="mvOffNote" hidden></p>
+    <label class="check" id="mvOffRow" hidden>
+      <input type="checkbox" id="mvOffAnyway">
+      <span data-th><b>Move it anyway</b>This person was given that day off.</span>
+    </label>
     <p class="err" id="mvErr"></p>
     <div class="actions">
       <button type="button" class="btn" id="mvCancel" data-t>Back</button>
@@ -1965,6 +1974,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "ל{name} יש חופש ביום הזה, שאושר על ידי {who}. סמנו את התיבה כדי לשבץ בכל זאת.",
     "<b>Book it anyway</b>This person was given this day off.":
       "<b>לשבץ בכל זאת</b>לאדם הזה אושר חופש ביום הזה.",
+    "<b>Move it anyway</b>This person was given that day off.":
+      "<b>להעביר בכל זאת</b>לאדם הזה אושר חופש ביום ההוא.",
+    "<b>Move it anyway</b>He would have two jobs at once.":
+      "<b>להעביר בכל זאת</b>יהיו לו שתי עבודות באותה שעה.",
+    "{name} has this day off, given by {who}.":
+      "ל{name} יש חופש ביום הזה, שאושר על ידי {who}.",
+    "{name} is off {a}–{b} that day, given by {who}.":
+      "{name} בחופש {a}–{b} ביום ההוא, שאושר על ידי {who}.",
+    "Tick the box to move it anyway.":
+      "סמנו את התיבה כדי להעביר בכל זאת.",
     "Asked for {man} on {d}, {h}":
       "ביקש את {man} ב{d}, {h}",
     "Let it in — {how}":
@@ -3394,6 +3413,16 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "{name} a cong\u00e9 ce jour-l\u00e0, accord\u00e9 par {who}. Cochez la case pour r\u00e9server quand m\u00eame.",
     "<b>Book it anyway</b>This person was given this day off.":
       "<b>R\u00e9server quand m\u00eame</b>Cette personne a eu cong\u00e9 ce jour-l\u00e0.",
+    "<b>Move it anyway</b>This person was given that day off.":
+      "<b>D\u00e9placer quand m\u00eame</b>Cette personne a eu cong\u00e9 ce jour-l\u00e0.",
+    "<b>Move it anyway</b>He would have two jobs at once.":
+      "<b>D\u00e9placer quand m\u00eame</b>Il aurait deux travaux en m\u00eame temps.",
+    "{name} has this day off, given by {who}.":
+      "{name} a cong\u00e9 ce jour-l\u00e0, accord\u00e9 par {who}.",
+    "{name} is off {a}–{b} that day, given by {who}.":
+      "{name} est en cong\u00e9 de {a} \u00e0 {b} ce jour-l\u00e0, accord\u00e9 par {who}.",
+    "Tick the box to move it anyway.":
+      "Cochez la case pour d\u00e9placer quand m\u00eame.",
     "Asked for {man} on {d}, {h}": "A demand\u00e9 {man} le {d}, {h}",
     "Let it in \u2014 {how}": "Accept\u00e9 \u2014 {how}",
     "pushed the other work later": "l\u2019autre travail repouss\u00e9",
@@ -4338,7 +4367,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v156";
+  var APP_VERSION = "v157";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6481,6 +6510,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
      inside the release and shows up in the thread; the only notifications are
      the ones the server actually sends about jobs and messages. */
   var RELEASES = [
+    {at:"2026-11-18T19:30:00Z", who:"office",
+     en:"Moving a job on top of a job the man already has takes a tick too. The box has always said, in orange, that he would have two jobs at once \u2014 and then saved it on one tap anyway, which is how a two-hour job at 2350 Mariette landed on top of a whole day at 5790 Chambly. The line stays; it now needs the box ticked, and it checks every job on that day at the moment of saving rather than trusting the hour list.",
+     fr:"D\u00e9placer un travail par-dessus un travail que l\u2019homme a d\u00e9j\u00e0 demande aussi une case coch\u00e9e. La bo\u00eete disait d\u00e9j\u00e0, en orange, qu\u2019il aurait deux travaux en m\u00eame temps \u2014 puis enregistrait quand m\u00eame d\u2019un seul geste. La ligne reste\u00a0; il faut maintenant cocher, et tous les travaux du jour sont v\u00e9rifi\u00e9s au moment d\u2019enregistrer."},
+    {at:"2026-11-18T19:00:00Z", who:"office",
+     en:"Moving a job onto a day somebody has off now stops and asks, the way booking onto one always has. Two of Zion\u2019s jobs landed on the 24th, a day he had been given off for a doctor: they were never booked onto it \u2014 they were booked for the Saturday and moved, and the move box had no idea the day off existed. It names who gave the day and why while you are still picking it, and takes a tick to go through. An all-day job on a man who is off only part of that day is said now too; it used to pass without a word.",
+     fr:"D\u00e9placer un travail vers un jour de cong\u00e9 s\u2019arr\u00eate maintenant pour le dire, comme la r\u00e9servation l\u2019a toujours fait. Deux travaux de Zion se sont retrouv\u00e9s le 24, un jour de cong\u00e9 accord\u00e9\u00a0: ils n\u2019y ont jamais \u00e9t\u00e9 r\u00e9serv\u00e9s \u2014 ils \u00e9taient pr\u00e9vus le samedi et ont \u00e9t\u00e9 d\u00e9plac\u00e9s, et la bo\u00eete de d\u00e9placement ignorait le cong\u00e9. Elle dit qui l\u2019a accord\u00e9 et pourquoi pendant que vous choisissez le jour, et demande une case coch\u00e9e. Un travail \u00e0 la journ\u00e9e sur quelqu\u2019un en cong\u00e9 une partie du jour est signal\u00e9 aussi."},
     {at:"2026-11-09T18:00:00Z", who:"office",
      en:"Typing in hours of today that have not come yet is allowed. A job going three thirty to five, written up at lunchtime, was refused with \u201cthat time has not come yet\u201d \u2014 which is no use to somebody who already knows when the man is going. The line under the boxes says still to come instead, and it saves.",
      fr:"Saisir des heures d\u2019aujourd\u2019hui qui ne sont pas encore arriv\u00e9es est maintenant permis. Un travail de quinze heures trente \u00e0 dix-sept heures, inscrit \u00e0 midi, \u00e9tait refus\u00e9 \u2014 ce qui ne sert \u00e0 rien quand on sait d\u00e9j\u00e0 quand l\u2019homme y va. La ligne sous les cases dit \u00ab\u00a0\u00e0 venir\u00a0\u00bb, et \u00e7a enregistre."},
@@ -8505,10 +8540,57 @@ dialog#callDlg::backdrop{background:#0b0f12}
     for (i = from; i < to; i++) if (busyMap[i] && mvMine[i] === true) over.push(i);
     $("mvErr").textContent = room ? ""
       : tr("No room on that day. Pick another one.");
+    mvOffLook();
     $("mvWarn").hidden = !(room && over.length);
+    /* The line was all there was. It said, in orange, that the man would
+       have two jobs at once \u2014 and then the box saved it on one tap anyway,
+       which is how a two-hour job landed on top of somebody's whole day.
+       Your own booking still does not block the hour; it now costs a tick,
+       the same as a day the office gave away. */
+    $("mvClashRow").hidden = !(room && over.length);
+    if (!(room && over.length)) $("mvClashAnyway").checked = false;
     if (room && over.length)
       $("mvWarn").textContent = tr("This lands on top of your own booking at {h}. He would have two jobs at once.",
         {h: hourLong(over[0])});
+  }
+  /* A day off that actually touches these hours. The booking form worked
+     this out inline and the move box did not work it out at all \u2014 which is
+     how two jobs landed on a man the office had already given the day to:
+     they were not booked onto that day, they were moved onto it, and the
+     move box never looked. One reading of it now, for both boxes. */
+  function offHits(ds, crewId, from, to, allDay){
+    var off = offOn(ds, crewId);
+    if (!off) return null;
+    if (wholeDayOff(off) || allDay) return off;
+    return (to <= off.h1 || from >= off.h2) ? null : off;
+  }
+  function offSays(off, crewId){
+    var who = off.decidedBy || tr("the office");
+    return wholeDayOff(off)
+      ? tr("{name} has this day off, given by {who}.",
+           {name: memberOr(crewId).name, who: who})
+      : tr("{name} is off {a}\u2013{b} that day, given by {who}.",
+           {name: memberOr(crewId).name, a: hourLong(off.h1), b: hourLong(off.h2),
+            who: who});
+  }
+  /* Said while the day is being picked, not sprung at the moment of saving:
+     the man picking a day should see it is one the office already gave away
+     before he has settled on it. */
+  function mvOffLook(){
+    var j = mvJob;
+    var row = $("mvOffRow"), note = $("mvOffNote");
+    if (!j){ row.hidden = true; note.hidden = true; return; }
+    var off = offHits($("mvDate").value, j.crewId,
+                      parseInt($("mvFrom").value, 10), parseInt($("mvTo").value, 10),
+                      j.allDay);
+    if (!off){
+      row.hidden = true; note.hidden = true;
+      $("mvOffAnyway").checked = false; note.textContent = "";
+      return;
+    }
+    note.textContent = offSays(off, j.crewId) +
+      (off.why ? " " + tr("Reason: {why}", {why: off.why}) : "");
+    note.hidden = false; row.hidden = false;
   }
   function moveNote(){
     var j = mvJob; if (!j) return "";
@@ -8535,6 +8617,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     $("mvDate").value = next < todayIso ? todayIso : next;
     $("mvErr").textContent = "";
     $("mvSave").disabled = false;
+    $("mvOffRow").hidden = true; $("mvOffNote").hidden = true;
+    $("mvOffAnyway").checked = false;
+    $("mvClashRow").hidden = true; $("mvClashAnyway").checked = false;
     fillMoveHours(j.from);
     $("mvNote").textContent = moveNote();
     $("mvDlg").showModal();
@@ -8552,6 +8637,29 @@ dialog#callDlg::backdrop{background:#0b0f12}
     var from = parseInt($("mvFrom").value, 10), to = parseInt($("mvTo").value, 10);
     if (!ds || !(to > from)){ $("mvErr").textContent = tr("Pick a day and the hours."); return; }
     if (ds < todayIso){ $("mvErr").textContent = tr("That day has gone."); return; }
+    /* Not a refusal \u2014 plans change and the office may well mean it \u2014 but it
+       must not happen without being said, which is exactly what the booking
+       form has always done and this box never did. */
+    /* Asked again here over every job on that day rather than trusting the
+       hour list, which only disables what it knew about when it was drawn. */
+    var sitting = jobsOn(ds, j.crewId).filter(function(x){
+      return x.id !== j.id && from < heldTo(x) && to > x.from;
+    })[0];
+    if (sitting && !$("mvClashAnyway").checked){
+      $("mvErr").textContent =
+        tr("{name} is booked at {where} that day at {h}.",
+           {name: memberOr(j.crewId).name, where: sitting.buildingName,
+            h: hourLong(sitting.from)}) + " " + tr("Tick the box to move it anyway.");
+      $("mvClashRow").hidden = false;
+      return;
+    }
+    var mvOff = offHits(ds, j.crewId, from, to, j.allDay);
+    if (mvOff && !$("mvOffAnyway").checked){
+      $("mvErr").textContent = offSays(mvOff, j.crewId) + " " +
+        tr("Tick the box to move it anyway.");
+      $("mvOffRow").hidden = false;
+      return;
+    }
     $("mvSave").disabled = true;
     // What it was before it moved, and \u2014 for a job carried over, which makes
     // a second job rather than moving the first \u2014 the new one to delete.
@@ -10446,12 +10554,10 @@ dialog#callDlg::backdrop{background:#0b0f12}
 
     /* A day the office itself gave off. Not a refusal — plans change and the
        office may well mean it — but it must not happen without being said. */
-    var off = offOn(ds, crewId);
-    if (off && !wholeDayOff(off) && !(to <= off.h1 || from >= off.h2 || allDay)) {
-      // nothing: it overlaps, and falls through to the warning below
-    } else if (off && !wholeDayOff(off)) {
-      off = null;                       // his hours off are nowhere near this
-    }
+    /* An all-day job on a man who is off the morning used to pass without a
+       word: the hours were read as "nowhere near this" because an all-day
+       job has no hours to compare. It covers his morning off by definition. */
+    var off = offHits(ds, crewId, from, to, allDay);
     if (off && !$("fOffAnyway").checked){
       $("formErr").textContent = wholeDayOff(off)
         ? tr("{name} has this day off, given by {who}. Tick the box to book it anyway.",
