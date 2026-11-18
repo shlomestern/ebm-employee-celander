@@ -78,6 +78,33 @@ with sync_playwright() as pw:
     check("and it moves with one tap",
           pg.evaluate("() => window.__state.jobs.o1.date"), d(4))
 
+    print("\n--- an admin who did not give the day ---")
+    # Galit can book, and the day off was the office's answer, not hers.
+    # Her own booking, so the card offers her Reschedule in the first place.
+    MOVING2 = job("o4", d(2), "zion", 8, 12, "30", "Chateau St Bruno Inc.",
+                  "30-1669-310", "1669-310", "Atelier", "Clapet antiretour",
+                  by="Galit Knafou", byid="galit")
+    boot(pg, "gl0005", [MOVING2], extra={"config/dayoff": OFFS})
+    pg.evaluate("() => { window.__state.who = 'zion'; }")
+    openDay(pg, d(3))
+    check("the day sheet says whose answer it is",
+          "Only Shlome Stern" in pg.text_content("#daySub"), True)
+    openDay(pg, d(2))
+    press(pg, "Atelier", "Reschedule")
+    pg.fill("#mvDate", d(3))
+    pg.eval_on_selector("#mvDate", "e=>e.dispatchEvent(new Event('change'))")
+    pg.wait_for_timeout(500)
+    check("she is told, and offered no tick",
+          [pg.evaluate("() => !document.getElementById('mvOffNote').hidden"),
+           pg.evaluate("() => document.getElementById('mvOffRow').hidden")],
+          [True, True])
+    pg.eval_on_selector("#mvSave", "e=>e.click()")
+    pg.wait_for_timeout(900)
+    check("and it is a flat no",
+          "Only Shlome Stern" in pg.text_content("#mvErr"), True)
+    check("the job stays where it was",
+          pg.evaluate("() => window.__state.jobs.o4.date"), d(2))
+
     print("\n--- on top of a job he already has ---")
     # The whole day, booked by the same person who is doing the moving: the
     # hour list calls those hours "your own booking" and leaves them pickable.

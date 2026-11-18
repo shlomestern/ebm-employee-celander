@@ -1985,6 +1985,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "{name} בחופש {a}–{b} ביום ההוא, שאושר על ידי {who}.",
     "Tick the box to move it anyway.":
       "סמנו את התיבה כדי להעביר בכל זאת.",
+    "Only {who} can put work on it.":
+      "רק {who} יכול לשבץ עבודה ביום הזה.",
     "Asked for {man} on {d}, {h}":
       "ביקש את {man} ב{d}, {h}",
     "Let it in — {how}":
@@ -3424,6 +3426,8 @@ dialog#callDlg::backdrop{background:#0b0f12}
       "{name} est en cong\u00e9 de {a} \u00e0 {b} ce jour-l\u00e0, accord\u00e9 par {who}.",
     "Tick the box to move it anyway.":
       "Cochez la case pour d\u00e9placer quand m\u00eame.",
+    "Only {who} can put work on it.":
+      "Seul {who} peut y mettre du travail.",
     "Asked for {man} on {d}, {h}": "A demand\u00e9 {man} le {d}, {h}",
     "Let it in \u2014 {how}": "Accept\u00e9 \u2014 {how}",
     "pushed the other work later": "l\u2019autre travail repouss\u00e9",
@@ -4368,7 +4372,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v157";
+  var APP_VERSION = "v158";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -6515,6 +6519,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
      inside the release and shows up in the thread; the only notifications are
      the ones the server actually sends about jobs and messages. */
   var RELEASES = [
+    {at:"2026-11-18T21:00:00Z", who:"office",
+     en:"A day off is now only the office\u2019s to spend. Whoever granted the day can still put work on it, with the box ticked; for anybody else who can book it is a flat no, on the day sheet and in both boxes, saying whose answer it was. Until now the tick was there for anyone who could book, so work could go onto a day the office had given away without the office hearing a word.",
+     fr:"Un jour de cong\u00e9 n\u2019appartient plus qu\u2019\u00e0 celui qui l\u2019a accord\u00e9. Il peut encore y mettre du travail en cochant la case\u00a0; pour toute autre personne qui peut r\u00e9server, c\u2019est un refus net, sur la fiche du jour comme dans les deux bo\u00eetes, en disant de qui vient la d\u00e9cision."},
     {at:"2026-11-18T19:30:00Z", who:"office",
      en:"Moving a job on top of a job the man already has takes a tick too. The box has always said, in orange, that he would have two jobs at once \u2014 and then saved it on one tap anyway, which is how a two-hour job at 2350 Mariette landed on top of a whole day at 5790 Chambly. The line stays; it now needs the box ticked, and it checks every job on that day at the moment of saving rather than trusting the hour list.",
      fr:"D\u00e9placer un travail par-dessus un travail que l\u2019homme a d\u00e9j\u00e0 demande aussi une case coch\u00e9e. La bo\u00eete disait d\u00e9j\u00e0, en orange, qu\u2019il aurait deux travaux en m\u00eame temps \u2014 puis enregistrait quand m\u00eame d\u2019un seul geste. La ligne reste\u00a0; il faut maintenant cocher, et tous les travaux du jour sont v\u00e9rifi\u00e9s au moment d\u2019enregistrer."},
@@ -8569,6 +8576,14 @@ dialog#callDlg::backdrop{background:#0b0f12}
     if (wholeDayOff(off) || allDay) return off;
     return (to <= off.h1 || from >= off.h2) ? null : off;
   }
+  /* A day off is not everybody's to spend. It was a tick anybody who could
+     book could reach, so an admin could put work on a day the office had
+     given away without the office hearing a word about it \u2014 which is how
+     two jobs landed on a man who was at the doctor. Only whoever granted
+     the day can overrule it; for everybody else it is a flat no, and they
+     are told whose answer it is. */
+  function offBoss(off){ return (off && off.decidedById) || "office"; }
+  function offIsMine(off){ return state.me === offBoss(off); }
   function offSays(off, crewId){
     var who = off.decidedBy || tr("the office");
     return wholeDayOff(off)
@@ -8595,7 +8610,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
     }
     note.textContent = offSays(off, j.crewId) +
       (off.why ? " " + tr("Reason: {why}", {why: off.why}) : "");
-    note.hidden = false; row.hidden = false;
+    note.hidden = false;
+    row.hidden = !offIsMine(off);
+    if (!offIsMine(off)) $("mvOffAnyway").checked = false;
   }
   function moveNote(){
     var j = mvJob; if (!j) return "";
@@ -8659,6 +8676,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
       return;
     }
     var mvOff = offHits(ds, j.crewId, from, to, j.allDay);
+    if (mvOff && !offIsMine(mvOff)){
+      $("mvErr").textContent = offSays(mvOff, j.crewId) + " " +
+        tr("Only {who} can put work on it.", {who: mvOff.decidedBy || tr("the office")});
+      $("mvOffRow").hidden = true;
+      return;
+    }
     if (mvOff && !$("mvOffAnyway").checked){
       $("mvErr").textContent = offSays(mvOff, j.crewId) + " " +
         tr("Tick the box to move it anyway.");
@@ -10086,7 +10109,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
         : tr("{name} is off {a}\u2013{b}.",
              {name: m.name, a: hourLong(mine.h1), b: hourLong(mine.h2)}))
         + (mine.why ? " " + tr("Reason: {why}", {why: mine.why}) : "")
-        + (mine.decidedBy ? " " + tr("Given by {who}.", {who: mine.decidedBy}) : "");
+        + (mine.decidedBy ? " " + tr("Given by {who}.", {who: mine.decidedBy}) : "")
+        /* Said here rather than only at the moment of saving, so nobody
+           fills in a whole job before finding out it is not theirs to put
+           on this day. */
+        + (offIsMine(mine) ? "" : " " +
+           tr("Only {who} can put work on it.",
+              {who: mine.decidedBy || tr("the office")}));
     }
     if (!can("book")){
       $("daySub").textContent = offLine || list0Text(ds);
@@ -10563,6 +10592,12 @@ dialog#callDlg::backdrop{background:#0b0f12}
        word: the hours were read as "nowhere near this" because an all-day
        job has no hours to compare. It covers his morning off by definition. */
     var off = offHits(ds, crewId, from, to, allDay);
+    if (off && !offIsMine(off)){
+      $("formErr").textContent = offSays(off, crewId) + " " +
+        tr("Only {who} can put work on it.", {who: off.decidedBy || tr("the office")});
+      $("offAnywayRow").hidden = true;
+      return;
+    }
     if (off && !$("fOffAnyway").checked){
       $("formErr").textContent = wholeDayOff(off)
         ? tr("{name} has this day off, given by {who}. Tick the box to book it anyway.",
