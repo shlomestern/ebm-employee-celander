@@ -4371,7 +4371,7 @@ dialog#callDlg::backdrop{background:#0b0f12}
   // Bumped with sw.js's CACHE on every release, and shown in the account
   // sheet: without it there is no way to tell a phone that has picked up a
   // fix from one still running last week's copy out of its cache.
-  var APP_VERSION = "v158";
+  var APP_VERSION = "v159";
 
   var F_MONTH, F_LONG, F_DOW, F_MED, F_TIME;
   function buildFormats(){
@@ -4688,10 +4688,13 @@ dialog#callDlg::backdrop{background:#0b0f12}
      How much time depends on how far it really is. Two buildings on the same
      property are a walk across a car park and need nothing — the office asked
      for that plainly, and it is right: 2350 and 2354 Mariette are next door
-     to each other. Another project is a drive across Montreal, at the wrong
-     end of the morning, with a van to unload at the other end, so it takes
-     two hours. */
-  var GAP_OTHER_PROJECT = 2;
+     to each other.
+
+     Another project is one hour. It was two for a while, on my own reasoning
+     about a drive across Montreal with a van to unload at the other end.
+     Nobody asked for that, and an afternoon with two of its hours held for a
+     trip across town is not what the day actually looks like. */
+  var GAP_OTHER_PROJECT = 1;
   function gapFor(aProj, aBld, bProj, bBld){
     return aProj === bProj ? 0 : GAP_OTHER_PROJECT;
   }
@@ -6514,6 +6517,9 @@ dialog#callDlg::backdrop{background:#0b0f12}
      inside the release and shows up in the thread; the only notifications are
      the ones the server actually sends about jobs and messages. */
   var RELEASES = [
+    {at:"2026-11-24T17:00:00Z", who:"office",
+     en:"Getting from one project to another takes one hour again, not two. It was quietly put up to two in September on my own reasoning about a drive across Montreal with a van to unload \u2014 nobody asked for that, and it took half an afternoon out of the hour list: a job finishing at two showed two o\u2019clock and three o\u2019clock both as travelling. Two buildings on the same property still need nothing. The same number decides how far a pushed job lands when you let an emergency in, so those land an hour closer now too.",
+     fr:"Aller d\u2019un projet \u00e0 un autre reprend une heure, plus deux. C\u2019\u00e9tait pass\u00e9 \u00e0 deux en septembre sur mon propre raisonnement \u2014 personne ne l\u2019avait demand\u00e9 \u2014 et cela retirait la moiti\u00e9 d\u2019un apr\u00e8s-midi de la liste des heures. Deux b\u00e2timents de la m\u00eame propri\u00e9t\u00e9 ne demandent toujours rien. Le m\u00eame nombre d\u00e9cide o\u00f9 retombe un travail d\u00e9cal\u00e9 pour laisser entrer une urgence."},
     {at:"2026-11-18T21:00:00Z", who:"office",
      en:"A day off is now only the office\u2019s to spend. Whoever granted the day can still put work on it, with the box ticked; for anybody else who can book it is a flat no, on the day sheet and in both boxes, saying whose answer it was. Until now the tick was there for anyone who could book, so work could go onto a day the office had given away without the office hearing a word.",
      fr:"Un jour de cong\u00e9 n\u2019appartient plus qu\u2019\u00e0 celui qui l\u2019a accord\u00e9. Il peut encore y mettre du travail en cochant la case\u00a0; pour toute autre personne qui peut r\u00e9server, c\u2019est un refus net, sur la fiche du jour comme dans les deux bo\u00eetes, en disant de qui vient la d\u00e9cision."},
